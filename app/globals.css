@@ -7,7 +7,7 @@
   --cream-dark: #DDD4C6;
   --sage:       #6B8F71;
   --amber:      #B07D3A;
-  --bg-grad:    linear-gradient(160deg, #EDE8E0 0%, #DDD4C6 100%);
+  --bg-grad: linear-gradient(160deg, #F4F1EC 0%, #E8E0D4 100%);
 
   --font-sans:  'Jost', sans-serif;
   --font-mono:  'DM Mono', 'Courier New', monospace;
@@ -42,7 +42,12 @@ body {
   font-size: 8px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  opacity: 0.28;
+  opacity: 0.45;
+}
+
+/* -- Legibility boost -- */
+body {
+  color: rgba(15,15,14,0.85);
 }
 
 .mono {
