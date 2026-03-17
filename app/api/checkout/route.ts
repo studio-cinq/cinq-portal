@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
-import { cookies } from "next/headers"
+import { createServerComponentClient } from "@/lib/supabase-server"
 import type { Database } from "@/types/database"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2024-06-20" })
