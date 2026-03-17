@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import CinqLogo from "@/components/CinqLogo"
 
@@ -12,6 +13,16 @@ export default function LoginPage() {
   const [code, setCode]       = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState<string | null>(null)
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const authError = searchParams.get("error")
+    if (authError === "code_exchange_failed") {
+      setError("Magic link sign-in failed. Please try entering the 6-digit code instead.")
+    } else if (authError === "no_code") {
+      setError("Invalid magic link. Please request a new code.")
+    }
+  }, [searchParams])
 
   // Step 1 — send OTP to email
   async function handleSendCode(e: React.FormEvent) {

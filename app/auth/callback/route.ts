@@ -27,10 +27,17 @@ export async function GET(req: NextRequest) {
     )
 
     const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) {
-      return redirectTo
+    if (error) {
+      console.error("[auth/callback] Code exchange failed:", error.message)
+      const loginUrl = new URL("/login", req.url)
+      loginUrl.searchParams.set("error", "code_exchange_failed")
+      return NextResponse.redirect(loginUrl)
     }
+    return redirectTo
   }
 
-  return NextResponse.redirect(new URL("/login", req.url))
+  console.error("[auth/callback] No code parameter in URL")
+  const loginUrl = new URL("/login", req.url)
+  loginUrl.searchParams.set("error", "no_code")
+  return NextResponse.redirect(loginUrl)
 }
