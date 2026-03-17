@@ -21,13 +21,12 @@ export async function POST(req: NextRequest) {
     const invoiceId = session.metadata?.invoice_id
 
     if (invoiceId) {
-      // Mark invoice as paid
       await supabaseAdmin
         .from("invoices")
         .update({
-          status:                     "paid",
-          paid_at:                    new Date().toISOString(),
-          stripe_payment_intent_id:   session.payment_intent as string,
+          status:                   "paid",
+          paid_at:                  new Date().toISOString(),
+          stripe_payment_intent_id: session.payment_intent as string,
         })
         .eq("id", invoiceId)
     }
@@ -35,6 +34,3 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ received: true })
 }
-
-// Required for Stripe webhooks — disable body parsing
-export const config = { api: { bodyParser: false } }
