@@ -51,25 +51,28 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser()
 
   // Get client record
-  const { data: client } = await supabase
-    .from("clients")
-    .select("*")
-    .eq("contact_email", user?.email ?? "")
-    .single()
+  const { data: clientRaw } = await supabase
+  .from("clients")
+  .select("*")
+  .eq("contact_email", user?.email ?? "")
+  .single()
+const client = clientRaw as any
 
   // Get projects with their deliverables
-  const { data: projects } = await supabase
-    .from("projects")
-    .select("*, deliverables(*)")
-    .eq("client_id", client?.id ?? "")
-    .order("created_at", { ascending: false })
+  const { data: projectsRaw } = await supabase
+  .from("projects")
+  .select("*, deliverables(*)")
+  .eq("client_id", client?.id ?? "")
+  .order("created_at", { ascending: false })
+const projects = projectsRaw as any[] | null
 
   // Get outstanding invoices
-  const { data: invoices } = await supabase
-    .from("invoices")
-    .select("*")
-    .eq("client_id", client?.id ?? "")
-    .in("status", ["sent", "overdue"])
+  const { data: invoicesRaw } = await supabase
+  .from("invoices")
+  .select("*")
+  .eq("client_id", client?.id ?? "")
+  .in("status", ["sent", "overdue"])
+const invoices = invoicesRaw as any[] | null
 
   const hour = new Date().getHours()
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening"
