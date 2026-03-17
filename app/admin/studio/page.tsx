@@ -16,14 +16,14 @@ export default async function AdminStudioPage() {
   const attentionCount = (invoices?.length ?? 0) + (messages?.length ?? 0)
 
   // YTD revenue
-  const { data: paidInvoices } = await supabase
-    .from("invoices")
-    .select("amount, paid_at")
-    .eq("status", "paid")
-    .gte("paid_at", new Date(new Date().getFullYear(), 0, 1).toISOString())
+  const { data: paidInvoicesRaw } = await supabase
+  .from("invoices")
+  .select("amount, paid_at")
+  .eq("status", "paid")
+  .gte("paid_at", new Date(new Date().getFullYear(), 0, 1).toISOString())
 
-  const ytdBilled    = paidInvoices?.reduce((s, i) => s + i.amount, 0) ?? 0
-  const outstanding  = invoices?.reduce((s, i) => s + i.amount, 0) ?? 0
+const paidInvoices = paidInvoicesRaw as { amount: number; paid_at: string }[] | null
+const ytdBilled = paidInvoices?.reduce((s, i) => s + i.amount, 0) ?? 0
 
   return (
     <>
