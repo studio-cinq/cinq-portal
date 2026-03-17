@@ -1,11 +1,11 @@
 import { cookies } from "next/headers"
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
+import { createServerComponentClient } from "@/lib/supabase"
 import PortalNav from "@/components/portal/Nav"
 import PayInvoiceButton from "@/components/portal/PayInvoiceButton"
 import type { Database } from "@/types/database"
 
 export default async function InvoicesPage() {
-  const supabase = createServerComponentClient<Database>({ cookies })
+  const supabase = await createServerComponentClient()
 
   const { data: { user } } = await supabase.auth.getUser()
   const { data: client } = await supabase

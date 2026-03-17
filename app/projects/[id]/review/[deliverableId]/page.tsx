@@ -1,5 +1,5 @@
 import { cookies } from "next/headers"
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
+import { createServerComponentClient } from "@/lib/supabase"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import PortalNav from "@/components/portal/Nav"
@@ -11,7 +11,7 @@ export default async function ReviewPage({
 }: {
   params: { id: string; deliverableId: string }
 }) {
-  const supabase = createServerComponentClient<Database>({ cookies })
+  const supabase = await createServerComponentClient()
 
   const { data: { user } } = await supabase.auth.getUser()
   const { data: client } = await supabase

@@ -19,10 +19,10 @@ export async function createServerComponentClient() {
     cookies: {
       getAll() { return cookieStore.getAll() },
       setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value, options }) => {
-          cookieStore.set(name, value, options)
-        })
+        try { cookiesToSet.forEach(({ name, value, options }) => { cookieStore.set(name, value, options) }) } catch {}
       },
     },
   })
 }
+
+export { createServerComponentClient as createRouteHandlerClient }

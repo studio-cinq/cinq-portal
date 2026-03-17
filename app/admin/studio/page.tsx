@@ -1,11 +1,11 @@
 import { cookies } from "next/headers"
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
+import { createServerComponentClient } from "@/lib/supabase"
 import Link from "next/link"
 import PortalNav from "@/components/portal/Nav"
 import type { Database } from "@/types/database"
 
 export default async function AdminStudioPage() {
-  const supabase = createServerComponentClient<Database>({ cookies })
+  const supabase = await createServerComponentClient()
 
   const { data: clients }  = await supabase.from("clients").select("*").order("created_at", { ascending: false })
   const { data: projects } = await supabase.from("projects").select("*, clients(name), deliverables(*)").eq("status", "active")

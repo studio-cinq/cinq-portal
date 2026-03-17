@@ -1,12 +1,12 @@
 import { cookies } from "next/headers"
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
+import { createServerComponentClient } from "@/lib/supabase"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import PortalNav from "@/components/portal/Nav"
 import type { Database } from "@/types/database"
 
 export default async function ProjectPage({ params }: { params: { id: string } }) {
-  const supabase = createServerComponentClient<Database>({ cookies })
+  const supabase = await createServerComponentClient()
 
   const { data: { user } } = await supabase.auth.getUser()
 
