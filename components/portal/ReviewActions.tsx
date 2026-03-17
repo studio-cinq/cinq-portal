@@ -47,10 +47,16 @@ export default function ReviewActions({ projectId, deliverableId, revisionsRemai
   async function handleRevision() {
     if (!feedback.trim()) return
     setLoading(true)
-
+  
+    const { data: current } = await supabase
+      .from("deliverables")
+      .select("revision_used")
+      .eq("id", deliverableId)
+      .single()
+  
     await supabase
       .from("deliverables")
-      .update(d => ({ revision_used: d.revision_used + 1, status: "in_progress" }))
+      .update({ revision_used: ((current as any)?.revision_used ?? 0) + 1, status: "in_progress" })
       .eq("id", deliverableId)
 
     await supabase.from("messages").insert({
