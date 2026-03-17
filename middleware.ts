@@ -27,11 +27,11 @@ export async function middleware(req: NextRequest) {
 
   const { pathname } = req.nextUrl
 
-  // Public routes
-  if (pathname === "/login") {
-    if (session) return NextResponse.redirect(new URL("/dashboard", req.url))
-    return res
-  }
+// Public routes
+if (pathname === "/login" || pathname.startsWith("/auth/callback")) {
+  if (session && pathname === "/login") return NextResponse.redirect(new URL("/dashboard", req.url))
+  return res
+}
 
   // Not logged in — redirect to login
   if (!session) {
