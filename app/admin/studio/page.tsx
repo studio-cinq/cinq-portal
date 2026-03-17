@@ -19,19 +19,18 @@ export default async function AdminStudioPage() {
   const { data: messagesRaw } = await supabase.from("messages").select("*, projects(title, clients(name))").eq("from_client", true).eq("read", false)
   const messages = messagesRaw as any[] | null
 
-  const activeCount   = projects?.length ?? 0
+  const activeCount    = projects?.length ?? 0
   const attentionCount = (invoices?.length ?? 0) + (messages?.length ?? 0)
 
-  // YTD revenue
   const { data: paidInvoicesRaw } = await supabase
-  .from("invoices")
-  .select("amount, paid_at")
-  .eq("status", "paid")
-  .gte("paid_at", new Date(new Date().getFullYear(), 0, 1).toISOString())
+    .from("invoices")
+    .select("amount, paid_at")
+    .eq("status", "paid")
+    .gte("paid_at", new Date(new Date().getFullYear(), 0, 1).toISOString())
 
-const paidInvoices = paidInvoicesRaw as { amount: number; paid_at: string }[] | null
-const ytdBilled = paidInvoices?.reduce((s, i) => s + i.amount, 0) ?? 0
-const outstanding = invoices?.reduce((s, i) => s + i.amount, 0) ?? 0
+  const paidInvoices = paidInvoicesRaw as { amount: number; paid_at: string }[] | null
+  const ytdBilled    = paidInvoices?.reduce((s, i) => s + i.amount, 0) ?? 0
+  const outstanding  = invoices?.reduce((s, i) => s + i.amount, 0) ?? 0
 
   return (
     <>
@@ -46,7 +45,7 @@ const outstanding = invoices?.reduce((s, i) => s + i.amount, 0) ?? 0
       }}>
 
         {/* Left */}
-        <div style={{ padding: "36px 36px 48px 40px", borderRight: "0.5px solid rgba(15,15,14,0.08)" }}>
+        <div style={{ padding: "36px 36px 48px 40px", borderRight: "0.5px solid rgba(15,15,14,0.12)" }}>
 
           {/* Stats */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 36 }}>
@@ -62,11 +61,11 @@ const outstanding = invoices?.reduce((s, i) => s + i.amount, 0) ?? 0
           {/* Header row */}
           <div style={{ display: "grid", gridTemplateColumns: "200px 1fr 140px 120px 60px", gap: 16, paddingBottom: 10, marginBottom: 2 }}>
             {["Client", "Progress", "Status", "Outstanding", ""].map(h => (
-              <div key={h} style={{ fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase", color: "#0F0F0E", opacity: 0.22 }}>{h}</div>
+              <div key={h} style={{ fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase", color: "#0F0F0E", opacity: 0.45 }}>{h}</div>
             ))}
           </div>
 
-          <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.07)" }}>
+          <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.1)" }}>
             {projects?.map(project => {
               const deliverables = (project as any).deliverables ?? []
               const hasReview    = deliverables.some((d: any) => d.status === "awaiting_approval")
@@ -88,39 +87,39 @@ const outstanding = invoices?.reduce((s, i) => s + i.amount, 0) ?? 0
                     display: "grid",
                     gridTemplateColumns: "200px 1fr 140px 120px 60px",
                     gap: 16, alignItems: "center",
-                    padding: "16px 0", borderBottom: "0.5px solid rgba(15,15,14,0.07)",
+                    padding: "16px 0", borderBottom: "0.5px solid rgba(15,15,14,0.1)",
                     textDecoration: "none",
                   }}
                 >
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 300, opacity: 0.82, letterSpacing: "-0.01em" }}>
+                    <div style={{ fontSize: 13, fontWeight: 300, opacity: 0.9, letterSpacing: "-0.01em" }}>
                       {(project.clients as any)?.name}
                     </div>
-                    <div style={{ fontSize: 9, opacity: 0.32, letterSpacing: "0.02em", marginTop: 2 }}>
+                    <div style={{ fontSize: 9, opacity: 0.5, letterSpacing: "0.02em", marginTop: 2 }}>
                       {project.scope}
                     </div>
                   </div>
 
                   <div>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 8, opacity: 0.28, marginBottom: 5 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 8, opacity: 0.5, marginBottom: 5 }}>
                       <span>Week {project.current_week} of {project.total_weeks}</span>
                       <span>{pct}%</span>
                     </div>
-                    <div style={{ height: 1.5, background: "rgba(15,15,14,0.08)", borderRadius: 1 }}>
-                      <div style={{ height: 1.5, width: `${pct}%`, background: "#0F0F0E", opacity: 0.35, borderRadius: 1 }} />
+                    <div style={{ height: 1.5, background: "rgba(15,15,14,0.12)", borderRadius: 1 }}>
+                      <div style={{ height: 1.5, width: `${pct}%`, background: "#0F0F0E", opacity: 0.5, borderRadius: 1 }} />
                     </div>
                   </div>
 
                   <StatusCell status={rowStatus} />
 
                   <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: 12, opacity: clientDue > 0 ? 0.85 : 0.35, color: clientDue > 0 ? "#B07D3A" : "#0F0F0E", letterSpacing: "-0.01em" }}>
+                    <div style={{ fontSize: 12, opacity: clientDue > 0 ? 0.9 : 0.45, color: clientDue > 0 ? "#B07D3A" : "#0F0F0E", letterSpacing: "-0.01em" }}>
                       {clientDue > 0 ? `$${(clientDue / 100).toLocaleString()}` : "—"}
                     </div>
-                    {clientDue > 0 && <div style={{ fontSize: 8, opacity: 0.28, marginTop: 2, letterSpacing: "0.04em" }}>outstanding</div>}
+                    {clientDue > 0 && <div style={{ fontSize: 8, opacity: 0.45, marginTop: 2, letterSpacing: "0.04em" }}>outstanding</div>}
                   </div>
 
-                  <div style={{ textAlign: "right", fontSize: 11, opacity: 0.2 }}>&rarr;</div>
+                  <div style={{ textAlign: "right", fontSize: 11, opacity: 0.35 }}>&rarr;</div>
                 </Link>
               )
             })}
@@ -155,7 +154,7 @@ const outstanding = invoices?.reduce((s, i) => s + i.amount, 0) ?? 0
               />
             ))}
             {attentionCount === 0 && (
-              <div style={{ fontSize: 11, opacity: 0.28, padding: "12px 0" }}>All clear.</div>
+              <div style={{ fontSize: 11, opacity: 0.45, padding: "12px 0" }}>All clear.</div>
             )}
           </div>
 
@@ -168,10 +167,10 @@ const outstanding = invoices?.reduce((s, i) => s + i.amount, 0) ?? 0
               { label: "+ Send invoice",  href: "/admin/invoices/new"  },
             ].map(a => (
               <Link key={a.href} href={a.href} style={{
-                background: "transparent", border: "0.5px solid rgba(15,15,14,0.15)",
+                background: "transparent", border: "0.5px solid rgba(15,15,14,0.2)",
                 padding: "11px 14px",
                 fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase",
-                color: "#0F0F0E", opacity: 0.45, textDecoration: "none",
+                color: "#0F0F0E", opacity: 0.65, textDecoration: "none",
                 display: "block", transition: "all 0.2s",
               }}>
                 {a.label}
@@ -195,20 +194,20 @@ const outstanding = invoices?.reduce((s, i) => s + i.amount, 0) ?? 0
 function StatCard({ value, label, highlight }: { value: string; label: string; highlight?: boolean }) {
   return (
     <div style={{
-      background: highlight ? "rgba(15,15,14,0.04)" : "rgba(255,255,255,0.3)",
-      border: `0.5px solid rgba(15,15,14,${highlight ? 0.14 : 0.09})`,
+      background: highlight ? "rgba(15,15,14,0.05)" : "rgba(255,255,255,0.4)",
+      border: `0.5px solid rgba(15,15,14,${highlight ? 0.18 : 0.12})`,
       padding: 16,
     }}>
-      <div style={{ fontWeight: 300, fontSize: 24, letterSpacing: "-0.02em", marginBottom: 4, color: highlight ? "#B07D3A" : "#0F0F0E", opacity: highlight ? 0.9 : 0.82 }}>
+      <div style={{ fontWeight: 300, fontSize: 24, letterSpacing: "-0.02em", marginBottom: 4, color: highlight ? "#B07D3A" : "#0F0F0E", opacity: highlight ? 0.95 : 0.88 }}>
         {value}
       </div>
-      <div style={{ fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.3 }}>{label}</div>
+      <div style={{ fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.5 }}>{label}</div>
     </div>
   )
 }
 
 function StatusCell({ status }: { status: string }) {
-  const colors: Record<string, string> = { awaiting_approval: "#B07D3A", in_progress: "#6B8F71", complete: "rgba(15,15,14,0.22)" }
+  const colors: Record<string, string> = { awaiting_approval: "#B07D3A", in_progress: "#6B8F71", complete: "rgba(15,15,14,0.35)" }
   const labels: Record<string, string> = { awaiting_approval: "Awaiting approval", in_progress: "In progress", complete: "Complete" }
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -220,30 +219,30 @@ function StatusCell({ status }: { status: string }) {
 
 function ActionItem({ client, tag, tagColor, text, href }: { client: string; tag: string; tagColor: string; text: string; href: string }) {
   return (
-    <Link href={href} style={{ display: "block", padding: "13px 0", borderBottom: "0.5px solid rgba(15,15,14,0.07)", textDecoration: "none" }}>
+    <Link href={href} style={{ display: "block", padding: "13px 0", borderBottom: "0.5px solid rgba(15,15,14,0.1)", textDecoration: "none" }}>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-        <span style={{ fontSize: 10, opacity: 0.75, fontWeight: 300 }}>{client}</span>
-        <span style={{ fontSize: 7, letterSpacing: "0.1em", textTransform: "uppercase", padding: "3px 7px", border: `0.5px solid ${tagColor}40`, color: tagColor }}>{tag}</span>
+        <span style={{ fontSize: 10, opacity: 0.85, fontWeight: 300 }}>{client}</span>
+        <span style={{ fontSize: 7, letterSpacing: "0.1em", textTransform: "uppercase", padding: "3px 7px", border: `0.5px solid ${tagColor}60`, color: tagColor }}>{tag}</span>
       </div>
-      <div style={{ fontSize: 10, opacity: 0.38, lineHeight: 1.4 }}>{text}</div>
+      <div style={{ fontSize: 10, opacity: 0.55, lineHeight: 1.4 }}>{text}</div>
     </Link>
   )
 }
 
 function RevRow({ label, value, green }: { label: string; value: string; green?: boolean }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "0.5px solid rgba(15,15,14,0.06)" }}>
-      <span style={{ fontSize: 10, opacity: 0.38 }}>{label}</span>
-      <span style={{ fontSize: 11, color: green ? "#6B8F71" : "#0F0F0E", opacity: green ? 0.8 : 0.65, letterSpacing: "-0.01em" }}>{value}</span>
+    <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "0.5px solid rgba(15,15,14,0.08)" }}>
+      <span style={{ fontSize: 10, opacity: 0.55 }}>{label}</span>
+      <span style={{ fontSize: 11, color: green ? "#6B8F71" : "#0F0F0E", opacity: green ? 0.9 : 0.75, letterSpacing: "-0.01em" }}>{value}</span>
     </div>
   )
 }
 
 const sectionLabel: React.CSSProperties = {
   fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase",
-  color: "#0F0F0E", opacity: 0.28, marginBottom: 14,
+  color: "#0F0F0E", opacity: 0.5, marginBottom: 14,
 }
 const sidebarLabel: React.CSSProperties = {
   fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase",
-  color: "#0F0F0E", opacity: 0.28, marginBottom: 16,
+  color: "#0F0F0E", opacity: 0.5, marginBottom: 16,
 }
