@@ -7,13 +7,17 @@ import type { Database } from "@/types/database"
 export default async function AdminStudioPage() {
   const supabase = await createServerComponentClient()
 
-  const { data: clientsRaw } = await supabase.from("clients").select("*").order("created_at", { ascending: false })
+  const { data: clientsRaw }  = await supabase.from("clients").select("*").order("created_at", { ascending: false })
   const clients = clientsRaw as any[] | null
+
   const { data: projectsRaw } = await supabase.from("projects").select("*, clients(name), deliverables(*)").eq("status", "active")
-  const projects = projectsRaw as any[] | null  const { data: invoicesRaw } = await supabase.from("invoices").select("*, clients(name)").in("status", ["sent", "overdue"]).order("due_date")
+  const projects = projectsRaw as any[] | null
+
+  const { data: invoicesRaw } = await supabase.from("invoices").select("*, clients(name)").in("status", ["sent", "overdue"]).order("due_date")
   const invoices = invoicesRaw as any[] | null
+
   const { data: messagesRaw } = await supabase.from("messages").select("*, projects(title, clients(name))").eq("from_client", true).eq("read", false)
-const messages = messagesRaw as any[] | null
+  const messages = messagesRaw as any[] | null
 
   const activeCount   = projects?.length ?? 0
   const attentionCount = (invoices?.length ?? 0) + (messages?.length ?? 0)
