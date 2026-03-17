@@ -21,7 +21,10 @@ export default function LoginPage() {
 
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { shouldCreateUser: false }, // only existing clients can log in
+      options: {
+        shouldCreateUser: false,
+        emailRedirectTo: "https://cinq-portal.vercel.app/auth/callback",
+      },
     })
 
     setLoading(false)
