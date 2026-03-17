@@ -31,6 +31,7 @@ export default async function AdminStudioPage() {
 
 const paidInvoices = paidInvoicesRaw as { amount: number; paid_at: string }[] | null
 const ytdBilled = paidInvoices?.reduce((s, i) => s + i.amount, 0) ?? 0
+const outstanding = invoices?.reduce((s, i) => s + i.amount, 0) ?? 0
 
   return (
     <>
