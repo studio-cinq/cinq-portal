@@ -1,7 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useSearchParams } from "next/navigation"
+import { useState } from "react"
 import { supabase } from "@/lib/supabase"
 import CinqLogo from "@/components/CinqLogo"
 
