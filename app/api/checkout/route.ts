@@ -14,11 +14,12 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   // Get invoice
-  const { data: invoice } = await supabase
-    .from("invoices")
-    .select("*, clients(*)")
-    .eq("id", invoiceId)
-    .single()
+  const { data: invoiceRaw } = await supabase
+  .from("invoices")
+  .select("*, clients(*)")
+  .eq("id", invoiceId)
+  .single()
+const invoice = invoiceRaw as any
 
   if (!invoice) return NextResponse.json({ error: "Invoice not found" }, { status: 404 })
 
