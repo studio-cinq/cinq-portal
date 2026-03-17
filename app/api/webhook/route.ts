@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (event.type === "checkout.session.completed") {
-    const session   = event.data.object as Stripe.CheckoutSession
+    const session = event.data.object as Stripe.Checkout.Session
     const invoiceId = session.metadata?.invoice_id
 
     if (invoiceId) {
