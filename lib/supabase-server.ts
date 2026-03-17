@@ -7,7 +7,7 @@ const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 export async function createServerComponentClient() {
   const cookieStore = await cookies()
-  return createServerClient<Database>(supabaseUrl, supabaseAnon, {
+  return createServerClient(supabaseUrl, supabaseAnon, {
     cookies: {
       getAll() { return cookieStore.getAll() },
       setAll(cookiesToSet) {
