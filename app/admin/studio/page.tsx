@@ -1,5 +1,5 @@
 import { cookies } from "next/headers"
-import { createServerComponentClient } from "@/lib/supabase"
+import { createServerComponentClient } from "@/lib/supabase-server"
 import Link from "next/link"
 import PortalNav from "@/components/portal/Nav"
 import type { Database } from "@/types/database"
