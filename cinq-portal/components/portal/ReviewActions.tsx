@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { supabase } from "@/lib/supabase-server""
+import { supabase } from "@/lib/supabase-server"
 import { useRouter } from "next/navigation"
 
 interface Props {
