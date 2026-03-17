@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import CinqLogo from "@/components/CinqLogo"
-import { supabase } from "@/lib/supabase"
+import { supabase } from "@/lib/supabase-server""
 
 interface NavProps {
   clientName?: string
