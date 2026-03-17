@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { supabase } from "@/lib/supabase-server"
+import { supabase } from "@/lib/supabase"
 
 export default function MessageForm({ projectId }: { projectId: string }) {
   const [body, setBody]       = useState("")
