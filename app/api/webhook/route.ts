@@ -22,13 +22,13 @@ export async function POST(req: NextRequest) {
 
     if (invoiceId) {
       await supabaseAdmin
-        .from("invoices")
-        .update({
-          status:                   "paid",
-          paid_at:                  new Date().toISOString(),
-          stripe_payment_intent_id: session.payment_intent as string,
-        })
-        .eq("id", invoiceId)
+      .from("invoices")
+      .update({
+        status:                   "paid",
+        paid_at:                  new Date().toISOString(),
+        stripe_payment_intent_id: session.payment_intent as string,
+      } as any)
+      .eq("id", invoiceId)
     }
   }
 
