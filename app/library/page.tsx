@@ -1,5 +1,5 @@
 import { cookies } from "next/headers"
-import { createServerComponentClient } from "@/lib/supabase-server"-server"
+import { createServerComponentClient } from "@/lib/supabase-server"
 import PortalNav from "@/components/portal/Nav"
 import CinqLogo from "@/components/CinqLogo"
 import ColorSwatches from "@/components/portal/ColorSwatches"

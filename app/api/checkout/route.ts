@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
-import { createRouteHandlerClient } from "@/lib/supabase-server"-server"
+import { createRouteHandlerClient } from "@/lib/supabase-server"
 import { cookies } from "next/headers"
 import type { Database } from "@/types/database"
 
