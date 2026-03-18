@@ -28,7 +28,8 @@ export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
 // Public routes
-if (pathname === "/login" || pathname.startsWith("/auth/callback")) {
+i// Public routes
+if (pathname === "/login" || pathname.startsWith("/auth/callback") || pathname.startsWith("/proposals/")) {
   if (session && pathname === "/login") return NextResponse.redirect(new URL("/dashboard", req.url))
   return res
 }
