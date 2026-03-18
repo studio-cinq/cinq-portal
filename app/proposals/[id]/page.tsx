@@ -182,8 +182,9 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
           </div>
 
           <div style={{ textAlign: "right", flexShrink: 0 }}>
-            <div style={{ ...serif, fontSize: isMobile ? 14 : 16, opacity: checked[globalIndex] ? 0.82 : 0.25, letterSpacing: "-0.01em" }}>
+            <div style={{ ...mono, fontSize: isMobile ? 13 : 14, opacity: checked[globalIndex] ? 0.82 : 0.25 }}>
               ${(item.price / 100).toLocaleString()}
+            </div>
             </div>
             <div style={{ ...mono, fontSize: 8, opacity: 0.35, marginTop: 4, letterSpacing: "0.06em" }}>
               {item.timeline_weeks_min}–{item.timeline_weeks_max} wks
@@ -249,7 +250,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
               {item.name}
               {phases[i] === "later" && <span style={{ ...mono, fontSize: 8, marginLeft: 6, opacity: 0.5 }}>later</span>}
             </span>
-            <span style={{ ...serif, fontSize: 13, opacity: phases[i] === "later" ? 0.3 : 0.65 }}>
+            <span style={{ ...mono, fontSize: 12, opacity: phases[i] === "later" ? 0.3 : 0.65 }}>
               ${(item.price / 100).toLocaleString()}
             </span>
           </div>
@@ -269,7 +270,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 28 }}>
         <span style={{ ...mono, fontSize: 8, opacity: 0.38 }}>50% deposit due now</span>
-        <span style={{ ...serif, fontSize: 15, opacity: 0.6 }}>${(deposit / 100).toLocaleString()}</span>
+        <span style={{ ...mono, fontSize: 13, opacity: 0.6 }}>${(deposit / 100).toLocaleString()}</span>
       </div>
 
       {canInteract && (
