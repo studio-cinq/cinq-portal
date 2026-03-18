@@ -33,11 +33,18 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
       setProposal(prop)
 
       // Log first view
+// Log first view + notify
 if (!prop.viewed_at) {
   await supabase
     .from("proposals")
     .update({ viewed_at: new Date().toISOString() })
     .eq("id", params.id)
+
+  fetch("/api/notify/proposal-viewed", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ proposalId: params.id }),
+  }).catch((err) => console.error("[notify] proposal-viewed:", err))
 }
 
       const { data: propItems } = await supabase
