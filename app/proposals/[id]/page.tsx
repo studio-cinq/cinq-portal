@@ -154,7 +154,7 @@ if (!prop.viewed_at) {
               </div>
               {item.description && (
                <div style={{ fontSize: 13, opacity: 0.55, lineHeight: 1.75, letterSpacing: "0.01em" }}>
-               {item.description.split('\n').map((line: string, i: number) => (
+               {item.description.split(/\r?\n/).map((line: string, i: number) => (
                  <div key={i} style={{ ...serif, display: "flex", gap: 8, marginBottom: line.trim() ? 4 : 0 }}>
                    {line.trim().startsWith('—') || line.trim().startsWith('-') || line.trim().startsWith('•')
                      ? <><span style={{ opacity: 0.4, flexShrink: 0 }}>—</span><span>{line.replace(/^[\-—•]\s*/, '')}</span></>
