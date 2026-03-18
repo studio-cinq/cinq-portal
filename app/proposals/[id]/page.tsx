@@ -153,7 +153,7 @@ if (!prop.viewed_at) {
                 )}
               </div>
               {item.description && (
-                <div style={{ ...serif, fontSize: 13, opacity: 0.55, lineHeight: 1.75, letterSpacing: "0.01em" }}>
+                <div style={{ ...serif, fontSize: 13, opacity: 0.55, lineHeight: 1.75, letterSpacing: "0.01em", whiteSpace: "pre-wrap" }}>
                   {item.description}
                 </div>
               )}
