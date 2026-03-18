@@ -1,5 +1,4 @@
 "use client"
-
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import CinqLogo from "@/components/CinqLogo"
@@ -23,9 +22,13 @@ const ADMIN_LINKS = [
   { href: "/admin/invoices",  label: "Invoices"  },
 ]
 
+const mono: React.CSSProperties = {
+  fontFamily: "'Matter SemiMono', 'DM Mono', monospace",
+}
+
 export default function PortalNav({ clientName, isAdmin }: NavProps) {
-  const pathname  = usePathname()
-  const links     = isAdmin ? ADMIN_LINKS : CLIENT_LINKS
+  const pathname = usePathname()
+  const links    = isAdmin ? ADMIN_LINKS : CLIENT_LINKS
 
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -40,7 +43,7 @@ export default function PortalNav({ clientName, isAdmin }: NavProps) {
       padding: "0 48px",
       height: 64,
       borderBottom: "0.5px solid rgba(15,15,14,0.1)",
-      background: "rgba(237,232,224,0.92)",
+      background: "rgba(244,241,236,0.95)",
       backdropFilter: "blur(8px)",
       position: "sticky",
       top: 0,
@@ -54,7 +57,7 @@ export default function PortalNav({ clientName, isAdmin }: NavProps) {
       </Link>
 
       {/* Nav links */}
-      <div style={{ display: "flex", alignItems: "center", gap: 28 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
         {links.map(link => {
           const active = pathname === link.href || pathname.startsWith(link.href + "/")
           return (
@@ -62,13 +65,14 @@ export default function PortalNav({ clientName, isAdmin }: NavProps) {
               key={link.href}
               href={link.href}
               style={{
+                ...mono,
                 fontSize: 9,
                 letterSpacing: "0.14em",
                 textTransform: "uppercase",
                 color: "#0F0F0E",
-                opacity: active ? 0.82 : 0.35,
+                opacity: active ? 0.75 : 0.38,
                 textDecoration: "none",
-                borderBottom: active ? "0.5px solid rgba(15,15,14,0.5)" : "0.5px solid transparent",
+                borderBottom: active ? "0.5px solid rgba(15,15,14,0.45)" : "0.5px solid transparent",
                 paddingBottom: 1,
                 transition: "opacity 0.2s",
               }}
@@ -79,15 +83,16 @@ export default function PortalNav({ clientName, isAdmin }: NavProps) {
         })}
       </div>
 
-      {/* Right: client name + sign out */}
+      {/* Right */}
       <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
         {isAdmin && (
           <span style={{
+            ...mono,
             fontSize: 8,
             letterSpacing: "0.12em",
             textTransform: "uppercase",
             color: "#0F0F0E",
-            opacity: 0.25,
+            opacity: 0.35,
             border: "0.5px solid rgba(15,15,14,0.15)",
             padding: "4px 10px",
           }}>
@@ -96,11 +101,12 @@ export default function PortalNav({ clientName, isAdmin }: NavProps) {
         )}
         {clientName && (
           <span style={{
+            ...mono,
             fontSize: 9,
             letterSpacing: "0.1em",
             textTransform: "uppercase",
             color: "#0F0F0E",
-            opacity: 0.25,
+            opacity: 0.35,
           }}>
             {clientName}
           </span>
@@ -108,22 +114,21 @@ export default function PortalNav({ clientName, isAdmin }: NavProps) {
         <button
           onClick={handleSignOut}
           style={{
+            ...mono,
             fontSize: 9,
             letterSpacing: "0.1em",
             textTransform: "uppercase",
             color: "#0F0F0E",
-            opacity: 0.22,
+            opacity: 0.32,
             background: "none",
             border: "none",
             cursor: "pointer",
-            fontFamily: "'Jost', sans-serif",
             padding: 0,
           }}
         >
           Sign out
         </button>
       </div>
-
     </nav>
   )
 }
