@@ -1,9 +1,7 @@
-"use client"
-
-import { useState } from "react"
 import { createServerComponentClient } from "@/lib/supabase-server"
 import Link from "next/link"
 import PortalNav from "@/components/portal/Nav"
+import CopyLinkButton from "@/components/portal/CopyLinkButton"
 
 export default async function AdminProposalsPage() {
   const supabase = await createServerComponentClient()
@@ -34,7 +32,7 @@ export default async function AdminProposalsPage() {
         </div>
 
         {/* Header */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 160px 120px 100px 110px 80px 80px", gap: 16, paddingBottom: 10, borderBottom: "0.5px solid rgba(15,15,14,0.12)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 160px 120px 100px 110px 80px 100px", gap: 16, paddingBottom: 10, borderBottom: "0.5px solid rgba(15,15,14,0.12)" }}>
           {["Proposal", "Client", "Value", "Expires", "Viewed", "Status", ""].map(h => (
             <div key={h} style={{ fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.45 }}>{h}</div>
           ))}
@@ -49,7 +47,7 @@ export default async function AdminProposalsPage() {
               key={proposal.id}
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 160px 120px 100px 110px 80px 80px",
+                gridTemplateColumns: "1fr 160px 120px 100px 110px 80px 100px",
                 gap: 16, alignItems: "center",
                 padding: "16px 0",
                 borderBottom: "0.5px solid rgba(15,15,14,0.08)",
@@ -98,31 +96,5 @@ function ProposalStatus({ status }: { status: string }) {
     <span style={{ fontSize: 8, letterSpacing: "0.08em", textTransform: "uppercase", color: colors[status] ?? "rgba(15,15,14,0.4)" }}>
       {status}
     </span>
-  )
-}
-
-function CopyLinkButton({ id }: { id: string }) {
-  const [copied, setCopied] = useState(false)
-
-  async function handleCopy() {
-    await navigator.clipboard.writeText(`https://portal.studiocinq.com/proposals/${id}`)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
-  return (
-    <button
-      onClick={handleCopy}
-      style={{
-        fontSize: 8, letterSpacing: "0.1em", textTransform: "uppercase",
-        color: copied ? "#6B8F71" : "#0F0F0E",
-        opacity: copied ? 0.8 : 0.4,
-        background: "none", border: "0.5px solid rgba(15,15,14,0.15)",
-        padding: "5px 10px", cursor: "pointer",
-        fontFamily: "inherit", transition: "all 0.2s",
-      }}
-    >
-      {copied ? "Copied" : "Copy link"}
-    </button>
   )
 }
