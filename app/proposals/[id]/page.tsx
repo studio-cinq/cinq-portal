@@ -31,15 +31,14 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
 
   useEffect(() => {
     async function load() {
-      const { data: prop } = await supabase
-        .from("proposals")
-        .select("*, clients(name, contact_name)")
-        .eq("id", params.id)
-        .single()
-
-      if (!prop) { setLoading(false); return }
-      setProposal(prop)
-
+      const { data: prop, error: propError } = await supabase
+      .from("proposals")
+      .select("*, clients(name, contact_name)")
+      .eq("id", params.id)
+      .single()
+    
+    if (propError) console.error("[proposal] fetch error:", propError)
+    if (!prop) { setLoading(false); return }
       // Log first view
       if (!prop.viewed_at) {
         await supabase
