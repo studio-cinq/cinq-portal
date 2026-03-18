@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import CinqLogo from "@/components/CinqLogo"
 
 type Step = "email" | "code" | "done"
 
-export default function LoginPage() {
+function LoginPageInner() {
   const [step, setStep]       = useState<Step>("email")
   const [email, setEmail]     = useState("")
   const [code, setCode]       = useState("")
@@ -66,7 +67,6 @@ export default function LoginPage() {
       return
     }
 
-    // Redirect handled by middleware
     window.location.href = "/dashboard"
   }
 
@@ -215,6 +215,14 @@ export default function LoginPage() {
       </div>
 
     </main>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginPageInner />
+    </Suspense>
   )
 }
 
