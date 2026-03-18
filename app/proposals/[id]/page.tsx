@@ -37,10 +37,11 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
       .eq("id", params.id)
       .single()
     
-    if (propError) console.error("[proposal] fetch error:", propError)
-    if (!prop) { setLoading(false); return }
-      // Log first view
-      if (!prop.viewed_at) {
+      if (propError) console.error("[proposal] fetch error:", propError)
+        if (!prop) { setLoading(false); return }
+        setProposal(prop)
+          // Log first view
+          if (!prop.viewed_at) {
         await supabase
           .from("proposals")
           .update({ viewed_at: new Date().toISOString() })
