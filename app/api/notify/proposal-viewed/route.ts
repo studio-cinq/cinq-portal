@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { Resend } from "resend"
-import { createClient } from "@/lib/supabase-server"
+import { supabaseAdmin } from "@/lib/supabase-server"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     const { proposalId } = await req.json()
     if (!proposalId) return NextResponse.json({ error: "Missing proposalId" }, { status: 400 })
 
-    const supabase = createClient()
+        const supabase = supabaseAdmin
 
     const { data: proposal } = await supabase
       .from("proposals")
