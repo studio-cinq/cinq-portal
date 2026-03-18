@@ -237,7 +237,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                 background: "transparent", border: "none",
                 borderBottom: activeTab === i ? "1.5px solid #0F0F0E" : "1.5px solid transparent",
                 cursor: "pointer",
-                opacity: activeTab === i ? 0.88 : 0.35,
+                opacity: activeTab === i ? 0.88 : 0.5,
                 color: "#0F0F0E",
               }}
             >
@@ -382,13 +382,13 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                     </div>
                     {decisionLog.map(entry => (
                       <div key={entry.id} style={{ display: "flex", gap: 16, padding: "10px 0", borderBottom: "0.5px solid rgba(15,15,14,0.06)" }}>
-                        <div style={{ ...mono, fontSize: 9, opacity: 0.28, minWidth: 52, paddingTop: 1 }}>
+                        <div style={{ ...mono, fontSize: 9, opacity: 0.40, minWidth: 52, paddingTop: 1 }}>
                           {new Date(entry.logged_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                         </div>
                         <div style={{ ...serif, fontSize: 13, opacity: 0.65, lineHeight: 1.55, flex: 1 }}>{entry.entry}</div>
                         <button
                           onClick={() => deleteLogEntry(entry.id)}
-                          style={{ ...mono, fontSize: 9, opacity: 0.18, background: "none", border: "none", cursor: "pointer", color: "#0F0F0E", flexShrink: 0, paddingTop: 1 }}
+                          style={{ ...mono, fontSize: 9, opacity: 0.30, background: "none", border: "none", cursor: "pointer", color: "#0F0F0E", flexShrink: 0, paddingTop: 1 }}
                         >
                           ×
                         </button>
@@ -443,7 +443,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
               {/* Header row */}
               <div style={{ display: "grid", gridTemplateColumns: "80px 1fr 120px 100px", gap: 16, padding: "8px 0", borderBottom: "0.5px solid rgba(15,15,14,0.1)" }}>
                 {["#", "Description", "Amount", "Status"].map(h => (
-                  <div key={h} style={{ ...mono, fontSize: 7, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.38 }}>{h}</div>
+                  <div key={h} style={{ ...mono, fontSize: 7, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.50 }}>{h}</div>
                 ))}
               </div>
               {invoices.map(inv => (
@@ -462,7 +462,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                 </div>
               ))}
               {invoices.length === 0 && (
-                <div style={{ ...serif, fontSize: 13, opacity: 0.35, padding: "32px 0" }}>No invoices yet.</div>
+                <div style={{ ...serif, fontSize: 13, opacity: 0.50, padding: "32px 0" }}>No invoices yet.</div>
               )}
             </div>
           )}
@@ -540,14 +540,14 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
 
           {/* Client info */}
           <div style={{ marginBottom: 28 }}>
-            <div style={{ ...mono, fontSize: 7, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.38, marginBottom: 12 }}>Client</div>
+            <div style={{ ...mono, fontSize: 7, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.5, marginBottom: 12 }}>Client</div>
             {[
               { label: "Contact",  value: client.contact_name },
               { label: "Email",    value: client.contact_email },
               { label: "Projects", value: String(projects.length) },
             ].map(row => (
               <div key={row.label} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "0.5px solid rgba(15,15,14,0.06)" }}>
-                <span style={{ ...mono, fontSize: 9, opacity: 0.38 }}>{row.label}</span>
+                <span style={{ ...mono, fontSize: 9, opacity: 0.50 }}>{row.label}</span>
                 <span style={{ ...serif, fontSize: 12, opacity: 0.7, textAlign: "right", maxWidth: 160, wordBreak: "break-all" }}>{row.value}</span>
               </div>
             ))}
@@ -558,7 +558,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
 
           {/* Financials */}
           <div style={{ marginBottom: 28 }}>
-            <div style={{ ...mono, fontSize: 7, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.38, marginBottom: 12 }}>Financials</div>
+            <div style={{ ...mono, fontSize: 7, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.50, marginBottom: 12 }}>Financials</div>
             {[
               { label: "Contract value", value: `$${(contractVal / 100).toLocaleString()}`,   color: undefined },
               { label: "Collected",      value: `$${(collected / 100).toLocaleString()}`,     color: "#6B8F71" },
@@ -566,7 +566,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
               { label: "On delivery",    value: `$${(onDelivery / 100).toLocaleString()}`,    color: undefined },
             ].map(row => (
               <div key={row.label} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "0.5px solid rgba(15,15,14,0.06)" }}>
-                <span style={{ ...mono, fontSize: 9, opacity: 0.38 }}>{row.label}</span>
+                <span style={{ ...mono, fontSize: 9, opacity: 0.50 }}>{row.label}</span>
                 <span style={{ ...mono, fontSize: 12, color: row.color ?? "#0F0F0E", opacity: row.color ? 1 : 0.65 }}>{row.value}</span>
               </div>
             ))}
@@ -574,7 +574,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
 
           {/* Messages */}
           <div>
-            <div style={{ ...mono, fontSize: 7, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.38, marginBottom: 12 }}>Messages</div>
+            <div style={{ ...mono, fontSize: 7, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.50, marginBottom: 12 }}>Messages</div>
 
             {/* Reply form */}
             {projects.length > 0 && (
@@ -655,7 +655,7 @@ function SectionHeader({ label }: { label: string }) {
     <div style={{
       fontFamily: "'Matter SemiMono', monospace",
       fontSize: 7, letterSpacing: "0.16em", textTransform: "uppercase",
-      opacity: 0.38, marginBottom: 14,
+      opacity: 0.5, marginBottom: 14,
     }}>
       {label}
     </div>
