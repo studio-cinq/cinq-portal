@@ -32,6 +32,14 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
       if (!prop) { setLoading(false); return }
       setProposal(prop)
 
+      // Log first view
+if (!prop.viewed_at) {
+  await supabase
+    .from("proposals")
+    .update({ viewed_at: new Date().toISOString() })
+    .eq("id", params.id)
+}
+
       const { data: propItems } = await supabase
         .from("proposal_items")
         .select("*")

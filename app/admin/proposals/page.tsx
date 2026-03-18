@@ -31,8 +31,8 @@ export default async function AdminProposalsPage() {
         </div>
 
         {/* Header */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 160px 120px 100px 80px", gap: 16, paddingBottom: 10, borderBottom: "0.5px solid rgba(15,15,14,0.12)" }}>
-          {["Proposal", "Client", "Value", "Expires", "Status"].map(h => (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 160px 120px 100px 110px 80px", gap: 16, paddingBottom: 10, borderBottom: "0.5px solid rgba(15,15,14,0.12)" }}>
+          {["Proposal", "Client", "Value", "Expires", "Viewed", "Status"].map(h => (
             <div key={h} style={{ fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.45 }}>{h}</div>
           ))}
         </div>
@@ -47,7 +47,7 @@ export default async function AdminProposalsPage() {
               href={`/admin/proposals/${proposal.id}`}
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 160px 120px 100px 80px",
+                gridTemplateColumns: "1fr 160px 120px 100px 110px 80px",
                 gap: 16, alignItems: "center",
                 padding: "16px 0",
                 borderBottom: "0.5px solid rgba(15,15,14,0.08)",
@@ -62,6 +62,12 @@ export default async function AdminProposalsPage() {
               <div style={{ fontSize: 13, fontWeight: 300, opacity: 0.75 }}>${Math.round(total / 100).toLocaleString()}</div>
               <div style={{ fontSize: 10, opacity: isExpired ? 0.35 : 0.55, color: isExpired ? "#c0392b" : "#0F0F0E" }}>
                 {proposal.expires_at ? new Date(proposal.expires_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
+              </div>
+              <div style={{ fontSize: 10 }}>
+                {proposal.viewed_at
+                  ? <span style={{ color: "#6B8F71", opacity: 0.8 }}>Viewed {new Date(proposal.viewed_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+                  : <span style={{ opacity: 0.35 }}>Not yet viewed</span>
+                }
               </div>
               <ProposalStatus status={proposal.status} />
             </Link>
