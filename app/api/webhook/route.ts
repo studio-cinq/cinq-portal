@@ -18,17 +18,31 @@ export async function POST(req: NextRequest) {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session
-    const invoiceId = session.metadata?.invoice_id
+    const type       = session.metadata?.type
+    const invoiceId  = session.metadata?.invoice_id
+    const proposalId = session.metadata?.proposal_id
 
-    if (invoiceId) {
+    // Invoice payment
+    if (type === "invoice" || invoiceId) {
       await (supabaseAdmin as any)
-      .from("invoices")
-      .update({
-        status:                   "paid",
-        paid_at:                  new Date().toISOString(),
-        stripe_payment_intent_id: session.payment_intent as string,
-      })
-      .eq("id", invoiceId)
+        .from("invoices")
+        .update({
+          status:                   "paid",
+          paid_at:                  new Date().toISOString(),
+          stripe_payment_intent_id: session.payment_intent as string,
+        })
+        .eq("id", invoiceId)
+    }
+
+    // Proposal deposit
+    if (type === "proposal_deposit" || proposalId) {
+      await (supabaseAdmin as any)
+        .from("proposals")
+        .update({
+          status:            "accepted",
+          stripe_session_id: session.id,
+        })
+        .eq("id", proposalId)
     }
   }
 

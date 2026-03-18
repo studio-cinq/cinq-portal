@@ -1,18 +1,45 @@
-@import url('https://fonts.googleapis.com/css2?family=Jost:wght@300;400&display=swap');
+@font-face {
+  font-family: 'PP Writer';
+  src: url('/fonts/PPWriter-Book.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'PP Writer';
+  src: url('/fonts/PPWriter-BookItalic.woff2') format('woff2');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Matter SemiMono';
+  src: url('/fonts/MatterSemiMonoRegular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Matter SemiMono';
+  src: url('/fonts/MatterSemiMonoMedium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
 
 /* -- Cinq Portal Design Tokens -- */
 :root {
   --ink:        #0F0F0E;
-  --cream:      #EDE8E0;
-  --cream-dark: #DDD4C6;
+  --cream:      #F4F1EC;
+  --cream-dark: #E8E0D4;
   --sage:       #6B8F71;
   --amber:      #B07D3A;
-  --bg-grad: linear-gradient(160deg, #F4F1EC 0%, #E8E0D4 100%);
-
-  --font-sans:  'Jost', sans-serif;
-  --font-mono:  'DM Mono', 'Courier New', monospace;
-  --font-serif: 'PP Writer', 'Cormorant Garamond', Georgia, serif;
-
+  --bg-grad:    linear-gradient(160deg, #F4F1EC 0%, #E8E0D4 100%);
+  --font-sans:  'PP Writer', 'Cormorant Garamond', Georgia, serif;
+  --font-mono:  'Matter SemiMono', 'DM Mono', monospace;
   --nav-h:      64px;
   --page-pad:   clamp(32px, 5vw, 48px);
 }
@@ -31,23 +58,21 @@ html {
 
 body {
   font-family: var(--font-sans);
-  font-weight: 300;
-  color: var(--ink);
+  font-weight: 400;
+  font-size: 14px;
+  color: rgba(15,15,14,0.82);
   background: var(--bg-grad);
   min-height: 100vh;
+  line-height: 1.6;
 }
 
 /* -- Typography utilities -- */
 .label {
-  font-size: 8px;
-  letter-spacing: 0.16em;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  opacity: 0.45;
-}
-
-/* -- Legibility boost -- */
-body {
-  color: rgba(15,15,14,0.85);
+  opacity: 0.55;
 }
 
 .mono {
@@ -59,14 +84,14 @@ body {
 /* -- Hairline -- */
 .hairline {
   height: 0.5px;
-  background: rgba(15, 15, 14, 0.1);
+  background: rgba(15, 15, 14, 0.12);
 }
 
 /* -- Status colors -- */
 .status-active   { color: var(--sage); }
 .status-review   { color: var(--amber); }
-.status-complete { color: rgba(15,15,14,0.3); }
-.status-upcoming { color: rgba(15,15,14,0.2); }
+.status-complete { color: rgba(15,15,14,0.45); }
+.status-upcoming { color: rgba(15,15,14,0.35); }
 
 /* -- Scrollbar -- */
 ::-webkit-scrollbar { width: 4px; }
