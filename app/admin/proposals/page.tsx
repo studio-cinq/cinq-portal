@@ -1,3 +1,6 @@
+"use client"
+
+import { useState } from "react"
 import { createServerComponentClient } from "@/lib/supabase-server"
 import Link from "next/link"
 import PortalNav from "@/components/portal/Nav"
@@ -31,8 +34,8 @@ export default async function AdminProposalsPage() {
         </div>
 
         {/* Header */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 160px 120px 100px 110px 80px", gap: 16, paddingBottom: 10, borderBottom: "0.5px solid rgba(15,15,14,0.12)" }}>
-          {["Proposal", "Client", "Value", "Expires", "Viewed", "Status"].map(h => (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 160px 120px 100px 110px 80px 80px", gap: 16, paddingBottom: 10, borderBottom: "0.5px solid rgba(15,15,14,0.12)" }}>
+          {["Proposal", "Client", "Value", "Expires", "Viewed", "Status", ""].map(h => (
             <div key={h} style={{ fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.45 }}>{h}</div>
           ))}
         </div>
@@ -42,22 +45,20 @@ export default async function AdminProposalsPage() {
           const isExpired = proposal.expires_at && new Date(proposal.expires_at) < new Date()
 
           return (
-            <Link
+            <div
               key={proposal.id}
-              href={`/admin/proposals/${proposal.id}`}
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 160px 120px 100px 110px 80px",
+                gridTemplateColumns: "1fr 160px 120px 100px 110px 80px 80px",
                 gap: 16, alignItems: "center",
                 padding: "16px 0",
                 borderBottom: "0.5px solid rgba(15,15,14,0.08)",
-                textDecoration: "none",
               }}
             >
-              <div>
+              <Link href={`/admin/proposals/${proposal.id}`} style={{ textDecoration: "none" }}>
                 <div style={{ fontSize: 13, fontWeight: 300, opacity: 0.88 }}>{proposal.title}</div>
                 {proposal.subtitle && <div style={{ fontSize: 9, opacity: 0.45, marginTop: 2 }}>{proposal.subtitle}</div>}
-              </div>
+              </Link>
               <div style={{ fontSize: 11, opacity: 0.65 }}>{proposal.clients?.name}</div>
               <div style={{ fontSize: 13, fontWeight: 300, opacity: 0.75 }}>${Math.round(total / 100).toLocaleString()}</div>
               <div style={{ fontSize: 10, opacity: isExpired ? 0.35 : 0.55, color: isExpired ? "#c0392b" : "#0F0F0E" }}>
@@ -70,7 +71,8 @@ export default async function AdminProposalsPage() {
                 }
               </div>
               <ProposalStatus status={proposal.status} />
-            </Link>
+              <CopyLinkButton id={proposal.id} />
+            </div>
           )
         })}
 
@@ -96,5 +98,31 @@ function ProposalStatus({ status }: { status: string }) {
     <span style={{ fontSize: 8, letterSpacing: "0.08em", textTransform: "uppercase", color: colors[status] ?? "rgba(15,15,14,0.4)" }}>
       {status}
     </span>
+  )
+}
+
+function CopyLinkButton({ id }: { id: string }) {
+  const [copied, setCopied] = useState(false)
+
+  async function handleCopy() {
+    await navigator.clipboard.writeText(`https://portal.studiocinq.com/proposals/${id}`)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <button
+      onClick={handleCopy}
+      style={{
+        fontSize: 8, letterSpacing: "0.1em", textTransform: "uppercase",
+        color: copied ? "#6B8F71" : "#0F0F0E",
+        opacity: copied ? 0.8 : 0.4,
+        background: "none", border: "0.5px solid rgba(15,15,14,0.15)",
+        padding: "5px 10px", cursor: "pointer",
+        fontFamily: "inherit", transition: "all 0.2s",
+      }}
+    >
+      {copied ? "Copied" : "Copy link"}
+    </button>
   )
 }
