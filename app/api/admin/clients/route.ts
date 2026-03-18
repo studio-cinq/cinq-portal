@@ -12,7 +12,7 @@ export async function POST(req: Request) {
 
     const { data, error } = await supabaseAdmin
       .from("clients")
-      .insert({ name, contact_name, contact_email, logo_url, notes })
+      .insert({ name, contact_name, contact_email, logo_url, notes } as any)
       .select()
       .single()
 
