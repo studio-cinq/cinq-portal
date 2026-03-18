@@ -9,21 +9,19 @@ export async function POST(req: Request) {
     const { proposalId } = await req.json()
     if (!proposalId) return NextResponse.json({ error: "Missing proposalId" }, { status: 400 })
 
-        const supabase = supabaseAdmin
 
-    const { data: proposal } = await supabase
-      .from("proposals")
-      .select("id, title, clients(name, contact_name, contact_email)")
-      .eq("id", proposalId)
-      .single()
-
+        const { data: proposal } = await supabaseAdmin
+        .from("proposals")
+        .select("id, title, clients(name, contact_name, contact_email)")
+        .eq("id", proposalId)
+        .single() as { data: {
+          id: string
+          title: string
+          clients: { name: string; contact_name: string; contact_email: string } | null
+        } | null }
     if (!proposal) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
-    const client = proposal.clients as {
-      name: string
-      contact_name: string
-      contact_email: string
-    } | null
+        const client = proposal.clients
 
     if (!client) return NextResponse.json({ error: "No client" }, { status: 404 })
 
