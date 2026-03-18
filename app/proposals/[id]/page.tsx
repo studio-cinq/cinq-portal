@@ -189,7 +189,6 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
             <div style={{ ...mono, fontSize: 8, opacity: 0.35, marginTop: 4, letterSpacing: "0.06em" }}>
               {item.timeline_weeks_min}–{item.timeline_weeks_max} wks
             </div>
-          </div>
         </div>
 
         {/* Phase toggle */}
