@@ -14,12 +14,13 @@ interface LineItem {
   timeline_max: string
   phase: "now" | "later"
   is_recommended: boolean
+  is_optional: boolean
 }
 
 const emptyItem = (): LineItem => ({
   name: "", description: "", price: "",
   timeline_min: "2", timeline_max: "4",
-  phase: "now", is_recommended: false,
+  phase: "now", is_recommended: false, is_optional: false,
 })
 
 export default function NewProposalPage() {
@@ -28,11 +29,13 @@ export default function NewProposalPage() {
   const [loading, setLoading] = useState(false)
 
   const [form, setForm] = useState({
-    client_id: "",
-    title: "",
-    subtitle: "",
-    expires_at: "",
-    status: "sent",
+    client_id:    "",
+    title:        "",
+    subtitle:     "",
+    overview:     "",
+    closing:      "",
+    expires_at:   "",
+    status:       "sent",
   })
 
   const [items, setItems] = useState<LineItem[]>([emptyItem()])
@@ -51,13 +54,8 @@ export default function NewProposalPage() {
     setItems(items => items.map((item, i) => i === index ? { ...item, [key]: value } : item))
   }
 
-  function addItem() {
-    setItems(items => [...items, emptyItem()])
-  }
-
-  function removeItem(index: number) {
-    setItems(items => items.filter((_, i) => i !== index))
-  }
+  function addItem() { setItems(items => [...items, emptyItem()]) }
+  function removeItem(index: number) { setItems(items => items.filter((_, i) => i !== index)) }
 
   async function handleSave(status: "draft" | "sent") {
     if (!form.client_id || !form.title) return
@@ -69,6 +67,8 @@ export default function NewProposalPage() {
         client_id:  form.client_id,
         title:      form.title,
         subtitle:   form.subtitle || null,
+        overview:   form.overview || null,
+        closing:    form.closing || null,
         expires_at: form.expires_at || null,
         status,
       })
@@ -89,6 +89,7 @@ export default function NewProposalPage() {
         timeline_weeks_max: parseInt(item.timeline_max) || 4,
         phase:              item.phase,
         is_recommended:     item.is_recommended,
+        is_optional:        item.is_optional,
         sort_order:         idx,
         accepted:           false,
       }))
@@ -101,21 +102,31 @@ export default function NewProposalPage() {
     router.push("/admin/proposals")
   }
 
+  const totalEstimate = items.reduce((sum, item) => {
+    if (!item.price || item.is_optional) return sum
+    return sum + (parseFloat(item.price) || 0)
+  }, 0)
+
+  const optionalTotal = items.reduce((sum, item) => {
+    if (!item.price || !item.is_optional) return sum
+    return sum + (parseFloat(item.price) || 0)
+  }, 0)
+
   return (
     <>
       <PortalNav isAdmin />
-      <main style={{ maxWidth: 800, margin: "0 auto", padding: "40px 48px" }}>
+      <main style={{ maxWidth: 860, margin: "0 auto", padding: "40px 48px 80px" }}>
 
         <Link href="/admin/proposals" style={{ fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.4, textDecoration: "none", display: "inline-block", marginBottom: 28 }}>
           ← Proposals
         </Link>
 
-        <div style={{ fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.5, marginBottom: 32 }}>
+        <div style={{ fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.5, marginBottom: 40 }}>
           New proposal
         </div>
 
-        {/* Proposal details */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 40 }}>
+        {/* Section: Basics */}
+        <Section label="Basics">
           <Field label="Client">
             <select value={form.client_id} onChange={e => setField("client_id", e.target.value)} style={inputStyle}>
               <option value="">Select client…</option>
@@ -123,7 +134,7 @@ export default function NewProposalPage() {
             </select>
           </Field>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 180px", gap: 16 }}>
             <Field label="Proposal title">
               <input type="text" value={form.title} onChange={e => setField("title", e.target.value)} placeholder="Brand Identity & Launch" style={inputStyle} />
             </Field>
@@ -132,74 +143,118 @@ export default function NewProposalPage() {
             </Field>
           </div>
 
-          <Field label="Subtitle / context (optional)">
+          <Field label="Subtitle (shown under title)">
             <input type="text" value={form.subtitle} onChange={e => setField("subtitle", e.target.value)} placeholder="A focused scope for your spring launch." style={inputStyle} />
           </Field>
-        </div>
+        </Section>
 
-        {/* Line items */}
-        <div style={{ fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.5, marginBottom: 16 }}>
-          Line items
-        </div>
+        {/* Section: Overview */}
+        <Section label="Overview">
+          <Field label="Opening narrative">
+            <textarea
+              value={form.overview}
+              onChange={e => setField("overview", e.target.value)}
+              placeholder="Set the context for this proposal — the project background, your read on the opportunity, and how you're thinking about the scope. This shows at the top of the proposal before the line items."
+              rows={6}
+              style={{ ...inputStyle, resize: "vertical", lineHeight: 1.7 }}
+            />
+          </Field>
+        </Section>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-          {items.map((item, i) => (
-            <div key={i} style={{ borderTop: "0.5px solid rgba(15,15,14,0.1)", padding: "20px 0" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12 }}>
-                <div style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.4 }}>Item {i + 1}</div>
-                {items.length > 1 && (
-                  <button onClick={() => removeItem(i)} style={{ fontSize: 8, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.35, background: "none", border: "none", cursor: "pointer", color: "#0F0F0E" }}>
-                    Remove
-                  </button>
-                )}
+        {/* Section: Scope */}
+        <Section label="Scope">
+          <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+            {items.map((item, i) => (
+              <div key={i} style={{ borderTop: "0.5px solid rgba(15,15,14,0.1)", padding: "24px 0" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <span style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.4 }}>Item {i + 1}</span>
+                    {item.is_optional && <span style={{ fontSize: 7, letterSpacing: "0.1em", textTransform: "uppercase", color: "#B07D3A", border: "0.5px solid rgba(176,125,58,0.3)", padding: "2px 7px" }}>Optional</span>}
+                    {item.is_recommended && <span style={{ fontSize: 7, letterSpacing: "0.1em", textTransform: "uppercase", color: "#6B8F71", border: "0.5px solid rgba(107,143,113,0.3)", padding: "2px 7px" }}>Recommended</span>}
+                  </div>
+                  {items.length > 1 && (
+                    <button onClick={() => removeItem(i)} style={{ fontSize: 8, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.3, background: "none", border: "none", cursor: "pointer", color: "#0F0F0E", fontFamily: "'Jost', sans-serif" }}>
+                      Remove
+                    </button>
+                  )}
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 160px", gap: 12 }}>
+                    <Field label="Name">
+                      <input type="text" value={item.name} onChange={e => setItem(i, "name", e.target.value)} placeholder="Brand Identity" style={inputStyle} />
+                    </Field>
+                    <Field label="Price (USD)">
+                      <input type="number" value={item.price} onChange={e => setItem(i, "price", e.target.value)} placeholder="0" style={inputStyle} />
+                    </Field>
+                  </div>
+
+                  <Field label="Scope description">
+                    <textarea
+                      value={item.description}
+                      onChange={e => setItem(i, "description", e.target.value)}
+                      placeholder="What's included — be specific enough that the client understands the deliverables."
+                      rows={3}
+                      style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }}
+                    />
+                  </Field>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+                    <Field label="Timeline min (weeks)">
+                      <input type="number" value={item.timeline_min} onChange={e => setItem(i, "timeline_min", e.target.value)} style={inputStyle} />
+                    </Field>
+                    <Field label="Timeline max (weeks)">
+                      <input type="number" value={item.timeline_max} onChange={e => setItem(i, "timeline_max", e.target.value)} style={inputStyle} />
+                    </Field>
+                    <Field label="Default phase">
+                      <select value={item.phase} onChange={e => setItem(i, "phase", e.target.value as "now" | "later")} style={inputStyle}>
+                        <option value="now">Start now</option>
+                        <option value="later">Schedule later</option>
+                      </select>
+                    </Field>
+                  </div>
+
+                  <div style={{ display: "flex", gap: 24 }}>
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, opacity: 0.65, cursor: "pointer" }}>
+                      <input type="checkbox" checked={item.is_recommended} onChange={e => setItem(i, "is_recommended", e.target.checked)} />
+                      Recommended
+                    </label>
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, opacity: 0.65, cursor: "pointer" }}>
+                      <input type="checkbox" checked={item.is_optional} onChange={e => setItem(i, "is_optional", e.target.checked)} />
+                      Optional add-on
+                    </label>
+                  </div>
+                </div>
               </div>
+            ))}
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 140px", gap: 12 }}>
-                  <Field label="Name">
-                    <input type="text" value={item.name} onChange={e => setItem(i, "name", e.target.value)} placeholder="Brand Identity" style={inputStyle} />
-                  </Field>
-                  <Field label="Price (USD)">
-                    <input type="number" value={item.price} onChange={e => setItem(i, "price", e.target.value)} placeholder="0" style={inputStyle} />
-                  </Field>
-                </div>
-
-                <Field label="Description">
-                  <textarea value={item.description} onChange={e => setItem(i, "description", e.target.value)} placeholder="What's included…" rows={2} style={{ ...inputStyle, resize: "none" }} />
-                </Field>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-                  <Field label="Timeline min (weeks)">
-                    <input type="number" value={item.timeline_min} onChange={e => setItem(i, "timeline_min", e.target.value)} style={inputStyle} />
-                  </Field>
-                  <Field label="Timeline max (weeks)">
-                    <input type="number" value={item.timeline_max} onChange={e => setItem(i, "timeline_max", e.target.value)} style={inputStyle} />
-                  </Field>
-                  <Field label="Default phase">
-                    <select value={item.phase} onChange={e => setItem(i, "phase", e.target.value as "now" | "later")} style={inputStyle}>
-                      <option value="now">Start now</option>
-                      <option value="later">Schedule later</option>
-                    </select>
-                  </Field>
-                </div>
-
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <input type="checkbox" checked={item.is_recommended} onChange={e => setItem(i, "is_recommended", e.target.checked)} id={`rec-${i}`} />
-                  <label htmlFor={`rec-${i}`} style={{ fontSize: 11, opacity: 0.65 }}>Mark as recommended</label>
-                </div>
+            <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.1)", paddingTop: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <button onClick={addItem} style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.5, background: "none", border: "0.5px solid rgba(15,15,14,0.2)", padding: "10px 20px", cursor: "pointer", color: "#0F0F0E", fontFamily: "'Jost', sans-serif" }}>
+                + Add item
+              </button>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: 12, opacity: 0.7 }}>Base estimate: <strong>${totalEstimate.toLocaleString()}</strong></div>
+                {optionalTotal > 0 && <div style={{ fontSize: 10, opacity: 0.45, marginTop: 2 }}>With add-ons: ${(totalEstimate + optionalTotal).toLocaleString()}</div>}
               </div>
             </div>
-          ))}
-
-          <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.1)", paddingTop: 16 }}>
-            <button onClick={addItem} style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.5, background: "none", border: "0.5px solid rgba(15,15,14,0.2)", padding: "10px 20px", cursor: "pointer", color: "#0F0F0E", fontFamily: "'Jost', sans-serif" }}>
-              + Add item
-            </button>
           </div>
-        </div>
+        </Section>
+
+        {/* Section: Closing */}
+        <Section label="Closing note">
+          <Field label="Personal closing">
+            <textarea
+              value={form.closing}
+              onChange={e => setField("closing", e.target.value)}
+              placeholder="Your closing thought — why you're excited about the project, a personal note to the client, next steps. This shows at the bottom of the proposal after the pricing."
+              rows={5}
+              style={{ ...inputStyle, resize: "vertical", lineHeight: 1.7 }}
+            />
+          </Field>
+        </Section>
 
         {/* Actions */}
-        <div style={{ display: "flex", gap: 10, paddingTop: 32 }}>
+        <div style={{ display: "flex", gap: 10, paddingTop: 8 }}>
           <button onClick={() => handleSave("draft")} disabled={loading || !form.client_id || !form.title} style={{ ...btnStyle, background: "transparent", color: "#0F0F0E", border: "0.5px solid rgba(15,15,14,0.2)", opacity: loading ? 0.4 : 0.65 }}>
             Save as draft
           </button>
@@ -210,6 +265,15 @@ export default function NewProposalPage() {
 
       </main>
     </>
+  )
+}
+
+function Section({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ marginBottom: 48 }}>
+      <div style={{ fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.4, marginBottom: 20, paddingBottom: 10, borderBottom: "0.5px solid rgba(15,15,14,0.1)" }}>{label}</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>{children}</div>
+    </div>
   )
 }
 
@@ -233,7 +297,7 @@ const inputStyle: React.CSSProperties = {
 }
 
 const btnStyle: React.CSSProperties = {
-  padding: "12px 24px",
+  padding: "12px 28px",
   fontFamily: "'Jost', sans-serif",
   fontSize: 9, letterSpacing: "0.14em",
   textTransform: "uppercase",
