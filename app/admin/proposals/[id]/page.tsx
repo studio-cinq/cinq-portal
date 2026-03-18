@@ -134,18 +134,15 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
                 {cell.label}
               </div>
               <div style={{
-                fontFamily: "'PP Writer', Georgia, serif",
-                fontSize: 13,
-                opacity: (cell as any).color ? 1 : 0.8,
-                color: (cell as any).color ?? "#0F0F0E",
-                letterSpacing: "-0.01em",
-                textTransform: cell.label === "Status" ? "uppercase" : "none",
-                letterSpacing: cell.label === "Status" ? "0.08em" : "-0.01em",
-                fontSize: cell.label === "Status" ? 9 : 13,
-                fontFamily: cell.label === "Status" ? "'Matter SemiMono', monospace" : "'PP Writer', Georgia, serif",
-              } as any}>
-                {cell.value}
-              </div>
+  textTransform: cell.label === "Status" ? "uppercase" : "none",
+  letterSpacing: cell.label === "Status" ? "0.08em" : "-0.01em",
+  fontSize: cell.label === "Status" ? 9 : 13,
+  fontFamily: cell.label === "Status" ? "'Matter SemiMono', monospace" : "'PP Writer', Georgia, serif",
+  opacity: (cell as any).color ? 1 : 0.8,
+  color: (cell as any).color ?? "#0F0F0E",
+} as any}>
+  {cell.value}
+</div>
               {(cell as any).sub && (
                 <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, opacity: 0.4, marginTop: 2 }}>
                   {(cell as any).sub}
