@@ -60,6 +60,9 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
     if (!c) { setLoading(false); return }
     setClient(c)
 
+    const [inviting, setInviting]       = useState(false)
+const [inviteStatus, setInviteStatus] = useState<"idle" | "sent">("idle")
+
     const { data: proj } = await supabase
       .from("projects")
       .select("*, deliverables(*)")
@@ -160,6 +163,17 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
     setSendingReply(false)
   }
 
+  async function inviteClient() {
+    setInviting(true)
+    const res = await fetch("/api/admin/invite-client", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: client.contact_email, clientName: client.contact_name }),
+    })
+    setInviting(false)
+    if (res.ok) setInviteStatus("sent")
+  }
+
   if (loading) return (
     <>
       <PortalNav isAdmin />
@@ -215,12 +229,19 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
             </div>
           </div>
           <div style={{ display: "flex", gap: 8, paddingBottom: 20 }}>
-            <Link href={`/admin/invoices/new?client=${params.id}`} style={actionBtn}>
-              + Invoice
-            </Link>
-            <Link href={`/admin/proposals/new?client=${params.id}`} style={{ ...actionBtn, background: "#0F0F0E", color: "#F4F1EC", opacity: 1 }}>
-              + Proposal
-            </Link>
+          <button
+  onClick={inviteClient}
+  disabled={inviting}
+  style={{ ...actionBtn, opacity: inviting ? 0.4 : 0.6, cursor: inviting ? "default" : "pointer", border: "0.5px solid rgba(15,15,14,0.2)", background: "transparent", color: "#0F0F0E" }}
+>
+  {inviting ? "Sending…" : inviteStatus === "sent" ? "Invite sent ✓" : "Invite to portal"}
+</button>
+<Link href={`/admin/invoices/new?client=${params.id}`} style={actionBtn}>
+  + Invoice
+</Link>
+<Link href={`/admin/proposals/new?client=${params.id}`} style={{ ...actionBtn, background: "#0F0F0E", color: "#F4F1EC", opacity: 1 }}>
+  + Proposal
+</Link>
           </div>
         </div>
 
