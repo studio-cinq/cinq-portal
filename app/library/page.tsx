@@ -255,7 +255,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 function AssetTile({ asset, dark }: { asset: any; dark?: boolean }) {
   return (
-    
+    <a
       href={asset.file_url}
       style={{
         display: "flex", flexDirection: "column",
