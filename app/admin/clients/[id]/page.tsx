@@ -38,6 +38,11 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
   const [slides, setSlides]                 = useState<any[]>([])
   const [activeTab, setActiveTab]           = useState(0)
   const [selectedProject, setSelectedProject] = useState<any>(null)
+  const [timeEntries, setTimeEntries]   = useState<any[]>([])
+const [timerRunning, setTimerRunning] = useState(false)
+const [timerStart, setTimerStart]     = useState<Date | null>(null)
+const [timerSeconds, setTimerSeconds] = useState(0)
+const [timerNote, setTimerNote]       = useState("")
   const [logInput, setLogInput]             = useState("")
   const [replyText, setReplyText]           = useState("")
   const [replyProjectId, setReplyProjectId] = useState<string>("")
@@ -49,6 +54,75 @@ const [inviteStatus, setInviteStatus]     = useState<"idle" | "sent">("idle")
 
   useEffect(() => {
     if (selectedProject) {
+      // Timer tick
+useEffect(() => {
+  if (!timerRunning) return
+  const interval = setInterval(() => {
+    setTimerSeconds(s => s + 1)
+  }, 1000)
+  return () => clearInterval(interval)
+}, [timerRunning])
+
+// Load time entries when project changes
+useEffect(() => {
+  if (selectedProject) loadTimeEntries(selectedProject.id)
+}, [selectedProject?.id])
+
+async function loadTimeEntries(projectId: string) {
+  const { data } = await supabase
+    .from("time_entries")
+    .select("*")
+    .eq("project_id", projectId)
+    .order("started_at", { ascending: false })
+  setTimeEntries(data ?? [])
+}
+
+function formatDuration(seconds: number) {
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  const s = seconds % 60
+  if (h > 0) return `${h}h ${m}m`
+  if (m > 0) return `${m}m ${s}s`
+  return `${s}s`
+}
+
+function formatMinutes(minutes: number) {
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  if (h > 0 && m > 0) return `${h}h ${m}m`
+  if (h > 0) return `${h}h`
+  return `${m}m`
+}
+
+async function startTimer() {
+  setTimerStart(new Date())
+  setTimerSeconds(0)
+  setTimerRunning(true)
+}
+
+async function stopTimer() {
+  if (!timerStart || !selectedProject) return
+  setTimerRunning(false)
+  const stopped = new Date()
+  const durationMinutes = Math.round((stopped.getTime() - timerStart.getTime()) / 60000)
+
+  const { data } = await supabase
+    .from("time_entries")
+    .insert({
+      project_id:       selectedProject.id,
+      started_at:       timerStart.toISOString(),
+      stopped_at:       stopped.toISOString(),
+      duration_minutes: durationMinutes,
+      note:             timerNote.trim() || null,
+    })
+    .select()
+    .single()
+
+  if (data) setTimeEntries(prev => [data, ...prev])
+  setTimerStart(null)
+  setTimerSeconds(0)
+  setTimerNote("")
+}
       loadDecisionLog(selectedProject.id)
       loadSlides(selectedProject.id)
       setReplyProjectId(selectedProject.id)
@@ -456,6 +530,82 @@ const [inviteStatus, setInviteStatus]     = useState<"idle" | "sent">("idle")
               )}
             </div>
           )}
+
+          {/* Time tracking */}
+<div style={{ marginTop: 40 }}>
+  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 }}>
+    <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 7, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.5 }}>
+      Time tracking
+    </div>
+    {timeEntries.length > 0 && (
+      <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 8, opacity: 0.45 }}>
+        Total: {formatMinutes(timeEntries.reduce((s, e) => s + (e.duration_minutes ?? 0), 0))}
+      </div>
+    )}
+  </div>
+
+  {/* Timer control */}
+  <div style={{
+    border: "0.5px solid rgba(15,15,14,0.12)",
+    padding: "16px 20px",
+    background: timerRunning ? "rgba(107,143,113,0.06)" : "rgba(255,255,255,0.35)",
+    marginBottom: 16,
+    transition: "background 0.3s",
+  }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: timerRunning ? 12 : 0 }}>
+      <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: timerRunning ? 22 : 13, letterSpacing: timerRunning ? "0.04em" : "0.01em", opacity: timerRunning ? 0.9 : 0.45, transition: "font-size 0.2s" }}>
+        {timerRunning ? formatDuration(timerSeconds) : "Ready to track"}
+      </div>
+      <button
+        onClick={timerRunning ? stopTimer : startTimer}
+        style={{
+          fontFamily: "'Matter SemiMono', monospace",
+          fontSize: 8, letterSpacing: "0.14em", textTransform: "uppercase",
+          background: timerRunning ? "#c0392b" : "#0F0F0E",
+          color: "#F4F1EC", border: "none",
+          padding: "8px 16px", cursor: "pointer",
+          transition: "background 0.2s",
+        }}
+      >
+        {timerRunning ? "Stop" : "Start timer"}
+      </button>
+    </div>
+    {timerRunning && (
+      <input
+        value={timerNote}
+        onChange={e => setTimerNote(e.target.value)}
+        placeholder="What are you working on? (optional)"
+        style={{
+          width: "100%", boxSizing: "border-box",
+          fontFamily: "'Söhne', system-ui, sans-serif",
+          fontSize: 12, background: "transparent",
+          border: "none", borderBottom: "0.5px solid rgba(15,15,14,0.15)",
+          padding: "6px 0", color: "#0F0F0E", outline: "none",
+        }}
+      />
+    )}
+  </div>
+
+  {/* Time log */}
+  {timeEntries.map(entry => (
+    <div key={entry.id} style={{ display: "flex", gap: 16, padding: "10px 0", borderBottom: "0.5px solid rgba(15,15,14,0.06)", alignItems: "baseline" }}>
+      <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, opacity: 0.3, minWidth: 52 }}>
+        {new Date(entry.started_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+      </div>
+      <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 11, opacity: 0.7, minWidth: 48 }}>
+        {formatMinutes(entry.duration_minutes ?? 0)}
+      </div>
+      <div style={{ fontFamily: "'Söhne', system-ui, sans-serif", fontSize: 12, opacity: 0.55, flex: 1 }}>
+        {entry.note ?? <span style={{ opacity: 0.4 }}>—</span>}
+      </div>
+    </div>
+  ))}
+  {timeEntries.length === 0 && (
+    <div style={{ fontFamily: "'Söhne', system-ui, sans-serif", fontSize: 12, opacity: 0.3, padding: "8px 0" }}>
+      No time logged yet.
+    </div>
+  )}
+</div>
 
           {/* ── Tab 1: Presentation ── */}
           {activeTab === 1 && (
