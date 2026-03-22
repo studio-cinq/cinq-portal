@@ -292,7 +292,7 @@ function FileRow({ asset }: { asset: any }) {
     : `${Math.round(asset.file_size_bytes / 1024)} KB`
 
   return (
-    
+    <a
       href={asset.file_url}
       style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
