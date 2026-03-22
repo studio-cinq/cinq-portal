@@ -40,8 +40,8 @@ function emailShell(body: string) {
     .meta p:last-child { margin: 0; }
     .meta strong { color: #1C1916; font-weight: 600; }
     .cta  { display: inline-block; margin-top: 8px; padding: 12px 24px;
-            background: #1C1916; color: #FAF8F5; font-family: -apple-system, sans-serif;
-            font-size: 12px; letter-spacing: 0.08em; text-decoration: none; }
+        background: #1C1916; color: #FAF8F5 !important; font-family: -apple-system, sans-serif;
+        font-size: 12px; letter-spacing: 0.08em; text-decoration: none !important; }
     .foot { padding: 16px 40px; border-top: 0.5px solid #DDD6CC; }
     .foot p { margin: 0; font-size: 11px; font-family: -apple-system, sans-serif;
               color: #B0A89E; }
@@ -84,7 +84,7 @@ export async function sendProposalViewedEmail(p: ProposalViewedPayload) {
         <p><strong>Contact</strong> &nbsp;${p.contactEmail}</p>
         <p><strong>Viewed</strong> &nbsp;${formatDate(p.viewedAt)}</p>
       </div>
-      <a class="cta" href="${proposalUrl}">View proposal →</a>
+      <a class="cta" href="${proposalUrl}"style="color:#FAF8F5;text-decoration:none;">View &amp; pay invoice →</a>
     </div>
   `);
 
@@ -127,7 +127,7 @@ export async function sendProposalAcceptedEmail(p: ProposalAcceptedPayload) {
         <p><strong>Accepted</strong> &nbsp;${formatDate(p.acceptedAt)}</p>
         ${p.stripeSessionId ? `<p><strong>Stripe session</strong> &nbsp;<code style="font-size:11px">${p.stripeSessionId}</code></p>` : ""}
       </div>
-      <a class="cta" href="${proposalUrl}">View proposal →</a>
+      <a class="cta" href="${proposalUrl}"style="color:#FAF8F5;text-decoration:none;">View &amp; pay invoice →</a>
     </div>
   `);
 
@@ -171,7 +171,7 @@ export async function sendInvoiceEmail(p: InvoiceSentPayload) {
         <p><strong>Amount</strong> &nbsp;${amount}</p>
         ${dueLine ? `<p><strong>Due</strong> &nbsp;${dueLine}</p>` : ""}
       </div>
-      <a class="cta" href="${p.invoiceUrl}">View &amp; pay invoice →</a>
+      <a class="cta" href="${p.invoiceUrl}" style="color:#FAF8F5;text-decoration:none;">View &amp; pay invoice →</a>
     </div>
   `)
 
