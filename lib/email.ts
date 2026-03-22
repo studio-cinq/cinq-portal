@@ -141,3 +141,47 @@ export async function sendProposalAcceptedEmail(p: ProposalAcceptedPayload) {
     html,
   });
 }
+
+// ─── Invoice sent ─────────────────────────────────────────────────────────────
+
+interface InvoiceSentPayload {
+  invoiceNumber: string
+  description: string
+  amountCents: number
+  dueDate?: string
+  clientName: string
+  contactName: string
+  contactEmail: string
+  invoiceUrl: string
+}
+
+export async function sendInvoiceEmail(p: InvoiceSentPayload) {
+  const amount = (p.amountCents / 100).toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+  })
+
+  const dueLine = p.dueDate
+    ? new Date(p.dueDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+    : null
+
+  const html = emailShell(`
+    <div class="body">
+      <p>Hi ${p.contactName} — you have a new invoice from Studio Cinq.</p>
+      <div class="meta">
+        <p><strong>Invoice</strong> &nbsp;#${p.invoiceNumber}</p>
+        <p><strong>Description</strong> &nbsp;${p.description}</p>
+        <p><strong>Amount</strong> &nbsp;${amount}</p>
+        ${dueLine ? `<p><strong>Due</strong> &nbsp;${dueLine}</p>` : ""}
+      </div>
+      <a class="cta" href="${p.invoiceUrl}">View &amp; pay invoice →</a>
+    </div>
+  `)
+
+  return resend.emails.send({
+    from: "Studio Cinq <portal@studiocinq.com>",
+    to: p.contactEmail,
+    subject: `Invoice #${p.invoiceNumber} — ${amount} due from Studio Cinq`,
+    html,
+  })
+}

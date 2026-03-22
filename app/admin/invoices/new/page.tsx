@@ -77,7 +77,7 @@ function NewInvoicePageInner() {
 
     setSaving(true)
 
-    const { error } = await supabase.from("invoices").insert({
+    const { data, error } = await supabase.from("invoices").insert({
       client_id:      form.client_id,
       project_id:     form.project_id || null,
       invoice_number: form.invoice_number.trim(),
@@ -90,11 +90,17 @@ function NewInvoicePageInner() {
 
     setSaving(false)
 
-    if (error) {
-      setError(error.message)
-      return
-    }
+    if (error) { setError(error.message); return }
 
+    // Fire invoice email if status is sent
+    if (form.status === "sent" && data) {
+      fetch("/api/admin/send-invoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ invoiceId: data.id }),
+      }).catch(err => console.error("[send-invoice]", err))
+    }
+    
     router.push("/admin/invoices")
     router.refresh()
   }
