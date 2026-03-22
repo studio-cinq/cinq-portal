@@ -126,6 +126,7 @@ export default async function AdminStudioPage() {
     )
   })}
 </div>
+</div>
 
         {/* Right sidebar */}
         <div style={{ padding: "36px 28px" }}>
