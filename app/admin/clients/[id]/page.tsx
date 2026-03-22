@@ -68,7 +68,7 @@ useEffect(() => {
   if (selectedProject) loadTimeEntries(selectedProject.id)
 }, [selectedProject?.id])
 
-async function loadTimeEntries(projectId: string) {
+const loadTimeEntries = async (projectId: string) => {
   const { data } = await supabase
     .from("time_entries")
     .select("*")
@@ -77,7 +77,7 @@ async function loadTimeEntries(projectId: string) {
   setTimeEntries(data ?? [])
 }
 
-function formatDuration(seconds: number) {
+const formatDuration = (seconds: number) => {
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
   const s = seconds % 60
@@ -86,7 +86,7 @@ function formatDuration(seconds: number) {
   return `${s}s`
 }
 
-function formatMinutes(minutes: number) {
+const formatMinutes = (minutes: number) => {
   const h = Math.floor(minutes / 60)
   const m = minutes % 60
   if (h > 0 && m > 0) return `${h}h ${m}m`
@@ -94,13 +94,13 @@ function formatMinutes(minutes: number) {
   return `${m}m`
 }
 
-async function startTimer() {
+const startTimer = async () => {
   setTimerStart(new Date())
   setTimerSeconds(0)
   setTimerRunning(true)
 }
 
-async function stopTimer() {
+const stopTimer = async () => {
   if (!timerStart || !selectedProject) return
   setTimerRunning(false)
   const stopped = new Date()
