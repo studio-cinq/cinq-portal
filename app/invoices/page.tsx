@@ -44,7 +44,7 @@ export default async function InvoicesPage() {
         {/* Left */}
         <div style={{ padding: "40px 40px 64px 48px", borderRight: "0.5px solid rgba(15,15,14,0.08)" }}>
 
-          <div style={{ fontSize: 8, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.28, marginBottom: 8 }}>&bull; Invoices</div>
+          <div style={{ fontSize: 8, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.5, marginBottom: 8 }}>&bull; Invoices</div>
           <div style={{ fontWeight: 300, fontSize: 24, letterSpacing: "-0.01em", opacity: 0.88, marginBottom: 36 }}>
             {client?.name}
           </div>
@@ -90,7 +90,7 @@ export default async function InvoicesPage() {
             {totalDue > 0 && <SummaryRow label="Due now" value={`$${(totalDue / 100).toLocaleString()}`} color="#B07D3A" />}
             <div style={{ display: "flex", justifyContent: "space-between", padding: "14px 0 0" }}>
               <span style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.32 }}>Total</span>
-              <span style={{ fontWeight: 300, fontSize: 20, letterSpacing: "-0.02em", opacity: 0.82 }}>
+              <span style={{ fontFamily: "'PP Writer', Georgia, serif", fontWeight: 400, fontSize: 20, letterSpacing: "-0.02em", opacity: 0.9 }}>
                 ${(totalContract / 100).toLocaleString()}
               </span>
             </div>
@@ -101,7 +101,7 @@ export default async function InvoicesPage() {
             <div style={{ height: 2, background: "rgba(15,15,14,0.08)", borderRadius: 2, marginBottom: 8 }}>
               <div style={{ height: 2, width: `${paidPct}%`, background: "#6B8F71", borderRadius: 2, opacity: 0.7 }} />
             </div>
-            <div style={{ fontSize: 9, color: "#0F0F0E", opacity: 0.28, letterSpacing: "0.04em" }}>
+            <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, color: "#0F0F0E", opacity: 0.5, letterSpacing: "0.04em" }}>
               ${(totalPaid / 100).toLocaleString()} of ${(totalContract / 100).toLocaleString()} &nbsp;&middot;&nbsp; {paidPct}%
             </div>
           </div>
@@ -111,7 +111,7 @@ export default async function InvoicesPage() {
             <>
               <div style={sidebarLabel}>On final payment</div>
               <div style={{ border: "0.5px solid rgba(15,15,14,0.1)", padding: 18, background: "rgba(255,255,255,0.2)" }}>
-                <div style={{ fontSize: 8, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.28, marginBottom: 10 }}>
+                <div style={{ fontSize: 8, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.5, marginBottom: 10 }}>
                   Files unlocked
                 </div>
                 <div style={{ fontSize: 11, color: "#0F0F0E", opacity: 0.5, lineHeight: 1.6 }}>
@@ -140,13 +140,13 @@ function InvoiceCard({ inv, variant }: { inv: any; variant: "paid" | "due" | "lo
     }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16 }}>
         <div>
-          <div style={{ fontSize: 8, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.32, marginBottom: 6 }}>
+          <div style={{ fontSize: 8, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.5, marginBottom: 6 }}>
             {inv.invoice_number}
           </div>
-          <div style={{ fontWeight: 300, fontSize: 15, opacity: 0.85, letterSpacing: "-0.01em", marginBottom: 3 }}>
+          <div style={{ fontWeight: 300, fontSize: 16, opacity: 0.90, letterSpacing: "-0.01em", marginBottom: 3 }}>
             {inv.description}
           </div>
-          <div style={{ fontSize: 10, opacity: 0.35, letterSpacing: "0.04em" }}>
+          <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 10, opacity: 0.5, letterSpacing: "0.04em" }}>
             {variant === "paid" && inv.paid_at
               ? `Paid ${new Date(inv.paid_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`
               : variant === "due" && inv.due_date
@@ -155,7 +155,7 @@ function InvoiceCard({ inv, variant }: { inv: any; variant: "paid" | "due" | "lo
           </div>
         </div>
         <div style={{ textAlign: "right" }}>
-          <div style={{ fontWeight: 300, fontSize: 20, letterSpacing: "-0.02em", opacity: 0.85 }}>
+          <div style={{ fontFamily: "'PP Writer', Georgia, serif", fontWeight: 400, fontSize: 16, opacity: 0.9, }}>
             {fmt(inv.amount)}
           </div>
           <StatusBadge variant={variant} dueDate={inv.due_date} />
@@ -214,7 +214,7 @@ function StatusBadge({ variant, dueDate }: { variant: string; dueDate?: string }
 function SummaryRow({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", padding: "9px 0", borderBottom: "0.5px solid rgba(15,15,14,0.07)" }}>
-      <span style={{ fontSize: 10, opacity: 0.4 }}>{label}</span>
+      <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 10, opacity: 0.55 }}>{label}</span>
       <span style={{ fontSize: 10, color: color ?? "#0F0F0E", opacity: color ? 0.85 : 0.65 }}>{value}</span>
     </div>
   )
@@ -222,10 +222,10 @@ function SummaryRow({ label, value, color }: { label: string; value: string; col
 
 const sectionLabel: React.CSSProperties = {
   fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase",
-  color: "#0F0F0E", opacity: 0.28, marginBottom: 14,
+  color: "#0F0F0E", opacity: 0.5, marginBottom: 14,
 }
 
 const sidebarLabel: React.CSSProperties = {
   fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase",
-  color: "#0F0F0E", opacity: 0.28, marginBottom: 14,
+  color: "#0F0F0E", opacity: 0.5, marginBottom: 14,
 }
