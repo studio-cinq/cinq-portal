@@ -55,7 +55,7 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
             <div style={{ fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.38, marginBottom: 10, fontFamily: "'Matter SemiMono', monospace" }}>
               Proposal
             </div>
-            <h1 style={{ fontFamily: "'PP Writer', 'Cormorant Garamond', Georgia, serif", fontWeight: 400, fontSize: 26, opacity: 0.9, letterSpacing: "-0.015em", margin: "0 0 6px" }}>
+            <h1 style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontWeight: 400, fontSize: 26, opacity: 0.9, letterSpacing: "-0.015em", margin: "0 0 6px" }}>
               {proposal.title}
             </h1>
             {proposal.subtitle && (
@@ -238,7 +238,7 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
             <div style={{ marginTop: 20, paddingTop: 16, borderTop: "0.5px solid rgba(15,15,14,0.12)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
                 <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 8, opacity: 0.45, letterSpacing: "0.08em", textTransform: "uppercase" }}>Base total</span>
-                <span style={{ fontFamily: "'PP Writer', 'Cormorant Garamond', Georgia, serif", fontSize: 18, opacity: 0.88 }}>${(baseTotal / 100).toLocaleString()}</span>
+                <span style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 18, opacity: 0.88 }}>${(baseTotal / 100).toLocaleString()}</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                 <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 8, opacity: 0.35 }}>Deposit (50%)</span>
@@ -322,7 +322,7 @@ function LineItemRow({ item }: { item: any }) {
           )}
         </div>
         <div style={{ textAlign: "right", flexShrink: 0 }}>
-          <div style={{ fontFamily: "'PP Writer', 'Cormorant Garamond', Georgia, serif", fontSize: 15, opacity: 0.8, letterSpacing: "-0.01em" }}>
+          <div style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 15, opacity: 0.8, letterSpacing: "-0.01em" }}>
             ${(item.price / 100).toLocaleString()}
           </div>
           <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 8, opacity: 0.35, marginTop: 4 }}>
