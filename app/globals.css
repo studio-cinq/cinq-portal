@@ -30,6 +30,28 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: 'Söhne';
+  src: url('/fonts/Sohne-Buch.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Söhne';
+  src: url('/fonts/Sohne-Kraftig.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Söhne';
+  src: url('/fonts/Sohne-Leicht.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* -- Cinq Portal Design Tokens -- */
 :root {
   --ink:        #0F0F0E;
@@ -38,7 +60,8 @@
   --sage:       #6B8F71;
   --amber:      #B07D3A;
   --bg-grad:    linear-gradient(160deg, #F4F1EC 0%, #E8E0D4 100%);
-  --font-sans:  'PP Writer', 'Cormorant Garamond', Georgia, serif;
+  --font-serif: 'PP Writer', 'Cormorant Garamond', Georgia, serif;
+  --font-sans:  'Söhne', 'Inter', system-ui, sans-serif;
   --font-mono:  'Matter SemiMono', 'DM Mono', monospace;
   --nav-h:      64px;
   --page-pad:   clamp(32px, 5vw, 48px);
