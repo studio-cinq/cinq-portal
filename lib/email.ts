@@ -54,7 +54,7 @@ function emailShell(body: string) {
     </div>
     ${body}
     <div class="foot">
-      <p>Questions? Reply to this email or reach out to kacie@studiocinq.com</p>
+      <p>Questions? Reply to this email or reach out to <a href="mailto:kacie@studiocinq.com" style="color:#9E9589;text-decoration:none;">kacie@studiocinq.com</a></p>
     </div>
   </div>
 </body>
