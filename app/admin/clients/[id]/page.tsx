@@ -162,6 +162,17 @@ const [inviteStatus, setInviteStatus]     = useState<"idle" | "sent">("idle")
     setSendingReply(false)
   }
 
+  async function inviteClient() {
+    setInviting(true)
+    const res = await fetch("/api/admin/invite-client", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: client.contact_email, clientName: client.contact_name }),
+    })
+    setInviting(false)
+    if (res.ok) setInviteStatus("sent")
+  }
+
   if (loading) return (
     <>
       <PortalNav isAdmin />
@@ -220,6 +231,13 @@ const [inviteStatus, setInviteStatus]     = useState<"idle" | "sent">("idle")
           <Link href={`/admin/projects/new?client=${params.id}`} style={actionBtn}>
   + Project
 </Link>
+<button
+  onClick={inviteClient}
+  disabled={inviting}
+  style={{ ...actionBtn, opacity: inviting ? 0.4 : 0.6, cursor: inviting ? "default" : "pointer", border: "0.5px solid rgba(15,15,14,0.2)", background: "transparent", color: "#0F0F0E" }}
+>
+  {inviting ? "Sending…" : inviteStatus === "sent" ? "Invite sent ✓" : "Invite to portal"}
+</button>
             <Link href={`/admin/invoices/new?client=${params.id}`} style={actionBtn}>
               + Invoice
             </Link>
