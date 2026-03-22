@@ -97,7 +97,7 @@ function NewInvoicePageInner() {
       fetch("/api/admin/send-invoice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ invoiceId: data.id }),
+        body: JSON.stringify({ invoiceId: (data as any).id }),
       }).catch(err => console.error("[send-invoice]", err))
     }
     
