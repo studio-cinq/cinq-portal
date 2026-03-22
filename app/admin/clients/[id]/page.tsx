@@ -217,6 +217,9 @@ const [inviteStatus, setInviteStatus]     = useState<"idle" | "sent">("idle")
             </div>
           </div>
           <div style={{ display: "flex", gap: 8, paddingBottom: 20 }}>
+          <Link href={`/admin/projects/new?client=${params.id}`} style={actionBtn}>
+  + Project
+</Link>
             <Link href={`/admin/invoices/new?client=${params.id}`} style={actionBtn}>
               + Invoice
             </Link>
@@ -301,7 +304,38 @@ const [inviteStatus, setInviteStatus]     = useState<"idle" | "sent">("idle")
 
                   {/* Deliverables */}
                   <div style={{ marginBottom: 40 }}>
-                    <SectionHeader label="Deliverables" />
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 }}>
+  <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 7, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.5 }}>
+    Deliverables
+  </div>
+  <button
+    onClick={() => {
+      const name = window.prompt("Deliverable name:")
+      if (!name?.trim() || !selectedProject) return
+      supabase.from("deliverables").insert({
+        project_id: selectedProject.id,
+        name: name.trim(),
+        status: "not_started",
+        sort_order: deliverables.length,
+      }).select().single().then(({ data }) => {
+        if (data) setProjects(ps => ps.map(p =>
+          p.id === selectedProject.id
+            ? { ...p, deliverables: [...(p.deliverables ?? []), data] }
+            : p
+        ))
+      })
+    }}
+    style={{
+      fontFamily: "'Matter SemiMono', monospace",
+      fontSize: 7, letterSpacing: "0.12em", textTransform: "uppercase",
+      opacity: 0.45, background: "none",
+      border: "0.5px solid rgba(15,15,14,0.2)", padding: "5px 10px",
+      cursor: "pointer", color: "#0F0F0E",
+    }}
+  >
+    + Add
+  </button>
+</div>
                     {deliverables.length === 0 ? (
                       <div style={{ ...serif, fontSize: 13, opacity: 0.35, padding: "16px 0" }}>No deliverables yet.</div>
                     ) : deliverables.map((del: any) => (
