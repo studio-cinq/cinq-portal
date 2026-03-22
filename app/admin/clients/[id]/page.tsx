@@ -68,24 +68,6 @@ useEffect(() => {
   if (selectedProject) loadTimeEntries(selectedProject.id)
 }, [selectedProject?.id])
 
-
-const formatDuration = (seconds: number) => {
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  const s = seconds % 60
-  if (h > 0) return `${h}h ${m}m`
-  if (m > 0) return `${m}m ${s}s`
-  return `${s}s`
-}
-
-const formatMinutes = (minutes: number) => {
-  const h = Math.floor(minutes / 60)
-  const m = minutes % 60
-  if (h > 0 && m > 0) return `${h}h ${m}m`
-  if (h > 0) return `${h}h`
-  return `${m}m`
-}
-
 const loadTimeEntries = async (projectId: string) => {
   const { data } = await supabase
     .from("time_entries")
@@ -867,6 +849,23 @@ const stopTimer = async () => {
       </div>
     </>
   )
+}
+
+const formatDuration = (seconds: number) => {
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  const s = seconds % 60
+  if (h > 0) return `${h}h ${m}m`
+  if (m > 0) return `${m}m ${s}s`
+  return `${s}s`
+}
+
+const formatMinutes = (minutes: number) => {
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  if (h > 0 && m > 0) return `${h}h ${m}m`
+  if (h > 0) return `${h}h`
+  return `${m}m`
 }
 
 function SectionHeader({ label }: { label: string }) {
