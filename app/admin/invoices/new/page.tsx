@@ -70,14 +70,14 @@ function NewInvoicePageInner() {
 
   async function handleSave() {
     setError(null)
-    if (!form.client_id)      return setError("Please select a client.")
-    if (!form.description.trim()) return setError("Description is required.")
-    if (!form.amount)         return setError("Amount is required.")
+    if (!form.client_id)             return setError("Please select a client.")
+    if (!form.description.trim())    return setError("Description is required.")
+    if (!form.amount)                return setError("Amount is required.")
     if (!form.invoice_number.trim()) return setError("Invoice number is required.")
-
+  
     setSaving(true)
-
-    const { data, error } = await supabase.from("invoices").insert({
+  
+    const { error } = await supabase.from("invoices").insert({
       client_id:      form.client_id,
       project_id:     form.project_id || null,
       invoice_number: form.invoice_number.trim(),
@@ -87,20 +87,23 @@ function NewInvoicePageInner() {
       status:         form.status,
       unlocks_files:  form.unlocks_files,
     })
-
+  
     setSaving(false)
-
+  
     if (error) { setError(error.message); return }
-
+  
     // Fire invoice email if status is sent
-    if (form.status === "sent" && data) {
-      fetch("/api/admin/send-invoice", {
+    if (form.status === "sent") {
+      fetch("/api/admin/send-invoice-by-number", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ invoiceId: (data as any).id }),
+        body: JSON.stringify({
+          invoiceNumber: form.invoice_number.trim(),
+          clientId: form.client_id,
+        }),
       }).catch(err => console.error("[send-invoice]", err))
     }
-    
+  
     router.push("/admin/invoices")
     router.refresh()
   }
