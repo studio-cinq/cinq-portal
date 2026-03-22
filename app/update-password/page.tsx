@@ -52,12 +52,12 @@ export default function UpdatePasswordPage() {
         <div style={{ width: "100%", height: "0.5px", background: "rgba(15,15,14,0.12)" }} />
 
         {done ? (
-          <div style={{ fontFamily: "'PP Writer', Georgia, serif", fontSize: 13, opacity: 0.65, lineHeight: 1.7, padding: "20px 0", textAlign: "center" }}>
+          <div style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 13, opacity: 0.65, lineHeight: 1.7, padding: "20px 0", textAlign: "center" }}>
             Password set — taking you to your portal…
           </div>
         ) : (
           <form onSubmit={handleSubmit} style={{ width: "100%" }}>
-            <div style={{ fontFamily: "'PP Writer', Georgia, serif", fontSize: 13, color: "#0F0F0E", opacity: 0.5, padding: "14px 0", lineHeight: 1.6 }}>
+            <div style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 13, color: "#0F0F0E", opacity: 0.5, padding: "14px 0", lineHeight: 1.6 }}>
               Choose a password for your Studio Cinq portal account.
             </div>
             <input
@@ -85,7 +85,7 @@ export default function UpdatePasswordPage() {
         <div style={{ width: "100%", height: "0.5px", background: "rgba(15,15,14,0.12)" }} />
 
         {error && (
-          <div style={{ marginTop: 16, fontFamily: "'PP Writer', Georgia, serif", fontSize: 11, color: "#0F0F0E", opacity: 0.5, textAlign: "center", lineHeight: 1.6 }}>
+          <div style={{ marginTop: 16, fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 11, color: "#0F0F0E", opacity: 0.5, textAlign: "center", lineHeight: 1.6 }}>
             {error}
           </div>
         )}
@@ -104,7 +104,7 @@ const inputStyle: React.CSSProperties = {
   background: "rgba(255,255,255,0.45)",
   border: "0.5px solid rgba(15,15,14,0.18)",
   padding: "13px 16px",
-  fontFamily: "'PP Writer', Georgia, serif",
+  fontFamily: "'Söhne', 'Inter', system-ui, sans-serif",
   fontSize: 13, color: "#0F0F0E", outline: "none",
   letterSpacing: "0.01em", marginTop: 10,
 }

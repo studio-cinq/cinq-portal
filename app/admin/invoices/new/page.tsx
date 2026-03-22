@@ -8,7 +8,7 @@ import Link from "next/link"
 import { Suspense } from "react"
 
 const mono: React.CSSProperties = { fontFamily: "'Matter SemiMono', 'DM Mono', monospace" }
-const serif: React.CSSProperties = { fontFamily: "'PP Writer', 'Cormorant Garamond', Georgia, serif" }
+const serif: React.CSSProperties = { fontFamily: "'Söhne', 'Inter', system-ui, sans-serif" }
 
 const inputStyle: React.CSSProperties = {
   width: "100%", boxSizing: "border-box",
@@ -16,7 +16,7 @@ const inputStyle: React.CSSProperties = {
   border: "none",
   borderBottom: "0.5px solid rgba(15,15,14,0.2)",
   padding: "10px 0",
-  fontFamily: "'PP Writer', Georgia, serif",
+  fontFamily: "'Söhne', 'Inter', system-ui, sans-serif",
   fontSize: 15, color: "#0F0F0E", outline: "none",
   letterSpacing: "-0.01em",
 }

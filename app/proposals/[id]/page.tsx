@@ -9,7 +9,7 @@ const mono: React.CSSProperties = {
 }
 
 const serif: React.CSSProperties = {
-  fontFamily: "'PP Writer', 'Cormorant Garamond', Georgia, serif",
+  fontFamily: "'Söhne', 'Inter', system-ui, sans-serif",
 }
 
 export default function ProposalPage({ params }: { params: { id: string } }) {
@@ -284,7 +284,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
               background: "rgba(255,255,255,0.5)",
               border: "0.5px solid rgba(15,15,14,0.12)",
               padding: "10px 12px",
-              fontFamily: "'PP Writer', Georgia, serif",
+              fontFamily: "'Söhne', 'Inter', system-ui, sans-serif",
               fontSize: 13, color: "#0F0F0E",
               resize: "none", outline: "none",
               marginBottom: 14, lineHeight: 1.5,

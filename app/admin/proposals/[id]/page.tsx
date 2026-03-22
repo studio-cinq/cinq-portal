@@ -55,11 +55,11 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
             <div style={{ fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.38, marginBottom: 10, fontFamily: "'Matter SemiMono', monospace" }}>
               Proposal
             </div>
-            <h1 style={{ fontFamily: "'PP Writer', Georgia, serif", fontWeight: 400, fontSize: 26, opacity: 0.9, letterSpacing: "-0.015em", margin: "0 0 6px" }}>
+            <h1 style={{ fontFamily: "'PP Writer', 'Cormorant Garamond', Georgia, serif", fontWeight: 400, fontSize: 26, opacity: 0.9, letterSpacing: "-0.015em", margin: "0 0 6px" }}>
               {proposal.title}
             </h1>
             {proposal.subtitle && (
-              <div style={{ fontFamily: "'PP Writer', Georgia, serif", fontSize: 14, opacity: 0.5 }}>
+              <div style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 14, opacity: 0.5 }}>
                 {proposal.subtitle}
               </div>
             )}
@@ -137,7 +137,7 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
   textTransform: cell.label === "Status" ? "uppercase" : "none",
   letterSpacing: cell.label === "Status" ? "0.08em" : "-0.01em",
   fontSize: cell.label === "Status" ? 9 : 13,
-  fontFamily: cell.label === "Status" ? "'Matter SemiMono', monospace" : "'PP Writer', Georgia, serif",
+  fontFamily: cell.label === "Status" ? "'Matter SemiMono', monospace" : "'Söhne', 'Inter', system-ui, sans-serif",
   opacity: (cell as any).color ? 1 : 0.8,
   color: (cell as any).color ?? "#0F0F0E",
 } as any}>
@@ -161,7 +161,7 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
             {proposal.overview && (
               <div style={{ marginBottom: 40 }}>
                 <SectionLabel>Overview</SectionLabel>
-                <div style={{ fontFamily: "'PP Writer', Georgia, serif", fontSize: 14, lineHeight: 1.85, opacity: 0.7, whiteSpace: "pre-wrap" }}>
+                <div style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 14, lineHeight: 1.85, opacity: 0.7, whiteSpace: "pre-wrap" }}>
                   {proposal.overview}
                 </div>
               </div>
@@ -195,7 +195,7 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
             {proposal.closing && (
               <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.1)", paddingTop: 32 }}>
                 <SectionLabel>Closing</SectionLabel>
-                <div style={{ fontFamily: "'PP Writer', Georgia, serif", fontSize: 14, lineHeight: 1.85, opacity: 0.65, whiteSpace: "pre-wrap" }}>
+                <div style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 14, lineHeight: 1.85, opacity: 0.65, whiteSpace: "pre-wrap" }}>
                   {proposal.closing}
                 </div>
               </div>
@@ -219,7 +219,7 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
                 padding: "8px 0", borderBottom: "0.5px solid rgba(15,15,14,0.07)",
               }}>
                 <div>
-                  <span style={{ fontFamily: "'PP Writer', Georgia, serif", fontSize: 12, opacity: item.is_optional ? 0.45 : 0.75 }}>
+                  <span style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 12, opacity: item.is_optional ? 0.45 : 0.75 }}>
                     {item.name}
                   </span>
                   {item.is_optional && (
@@ -229,7 +229,7 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
                     <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 7, color: "#6B8F71", marginLeft: 6, letterSpacing: "0.08em" }}>rec.</span>
                   )}
                 </div>
-                <span style={{ fontFamily: "'PP Writer', Georgia, serif", fontSize: 12, opacity: item.is_optional ? 0.4 : 0.7 }}>
+                <span style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 12, opacity: item.is_optional ? 0.4 : 0.7 }}>
                   ${(item.price / 100).toLocaleString()}
                 </span>
               </div>
@@ -238,16 +238,16 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
             <div style={{ marginTop: 20, paddingTop: 16, borderTop: "0.5px solid rgba(15,15,14,0.12)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
                 <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 8, opacity: 0.45, letterSpacing: "0.08em", textTransform: "uppercase" }}>Base total</span>
-                <span style={{ fontFamily: "'PP Writer', Georgia, serif", fontSize: 18, opacity: 0.88 }}>${(baseTotal / 100).toLocaleString()}</span>
+                <span style={{ fontFamily: "'PP Writer', 'Cormorant Garamond', Georgia, serif", fontSize: 18, opacity: 0.88 }}>${(baseTotal / 100).toLocaleString()}</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                 <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 8, opacity: 0.35 }}>Deposit (50%)</span>
-                <span style={{ fontFamily: "'PP Writer', Georgia, serif", fontSize: 13, opacity: 0.55 }}>${(deposit / 100).toLocaleString()}</span>
+                <span style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 13, opacity: 0.55 }}>${(deposit / 100).toLocaleString()}</span>
               </div>
               {optionalTotal > 0 && (
                 <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, paddingTop: 8, borderTop: "0.5px solid rgba(15,15,14,0.07)" }}>
                   <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 8, opacity: 0.35 }}>With add-ons</span>
-                  <span style={{ fontFamily: "'PP Writer', Georgia, serif", fontSize: 13, opacity: 0.45 }}>${((baseTotal + optionalTotal) / 100).toLocaleString()}</span>
+                  <span style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 13, opacity: 0.45 }}>${((baseTotal + optionalTotal) / 100).toLocaleString()}</span>
                 </div>
               )}
             </div>
@@ -258,7 +258,7 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
                 <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 7, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.4, marginBottom: 8 }}>
                   Client note
                 </div>
-                <div style={{ fontFamily: "'PP Writer', Georgia, serif", fontSize: 13, opacity: 0.65, lineHeight: 1.7, fontStyle: "italic" }}>
+                <div style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 13, opacity: 0.65, lineHeight: 1.7, fontStyle: "italic" }}>
                   "{proposal.client_note}"
                 </div>
               </div>
@@ -301,7 +301,7 @@ function LineItemRow({ item }: { item: any }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 20 }}>
         <div style={{ flex: 1 }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 6, flexWrap: "wrap" }}>
-            <span style={{ fontFamily: "'PP Writer', Georgia, serif", fontSize: 15, opacity: 0.85, letterSpacing: "-0.01em" }}>
+            <span style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 15, opacity: 0.85, letterSpacing: "-0.01em" }}>
               {item.name}
             </span>
             {item.is_recommended && (
@@ -316,13 +316,13 @@ function LineItemRow({ item }: { item: any }) {
             )}
           </div>
           {item.description && (
-            <div style={{ fontFamily: "'PP Writer', Georgia, serif", fontSize: 13, opacity: 0.55, lineHeight: 1.75 }}>
+            <div style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 13, opacity: 0.55, lineHeight: 1.75 }}>
               {item.description}
             </div>
           )}
         </div>
         <div style={{ textAlign: "right", flexShrink: 0 }}>
-          <div style={{ fontFamily: "'PP Writer', Georgia, serif", fontSize: 15, opacity: 0.8, letterSpacing: "-0.01em" }}>
+          <div style={{ fontFamily: "'PP Writer', 'Cormorant Garamond', Georgia, serif", fontSize: 15, opacity: 0.8, letterSpacing: "-0.01em" }}>
             ${(item.price / 100).toLocaleString()}
           </div>
           <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 8, opacity: 0.35, marginTop: 4 }}>

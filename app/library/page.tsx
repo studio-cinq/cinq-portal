@@ -88,7 +88,7 @@ export default async function LibraryPage() {
             · Brand Library
           </div>
           <div style={{
-            fontFamily: "'PP Writer', Georgia, serif",
+            fontFamily: "'Söhne', 'Inter', system-ui, sans-serif",
             fontWeight: 400, fontSize: 28,
             color: "rgba(237,232,224,0.92)", letterSpacing: "-0.01em", marginBottom: 8,
           }}>
@@ -155,7 +155,7 @@ export default async function LibraryPage() {
             )}
 
             {logoAssets.length === 0 && colors.length === 0 && (
-              <div style={{ fontFamily: "'PP Writer', Georgia, serif", fontSize: 13, opacity: 0.4, paddingTop: 16 }}>
+              <div style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 13, opacity: 0.4, paddingTop: 16 }}>
                 No logo files or colors added yet.
               </div>
             )}
@@ -177,14 +177,14 @@ export default async function LibraryPage() {
                       borderTop: i === 0 ? "0.5px solid rgba(15,15,14,0.08)" : "none",
                     }}>
                       <div style={{
-                        fontFamily: "'PP Writer', Georgia, serif",
+                        fontFamily: "'Söhne', 'Inter', system-ui, sans-serif",
                         fontSize: 22, color: "#0F0F0E", opacity: 0.82,
                       }}>
                         Aa
                       </div>
                       <div style={{ textAlign: "right" }}>
                         <div style={{
-                          fontFamily: "'PP Writer', Georgia, serif",
+                          fontFamily: "'Söhne', 'Inter', system-ui, sans-serif",
                           fontSize: 13, color: "#0F0F0E", opacity: 0.72, marginBottom: 3,
                         }}>
                           {tf.name} — {tf.weight}
@@ -226,7 +226,7 @@ export default async function LibraryPage() {
             )}
 
             {typefaces.length === 0 && allFiles.length === 0 && (
-              <div style={{ fontFamily: "'PP Writer', Georgia, serif", fontSize: 13, opacity: 0.4, paddingTop: 16 }}>
+              <div style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 13, opacity: 0.4, paddingTop: 16 }}>
                 No files added yet.
               </div>
             )}
@@ -313,7 +313,7 @@ function FileRow({ asset }: { asset: any }) {
         </div>
         <div>
           <div style={{
-            fontFamily: "'PP Writer', Georgia, serif",
+            fontFamily: "'Söhne', 'Inter', system-ui, sans-serif",
             fontSize: 13, color: "#0F0F0E", opacity: 0.8, marginBottom: 3,
           }}>
             {asset.name}
@@ -348,14 +348,14 @@ function LockedState() {
         Brand library
       </div>
       <div style={{
-        fontFamily: "'PP Writer', Georgia, serif",
+        fontFamily: "'Söhne', 'Inter', system-ui, sans-serif",
         fontWeight: 400, fontSize: 20, opacity: 0.72,
         marginBottom: 14, letterSpacing: "-0.01em",
       }}>
         Your files are almost ready.
       </div>
       <div style={{
-        fontFamily: "'PP Writer', Georgia, serif",
+        fontFamily: "'Söhne', 'Inter', system-ui, sans-serif",
         fontSize: 13, opacity: 0.55, lineHeight: 1.8,
       }}>
         Your brand library will unlock automatically once the final invoice is paid. All logo files, brand guidelines, color values, and source files will be available here.

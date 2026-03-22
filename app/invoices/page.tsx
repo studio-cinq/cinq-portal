@@ -90,7 +90,7 @@ export default async function InvoicesPage() {
             {totalDue > 0 && <SummaryRow label="Due now" value={`$${(totalDue / 100).toLocaleString()}`} color="#B07D3A" />}
             <div style={{ display: "flex", justifyContent: "space-between", padding: "14px 0 0" }}>
               <span style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.32 }}>Total</span>
-              <span style={{ fontFamily: "'PP Writer', Georgia, serif", fontWeight: 400, fontSize: 20, letterSpacing: "-0.02em", opacity: 0.9 }}>
+              <span style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontWeight: 400, fontSize: 20, letterSpacing: "-0.02em", opacity: 0.9 }}>
                 ${(totalContract / 100).toLocaleString()}
               </span>
             </div>
@@ -155,7 +155,7 @@ function InvoiceCard({ inv, variant }: { inv: any; variant: "paid" | "due" | "lo
           </div>
         </div>
         <div style={{ textAlign: "right" }}>
-          <div style={{ fontFamily: "'PP Writer', Georgia, serif", fontWeight: 400, fontSize: 16, opacity: 0.9, }}>
+          <div style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontWeight: 400, fontSize: 16, opacity: 0.9, }}>
             {fmt(inv.amount)}
           </div>
           <StatusBadge variant={variant} dueDate={inv.due_date} />

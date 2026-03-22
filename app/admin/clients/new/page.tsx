@@ -9,7 +9,7 @@ const mono: React.CSSProperties = {
 }
 
 const serif: React.CSSProperties = {
-  fontFamily: "'PP Writer', 'Cormorant Garamond', Georgia, serif",
+  fontFamily: "'Söhne', 'Inter', system-ui, sans-serif",
 }
 
 const inputStyle: React.CSSProperties = {
@@ -19,7 +19,7 @@ const inputStyle: React.CSSProperties = {
   border: "none",
   borderBottom: "0.5px solid rgba(15,15,14,0.2)",
   padding: "10px 0",
-  fontFamily: "'PP Writer', Georgia, serif",
+  fontFamily: "'Söhne', 'Inter', system-ui, sans-serif",
   fontSize: 15,
   color: "#0F0F0E",
   outline: "none",

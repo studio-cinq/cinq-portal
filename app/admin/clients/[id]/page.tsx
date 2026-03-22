@@ -7,7 +7,7 @@ import PortalNav from "@/components/portal/Nav"
 import Link from "next/link"
 
 const mono: React.CSSProperties = { fontFamily: "'Matter SemiMono', 'DM Mono', monospace" }
-const serif: React.CSSProperties = { fontFamily: "'PP Writer', 'Cormorant Garamond', Georgia, serif" }
+const serif: React.CSSProperties = { fontFamily: "'Söhne', 'Inter', system-ui, sans-serif" }
 
 const TABS = ["Project", "Presentation", "Invoices", "Proposal"]
 

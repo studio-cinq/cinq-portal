@@ -60,7 +60,7 @@
   --sage:       #6B8F71;
   --amber:      #B07D3A;
   --bg-grad:    linear-gradient(160deg, #F4F1EC 0%, #E8E0D4 100%);
-  --font-serif: 'PP Writer', 'Cormorant Garamond', Georgia, serif;
+  --font-serif: 'Söhne', 'Inter', system-ui, sans-serif;
   --font-sans:  'Söhne', 'Inter', system-ui, sans-serif;
   --font-mono:  'Matter SemiMono', 'DM Mono', monospace;
   --nav-h:      64px;
