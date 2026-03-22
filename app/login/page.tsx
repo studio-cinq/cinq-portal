@@ -26,7 +26,7 @@ function LoginPageInner() {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     setLoading(false)
     if (error) { setError("Incorrect email or password. Please try again."); return }
-    window.location.href = "/dashboard"
+    window.location.href = email === "kacie@studiocinq.com" ? "/admin/studio" : "/dashboard"
   }
 
   async function handleReset(e: React.FormEvent) {
