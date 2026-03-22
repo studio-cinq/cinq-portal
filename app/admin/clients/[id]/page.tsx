@@ -556,6 +556,20 @@ const [inviteStatus, setInviteStatus]     = useState<"idle" | "sent">("idle")
             {client.notes && (
               <div style={{ ...serif, fontSize: 12, opacity: 0.45, lineHeight: 1.6, marginTop: 10 }}>{client.notes}</div>
             )}
+            <Link
+  href={`/library`}
+  target="_blank"
+  style={{
+    ...mono,
+    display: "inline-block",
+    marginTop: 14,
+    fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase",
+    color: "#0F0F0E", opacity: 0.45, textDecoration: "none",
+    border: "0.5px solid rgba(15,15,14,0.2)", padding: "7px 14px",
+  }}
+>
+  Preview brand library ↗
+</Link>
           </div>
 
           {/* Financials */}
