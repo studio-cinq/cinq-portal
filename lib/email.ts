@@ -26,25 +26,23 @@ function emailShell(body: string) {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    body  { margin: 0; padding: 0; background: #F6F4EF; font-family: Georgia, serif; }
-    .wrap { max-width: 520px; margin: 48px auto; background: #ffffff; border: 1px solid #E2DDD6; }
-    .head { padding: 32px 40px 24px; border-bottom: 1px solid #E2DDD6; }
-    .head p { margin: 0; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+    body  { margin: 0; padding: 0; background: #F0EBE3; font-family: Georgia, serif; }
+    .wrap { max-width: 520px; margin: 48px auto; background: #FAF8F5; border: 0.5px solid #DDD6CC; }
+    .head { padding: 32px 40px 24px; border-bottom: 0.5px solid #DDD6CC; }
+    .head p { margin: 0; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
               color: #9E9589; font-family: -apple-system, sans-serif; }
-    .head h1 { margin: 8px 0 0; font-size: 20px; font-weight: normal; color: #1C1916; }
     .body { padding: 28px 40px 32px; }
-    .body p { margin: 0 0 16px; font-size: 15px; line-height: 1.65; color: #3D3830; }
-    .meta  { background: #F6F4EF; border: 1px solid #E2DDD6; border-radius: 2px;
+    .body p { margin: 0 0 16px; font-size: 15px; line-height: 1.7; color: #2C2820; }
+    .meta  { background: #F0EBE3; border: 0.5px solid #DDD6CC;
              padding: 16px 20px; margin: 24px 0; }
-    .meta p { margin: 0 0 6px; font-size: 13px; font-family: -apple-system, sans-serif;
+    .meta p { margin: 0 0 7px; font-size: 13px; font-family: -apple-system, sans-serif;
               color: #6B6258; }
     .meta p:last-child { margin: 0; }
     .meta strong { color: #1C1916; font-weight: 600; }
-    .cta  { display: inline-block; margin-top: 8px; padding: 10px 22px;
-            background: #1C1916; color: #F6F4EF; font-family: -apple-system, sans-serif;
-            font-size: 13px; letter-spacing: 0.06em; text-decoration: none;
-            border-radius: 2px; }
-    .foot { padding: 16px 40px; border-top: 1px solid #E2DDD6; }
+    .cta  { display: inline-block; margin-top: 8px; padding: 12px 24px;
+            background: #1C1916; color: #FAF8F5; font-family: -apple-system, sans-serif;
+            font-size: 12px; letter-spacing: 0.08em; text-decoration: none; }
+    .foot { padding: 16px 40px; border-top: 0.5px solid #DDD6CC; }
     .foot p { margin: 0; font-size: 11px; font-family: -apple-system, sans-serif;
               color: #B0A89E; }
   </style>
@@ -52,16 +50,15 @@ function emailShell(body: string) {
 <body>
   <div class="wrap">
     <div class="head">
-      <p>Studio Cinq · Portal</p>
-      <h1>Studio Cinq</h1>
+      <p>Studio Cinq</p>
     </div>
     ${body}
     <div class="foot">
-      <p>You're receiving this because you're the Studio Cinq account owner.</p>
+      <p>Questions? Reply to this email or reach out to kacie@studiocinq.com</p>
     </div>
   </div>
 </body>
-</html>`;
+</html>`
 }
 
 // ─── Proposal viewed ──────────────────────────────────────────────────────────
