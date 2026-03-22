@@ -10,7 +10,7 @@ export default async function AdminStudioPage() {
   const { data: clientsRaw }  = await supabase.from("clients").select("*").order("created_at", { ascending: false })
   const clients = clientsRaw as any[] | null
 
-  const { data: projectsRaw } = await supabase.from("projects").select("*, clients(name), deliverables(*)").eq("status", "active")
+  const { data: projectsRaw } = await supabase.from("projects").select("*, clients(name), deliverables(*), client_id")
   const projects = projectsRaw as any[] | null
 
   const { data: invoicesRaw } = await supabase.from("invoices").select("*, clients(name)").in("status", ["sent", "overdue"]).order("due_date")
@@ -19,7 +19,7 @@ export default async function AdminStudioPage() {
   const { data: messagesRaw } = await supabase.from("messages").select("*, projects(title, clients(name))").eq("from_client", true).eq("read", false)
   const messages = messagesRaw as any[] | null
 
-  const activeCount    = projects?.length ?? 0
+  const activeCount = projects?.filter(p => p.status === "active").length ?? 0
   const attentionCount = (invoices?.length ?? 0) + (messages?.length ?? 0)
 
   const { data: paidInvoicesRaw } = await supabase
@@ -56,76 +56,76 @@ export default async function AdminStudioPage() {
           </div>
 
           {/* Clients table */}
-          <div style={sectionLabel}>All clients</div>
+<div style={sectionLabel}>All clients</div>
 
-          {/* Header row */}
-          <div style={{ display: "grid", gridTemplateColumns: "200px 1fr 140px 120px 60px", gap: 16, paddingBottom: 10, marginBottom: 2 }}>
-            {["Client", "Progress", "Status", "Outstanding", ""].map(h => (
-              <div key={h} style={{ fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase", color: "#0F0F0E", opacity: 0.45 }}>{h}</div>
-            ))}
+{/* Header row */}
+<div style={{ display: "grid", gridTemplateColumns: "200px 1fr 140px 120px 60px", gap: 16, paddingBottom: 10, marginBottom: 2 }}>
+  {["Client", "Projects", "Status", "Outstanding", ""].map(h => (
+    <div key={h} style={{ fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase", color: "#0F0F0E", opacity: 0.45 }}>{h}</div>
+  ))}
+</div>
+
+<div style={{ borderTop: "0.5px solid rgba(15,15,14,0.1)" }}>
+  {clients?.map(client => {
+    const clientProjects = projects?.filter(p => p.client_id === client.id) ?? []
+    const clientInvoices = invoices?.filter(i => i.client_id === client.id) ?? []
+    const clientDue = clientInvoices.reduce((s, i) => s + i.amount, 0)
+    const activeProjects = clientProjects.filter(p => p.status === "active")
+    
+    const hasReview = clientProjects.some(p => 
+      p.deliverables?.some((d: any) => d.status === "awaiting_approval")
+    )
+    const rowStatus = hasReview ? "awaiting_approval" 
+      : activeProjects.length > 0 ? "in_progress" 
+      : "complete"
+
+    return (
+      <Link
+        key={client.id}
+        href={`/admin/clients/${client.id}`}
+        style={{
+          display: "grid",
+          gridTemplateColumns: "200px 1fr 140px 120px 60px",
+          gap: 16, alignItems: "center",
+          padding: "16px 0", borderBottom: "0.5px solid rgba(15,15,14,0.1)",
+          textDecoration: "none",
+        }}
+      >
+        <div>
+          <div style={{ fontSize: 13, opacity: 0.9, letterSpacing: "-0.01em" }}>
+            {client.name}
           </div>
-
-          <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.1)" }}>
-            {projects?.map(project => {
-              const deliverables = (project as any).deliverables ?? []
-              const hasReview    = deliverables.some((d: any) => d.status === "awaiting_approval")
-              const allDone      = deliverables.every((d: any) => d.status === "complete")
-              const rowStatus    = hasReview ? "awaiting_approval" : allDone ? "complete" : "in_progress"
-
-              const pct = project.total_weeks && project.current_week
-                ? Math.round((project.current_week / project.total_weeks) * 100)
-                : 0
-
-              const clientInvoices = invoices?.filter(i => i.client_id === project.client_id) ?? []
-              const clientDue = clientInvoices.reduce((s, i) => s + i.amount, 0)
-
-              return (
-                <Link
-                  key={project.id}
-                  href={`/admin/clients/${project.client_id}`}
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "200px 1fr 140px 120px 60px",
-                    gap: 16, alignItems: "center",
-                    padding: "16px 0", borderBottom: "0.5px solid rgba(15,15,14,0.1)",
-                    textDecoration: "none",
-                  }}
-                >
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 300, opacity: 0.9, letterSpacing: "-0.01em" }}>
-                      {(project.clients as any)?.name}
-                    </div>
-                    <div style={{ fontSize: 9, opacity: 0.5, letterSpacing: "0.02em", marginTop: 2 }}>
-                      {project.scope}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 8, opacity: 0.5, marginBottom: 5 }}>
-                      <span>Week {project.current_week} of {project.total_weeks}</span>
-                      <span>{pct}%</span>
-                    </div>
-                    <div style={{ height: 1.5, background: "rgba(15,15,14,0.12)", borderRadius: 1 }}>
-                      <div style={{ height: 1.5, width: `${pct}%`, background: "#0F0F0E", opacity: 0.5, borderRadius: 1 }} />
-                    </div>
-                  </div>
-
-                  <StatusCell status={rowStatus} />
-
-                  <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: 12, opacity: clientDue > 0 ? 0.9 : 0.45, color: clientDue > 0 ? "#B07D3A" : "#0F0F0E", letterSpacing: "-0.01em" }}>
-                      {clientDue > 0 ? `$${(clientDue / 100).toLocaleString()}` : "—"}
-                    </div>
-                    {clientDue > 0 && <div style={{ fontSize: 8, opacity: 0.45, marginTop: 2, letterSpacing: "0.04em" }}>outstanding</div>}
-                  </div>
-
-                  <div style={{ textAlign: "right", fontSize: 11, opacity: 0.35 }}>&rarr;</div>
-                </Link>
-              )
-            })}
+          <div style={{ fontSize: 9, opacity: 0.45, marginTop: 2 }}>
+            {client.contact_name}
           </div>
-
         </div>
+
+        <div style={{ fontSize: 11, opacity: 0.55 }}>
+          {activeProjects.length > 0
+            ? <span style={{ color: "#6B8F71" }}>{activeProjects.length} active</span>
+            : <span style={{ opacity: 0.4 }}>—</span>
+          }
+          {clientProjects.length > 0 && (
+            <span style={{ opacity: 0.35, marginLeft: 6 }}>/ {clientProjects.length} total</span>
+          )}
+        </div>
+
+        {clientProjects.length > 0
+          ? <StatusCell status={rowStatus} />
+          : <div style={{ fontSize: 8, opacity: 0.3, letterSpacing: "0.08em", textTransform: "uppercase" }}>No projects</div>
+        }
+
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontSize: 12, opacity: clientDue > 0 ? 0.9 : 0.35, color: clientDue > 0 ? "#B07D3A" : "#0F0F0E" }}>
+            {clientDue > 0 ? `$${(clientDue / 100).toLocaleString()}` : "—"}
+          </div>
+        </div>
+
+        <div style={{ textAlign: "right", fontSize: 11, opacity: 0.35 }}>&rarr;</div>
+      </Link>
+    )
+  })}
+</div>
 
         {/* Right sidebar */}
         <div style={{ padding: "36px 28px" }}>
