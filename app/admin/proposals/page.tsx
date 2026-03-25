@@ -34,7 +34,7 @@ export default async function AdminProposalsPage() {
 
         {/* Header */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 160px 120px 100px 110px 80px 100px 60px", gap: 16, paddingBottom: 10, borderBottom: "0.5px solid rgba(15,15,14,0.12)" }}>
-          {["Pro{["Proposal", "Client", "Value", "Expires", "Viewed", "Status", "", ""].map(h => (posal", "Client", "Value", "Expires", "Viewed", "Status", ""].map(h => (
+        {["Proposal", "Client", "Value", "Expires", "Viewed", "Status", "", ""].map(h => (
             <div key={h} style={{ fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.45 }}>{h}</div>
           ))}
         </div>
