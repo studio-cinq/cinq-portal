@@ -33,7 +33,7 @@ export default async function InvoicesPage() {
     <>
       <PortalNav clientName={client?.name} />
 
-      <main lassName="layout-grid" style={{
+      <main className="layout-grid" style={{
         display: "grid",
         gridTemplateColumns: "1fr 300px",
         maxWidth: 1100,
