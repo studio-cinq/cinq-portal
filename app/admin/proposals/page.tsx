@@ -2,6 +2,7 @@ import { createServerComponentClient } from "@/lib/supabase-server"
 import Link from "next/link"
 import PortalNav from "@/components/portal/Nav"
 import CopyLinkButton from "@/components/portal/CopyLinkButton"
+import DeleteButton from "@/components/portal/DeleteButton"
 
 export default async function AdminProposalsPage() {
   const supabase = await createServerComponentClient()
@@ -32,8 +33,8 @@ export default async function AdminProposalsPage() {
         </div>
 
         {/* Header */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 160px 120px 100px 110px 80px 100px", gap: 16, paddingBottom: 10, borderBottom: "0.5px solid rgba(15,15,14,0.12)" }}>
-          {["Proposal", "Client", "Value", "Expires", "Viewed", "Status", ""].map(h => (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 160px 120px 100px 110px 80px 100px 60px", gap: 16, paddingBottom: 10, borderBottom: "0.5px solid rgba(15,15,14,0.12)" }}>
+          {["Pro{["Proposal", "Client", "Value", "Expires", "Viewed", "Status", "", ""].map(h => (posal", "Client", "Value", "Expires", "Viewed", "Status", ""].map(h => (
             <div key={h} style={{ fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.45 }}>{h}</div>
           ))}
         </div>
@@ -47,7 +48,7 @@ export default async function AdminProposalsPage() {
               key={proposal.id}
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 160px 120px 100px 110px 80px 100px",
+                gridTemplateColumns: "1fr 160px 120px 100px 110px 80px 100px 60px",
                 gap: 16, alignItems: "center",
                 padding: "16px 0",
                 borderBottom: "0.5px solid rgba(15,15,14,0.08)",
@@ -70,6 +71,7 @@ export default async function AdminProposalsPage() {
               </div>
               <ProposalStatus status={proposal.status} />
               <CopyLinkButton id={proposal.id} />
+              <DeleteButton endpoint="/api/admin/delete/proposal" id={proposal.id} confirm={`Delete "${proposal.title}"? This cannot be undone.`} />
             </div>
           )
         })}

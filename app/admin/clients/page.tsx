@@ -1,6 +1,7 @@
 import { createServerComponentClient } from "@/lib/supabase-server"
 import Link from "next/link"
 import PortalNav from "@/components/portal/Nav"
+import DeleteButton from "@/components/portal/DeleteButton"
 
 export default async function AdminClientsPage() {
   const supabase = await createServerComponentClient()
@@ -31,8 +32,8 @@ export default async function AdminClientsPage() {
         </div>
 
         {/* Header */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 160px 120px 80px", gap: 24, paddingBottom: 10, borderBottom: "0.5px solid rgba(15,15,14,0.12)" }}>
-          {["Client", "Contact", "Projects", ""].map(h => (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 160px 120px 80px 60px", gap: 24, paddingBottom: 10, borderBottom: "0.5px solid rgba(15,15,14,0.12)" }}>
+          {["Client", "Contact", "Projects", "", ""].map(h => (
             <div key={h} style={{ fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.45 }}>{h}</div>
           ))}
         </div>
@@ -47,7 +48,7 @@ export default async function AdminClientsPage() {
               href={`/admin/clients/${client.id}`}
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 160px 120px 80px",
+                gridTemplateColumns: "1fr 160px 120px 80px 60px",
                 gap: 24, alignItems: "center",
                 padding: "18px 0",
                 borderBottom: "0.5px solid rgba(15,15,14,0.08)",
@@ -81,6 +82,8 @@ export default async function AdminClientsPage() {
               </div>
 
               <div style={{ textAlign: "right", fontSize: 11, opacity: 0.3 }}>&rarr;</div>
+              <div style={{ textAlign: "right", fontSize: 11, opacity: 0.3 }}>&rarr;</div>
+<DeleteButton endpoint="/api/admin/delete/client" id={client.id} confirm={`Delete ${client.name}? This will also delete all their projects, invoices, and proposals. This cannot be undone.`} />
             </Link>
           )
         })}

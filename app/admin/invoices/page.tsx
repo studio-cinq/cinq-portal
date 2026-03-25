@@ -1,6 +1,7 @@
 import { createServerComponentClient } from "@/lib/supabase-server"
 import Link from "next/link"
 import PortalNav from "@/components/portal/Nav"
+import DeleteButton from "@/components/portal/DeleteButton"
 
 export default async function AdminInvoicesPage() {
   const supabase = await createServerComponentClient()
@@ -17,7 +18,7 @@ export default async function AdminInvoicesPage() {
   const totalDraft      = invoices?.filter(i => i.status === "draft").length ?? 0
 
   return (
-    <>
+    <>"1fr 140px 120px 100px 80px 60px"
       <PortalNav isAdmin />
       <main style={{ maxWidth: 1200, margin: "0 auto", padding: "40px 48px" }}>
 
@@ -42,8 +43,8 @@ export default async function AdminInvoicesPage() {
         </div>
 
         {/* Header */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 140px 120px 100px 80px", gap: 16, paddingBottom: 10, borderBottom: "0.5px solid rgba(15,15,14,0.12)" }}>
-          {["Invoice", "Client", "Amount", "Due", "Status"].map(h => (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 140px 120px 100px 80px 60px", gap: 16, paddingBottom: 10, borderBottom: "0.5px solid rgba(15,15,14,0.12)" }}>
+          {["Invoice", "Client", "Amount", "Due", "Status", ""].map(h => (
             <div key={h} style={{ fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.45 }}>{h}</div>
           ))}
         </div>
@@ -51,7 +52,7 @@ export default async function AdminInvoicesPage() {
         {invoices?.map(inv => (
           <div key={inv.id} style={{
             display: "grid",
-            gridTemplateColumns: "1fr 140px 120px 100px 80px",
+            gridTemplateColumns: "1fr 140px 120px 100px 80px 60px",
             gap: 16, alignItems: "center",
             padding: "16px 0",
             borderBottom: "0.5px solid rgba(15,15,14,0.08)",
@@ -66,6 +67,7 @@ export default async function AdminInvoicesPage() {
               {inv.due_date ? new Date(inv.due_date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
             </div>
             <InvoiceStatusBadge status={inv.status} />
+            <DeleteButton endpoint="/api/admin/delete/invoice" id={inv.id} confirm={`Delete invoice #${inv.invoice_number}? This cannot be undone.`} />
           </div>
         ))}
 
