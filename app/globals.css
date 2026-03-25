@@ -54,16 +54,37 @@
 
 /* -- Cinq Portal Design Tokens -- */
 :root {
+  /* Colors */
   --ink:        #0F0F0E;
   --cream:      #F4F1EC;
   --cream-dark: #E8E0D4;
   --sage:       #6B8F71;
   --amber:      #B07D3A;
+  --danger:     #c0392b;
   --bg-grad:    linear-gradient(160deg, #F4F1EC 0%, #E8E0D4 100%);
-  --font-serif: 'Söhne', 'Inter', system-ui, sans-serif;
+
+  /* Typography */
+  --font-serif: 'PP Writer', 'Cormorant Garamond', Georgia, serif;
   --font-sans:  'Söhne', 'Inter', system-ui, sans-serif;
   --font-mono:  'Matter SemiMono', 'DM Mono', monospace;
-  --nav-h:      64px;
+
+  /* Font sizes */
+  --text-eyebrow: 8px;    /* ALL CAPS labels, nav, tags */
+  --text-sm:      11px;   /* secondary info, metadata */
+  --text-body:    13px;   /* main body text */
+  --text-lg:      15px;   /* slightly larger body */
+  --text-title:   24px;   /* page titles */
+  --text-display: 30px;   /* hero/display text */
+
+  /* Opacity scale */
+  --op-full:   0.88;  /* primary text */
+  --op-body:   0.72;  /* body text */
+  --op-muted:  0.55;  /* secondary text */
+  --op-faint:  0.38;  /* labels, placeholders */
+  --op-ghost:  0.25;  /* very subtle */
+
+  /* Spacing */
+  --nav-h:      56px;
   --page-pad:   clamp(32px, 5vw, 48px);
 }
 
