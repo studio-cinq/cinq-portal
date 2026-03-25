@@ -23,10 +23,6 @@ const ADMIN_LINKS = [
   { href: "/admin/invoices",  label: "Invoices"  },
 ]
 
-const mono: React.CSSProperties = {
-  fontFamily: "'Matter SemiMono', 'DM Mono', monospace",
-}
-
 export default function PortalNav({ clientName, isAdmin }: NavProps) {
   const pathname  = usePathname()
   const links     = isAdmin ? ADMIN_LINKS : CLIENT_LINKS
@@ -44,7 +40,7 @@ export default function PortalNav({ clientName, isAdmin }: NavProps) {
         alignItems: "center",
         justifyContent: "space-between",
         padding: "0 24px",
-        height: 56,
+        height: "var(--nav-h)",
         borderBottom: "0.5px solid rgba(15,15,14,0.1)",
         background: "rgba(244,241,236,0.95)",
         backdropFilter: "blur(8px)",
@@ -53,7 +49,6 @@ export default function PortalNav({ clientName, isAdmin }: NavProps) {
         zIndex: 100,
         boxSizing: "border-box",
       }}>
-        {/* Logo */}
         <Link href={isAdmin ? "/admin/studio" : "/dashboard"} style={{ display: "flex" }}>
           <CinqLogo width={20} />
         </Link>
@@ -67,12 +62,12 @@ export default function PortalNav({ clientName, isAdmin }: NavProps) {
                 key={link.href}
                 href={link.href}
                 style={{
-                  ...mono,
-                  fontSize: 9,
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "var(--text-eyebrow)",
                   letterSpacing: "0.14em",
                   textTransform: "uppercase",
-                  color: "#0F0F0E",
-                  opacity: active ? 0.75 : 0.38,
+                  color: "var(--ink)",
+                  opacity: active ? 0.75 : "var(--op-faint)",
                   textDecoration: "none",
                   borderBottom: active ? "0.5px solid rgba(15,15,14,0.45)" : "0.5px solid transparent",
                   paddingBottom: 1,
@@ -89,19 +84,45 @@ export default function PortalNav({ clientName, isAdmin }: NavProps) {
         <div style={{ display: "flex", alignItems: "center", gap: 16 }} className="nav-right-desktop">
           {isAdmin && (
             <span style={{
-              ...mono, fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase",
-              color: "#0F0F0E", opacity: 0.35,
-              border: "0.5px solid rgba(15,15,14,0.15)", padding: "4px 10px",
+              fontFamily: "var(--font-mono)",
+              fontSize: "var(--text-eyebrow)",
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              color: "var(--ink)",
+              opacity: 0.35,
+              border: "0.5px solid rgba(15,15,14,0.15)",
+              padding: "4px 10px",
             }}>
               Studio admin
             </span>
           )}
           {clientName && (
-            <span style={{ ...mono, fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "#0F0F0E", opacity: 0.35 }}>
+            <span style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: "var(--text-eyebrow)",
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              color: "var(--ink)",
+              opacity: 0.35,
+            }}>
               {clientName}
             </span>
           )}
-          <button onClick={handleSignOut} style={{ ...mono, fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "#0F0F0E", opacity: 0.32, background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+          <button
+            onClick={handleSignOut}
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: "var(--text-eyebrow)",
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              color: "var(--ink)",
+              opacity: "var(--op-ghost)" as any,
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: 0,
+            }}
+          >
             Sign out
           </button>
         </div>
@@ -110,11 +131,19 @@ export default function PortalNav({ clientName, isAdmin }: NavProps) {
         <button
           className="nav-hamburger"
           onClick={() => setOpen(o => !o)}
-          style={{ display: "none", background: "none", border: "none", cursor: "pointer", padding: "4px", flexDirection: "column", gap: 5 }}
+          style={{
+            display: "none",
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: "4px",
+            flexDirection: "column",
+            gap: 5,
+          }}
         >
-          <span style={{ display: "block", width: 20, height: 0.5, background: "#0F0F0E", opacity: open ? 0 : 0.6, transition: "opacity 0.2s" }} />
-          <span style={{ display: "block", width: 20, height: 0.5, background: "#0F0F0E", opacity: 0.6 }} />
-          <span style={{ display: "block", width: 20, height: 0.5, background: "#0F0F0E", opacity: open ? 0 : 0.6, transition: "opacity 0.2s" }} />
+          <span style={{ display: "block", width: 20, height: 0.5, background: "var(--ink)", opacity: open ? 0 : 0.6, transition: "opacity 0.2s" }} />
+          <span style={{ display: "block", width: 20, height: 0.5, background: "var(--ink)", opacity: 0.6 }} />
+          <span style={{ display: "block", width: 20, height: 0.5, background: "var(--ink)", opacity: open ? 0 : 0.6, transition: "opacity 0.2s" }} />
         </button>
       </nav>
 
@@ -124,7 +153,7 @@ export default function PortalNav({ clientName, isAdmin }: NavProps) {
           className="nav-mobile-menu"
           style={{
             display: "none",
-            position: "fixed", top: 56, left: 0, right: 0, zIndex: 99,
+            position: "fixed", top: "var(--nav-h)", left: 0, right: 0, zIndex: 99,
             background: "rgba(244,241,236,0.98)",
             borderBottom: "0.5px solid rgba(15,15,14,0.1)",
             backdropFilter: "blur(8px)",
@@ -139,14 +168,14 @@ export default function PortalNav({ clientName, isAdmin }: NavProps) {
                 href={link.href}
                 onClick={() => setOpen(false)}
                 style={{
-                  ...mono,
+                  fontFamily: "var(--font-mono)",
                   display: "block",
                   padding: "14px 24px",
-                  fontSize: 11,
+                  fontSize: "var(--text-sm)",
                   letterSpacing: "0.14em",
                   textTransform: "uppercase",
-                  color: "#0F0F0E",
-                  opacity: active ? 0.88 : 0.4,
+                  color: "var(--ink)",
+                  opacity: active ? 0.88 : "var(--op-faint)" as any,
                   textDecoration: "none",
                   borderBottom: "0.5px solid rgba(15,15,14,0.06)",
                 }}
@@ -158,12 +187,19 @@ export default function PortalNav({ clientName, isAdmin }: NavProps) {
           <button
             onClick={handleSignOut}
             style={{
-              ...mono,
-              display: "block", width: "100%", textAlign: "left",
+              fontFamily: "var(--font-mono)",
+              display: "block",
+              width: "100%",
+              textAlign: "left",
               padding: "14px 24px",
-              fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase",
-              color: "#0F0F0E", opacity: 0.32,
-              background: "none", border: "none", cursor: "pointer",
+              fontSize: "var(--text-sm)",
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: "var(--ink)",
+              opacity: 0.32,
+              background: "none",
+              border: "none",
+              cursor: "pointer",
             }}
           >
             Sign out
