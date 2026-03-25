@@ -2,21 +2,17 @@
 
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
-import { useRouter } from "next/navigation"
 import PortalNav from "@/components/portal/Nav"
 import Link from "next/link"
-
-const mono: React.CSSProperties = { fontFamily: "'Matter SemiMono', 'DM Mono', monospace" }
-const serif: React.CSSProperties = { fontFamily: "'Söhne', 'Inter', system-ui, sans-serif" }
 
 const TABS = ["Project", "Presentation", "Invoices", "Proposal"]
 
 const statusColors: Record<string, string> = {
   not_started:       "rgba(15,15,14,0.3)",
-  in_progress:       "#B07D3A",
-  awaiting_approval: "#B07D3A",
-  approved:          "#6B8F71",
-  complete:          "#6B8F71",
+  in_progress:       "var(--amber)",
+  awaiting_approval: "var(--amber)",
+  approved:          "var(--sage)",
+  complete:          "var(--sage)",
 }
 const statusLabels: Record<string, string> = {
   not_started:       "Not started",
@@ -27,28 +23,27 @@ const statusLabels: Record<string, string> = {
 }
 
 export default function AdminClientWorkspacePage({ params }: { params: { id: string } }) {
-  const router = useRouter()
-  const [loading, setLoading]                   = useState(true)
-  const [client, setClient]                     = useState<any>(null)
-  const [projects, setProjects]                 = useState<any[]>([])
-  const [invoices, setInvoices]                 = useState<any[]>([])
-  const [messages, setMessages]                 = useState<any[]>([])
-  const [proposals, setProposals]               = useState<any[]>([])
-  const [decisionLog, setDecisionLog]           = useState<any[]>([])
-  const [slides, setSlides]                     = useState<any[]>([])
-  const [timeEntries, setTimeEntries]           = useState<any[]>([])
-  const [activeTab, setActiveTab]               = useState(0)
-  const [selectedProject, setSelectedProject]   = useState<any>(null)
-  const [timerRunning, setTimerRunning]         = useState(false)
-  const [timerStart, setTimerStart]             = useState<Date | null>(null)
-  const [timerSeconds, setTimerSeconds]         = useState(0)
-  const [timerNote, setTimerNote]               = useState("")
-  const [logInput, setLogInput]                 = useState("")
-  const [replyText, setReplyText]               = useState("")
-  const [replyProjectId, setReplyProjectId]     = useState<string>("")
-  const [sendingReply, setSendingReply]         = useState(false)
-  const [inviting, setInviting]                 = useState(false)
-  const [inviteStatus, setInviteStatus]         = useState<"idle" | "sent">("idle")
+  const [loading, setLoading]                 = useState(true)
+  const [client, setClient]                   = useState<any>(null)
+  const [projects, setProjects]               = useState<any[]>([])
+  const [invoices, setInvoices]               = useState<any[]>([])
+  const [messages, setMessages]               = useState<any[]>([])
+  const [proposals, setProposals]             = useState<any[]>([])
+  const [decisionLog, setDecisionLog]         = useState<any[]>([])
+  const [slides, setSlides]                   = useState<any[]>([])
+  const [timeEntries, setTimeEntries]         = useState<any[]>([])
+  const [activeTab, setActiveTab]             = useState(0)
+  const [selectedProject, setSelectedProject] = useState<any>(null)
+  const [timerRunning, setTimerRunning]       = useState(false)
+  const [timerStart, setTimerStart]           = useState<Date | null>(null)
+  const [timerSeconds, setTimerSeconds]       = useState(0)
+  const [timerNote, setTimerNote]             = useState("")
+  const [logInput, setLogInput]               = useState("")
+  const [replyText, setReplyText]             = useState("")
+  const [replyProjectId, setReplyProjectId]   = useState<string>("")
+  const [sendingReply, setSendingReply]       = useState(false)
+  const [inviting, setInviting]               = useState(false)
+  const [inviteStatus, setInviteStatus]       = useState<"idle" | "sent">("idle")
 
   useEffect(() => { loadAll() }, [params.id])
 
@@ -73,28 +68,24 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
     if (!c) { setLoading(false); return }
     setClient(c)
 
-    const { data: proj } = await supabase
-      .from("projects").select("*, deliverables(*)")
+    const { data: proj } = await supabase.from("projects").select("*, deliverables(*)")
       .eq("client_id", params.id).order("created_at", { ascending: false })
     const ps = proj ?? []
     setProjects(ps)
     if (ps.length > 0) setSelectedProject(ps[0])
 
-    const { data: inv } = await supabase
-      .from("invoices").select("*")
+    const { data: inv } = await supabase.from("invoices").select("*")
       .eq("client_id", params.id).order("created_at", { ascending: false })
     setInvoices(inv ?? [])
 
     const projectIds = ps.map((p: any) => p.id)
     if (projectIds.length > 0) {
-      const { data: msgs } = await supabase
-        .from("messages").select("*, projects(title)")
+      const { data: msgs } = await supabase.from("messages").select("*, projects(title)")
         .in("project_id", projectIds).order("created_at", { ascending: false }).limit(30)
       setMessages(msgs ?? [])
     }
 
-    const { data: props } = await supabase
-      .from("proposals").select("*, proposal_items(*)")
+    const { data: props } = await supabase.from("proposals").select("*, proposal_items(*)")
       .eq("client_id", params.id).order("created_at", { ascending: false })
     setProposals(props ?? [])
 
@@ -190,7 +181,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
     <>
       <PortalNav isAdmin />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
-        <div style={{ ...mono, fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.35 }}>Loading…</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.35 }}>Loading…</div>
       </div>
     </>
   )
@@ -199,7 +190,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
     <>
       <PortalNav isAdmin />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
-        <div style={{ ...serif, fontSize: 14, opacity: 0.5 }}>Client not found.</div>
+        <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.5 }}>Client not found.</div>
       </div>
     </>
   )
@@ -208,9 +199,9 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
   const outstanding = invoices.filter(i => ["sent","overdue"].includes(i.status)).reduce((s, i) => s + i.amount, 0)
   const onDelivery  = invoices.filter(i => i.status === "draft").reduce((s, i) => s + i.amount, 0)
   const contractVal = collected + outstanding + onDelivery
-  const deliverables = (selectedProject?.deliverables ?? []).sort((a: any, b: any) => a.sort_order - b.sort_order)
+  const deliverables  = (selectedProject?.deliverables ?? []).sort((a: any, b: any) => a.sort_order - b.sort_order)
   const latestProposal = proposals[0]
-  const totalMinutes = timeEntries.reduce((s, e) => s + (e.duration_minutes ?? 0), 0)
+  const totalMinutes   = timeEntries.reduce((s, e) => s + (e.duration_minutes ?? 0), 0)
 
   return (
     <>
@@ -218,26 +209,26 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
 
       {/* Client header */}
       <div style={{ borderBottom: "0.5px solid rgba(15,15,14,0.08)", background: "rgba(244,241,236,0.5)", padding: "20px 48px 0" }}>
-        <Link href="/admin/clients" style={{ ...mono, fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.35, textDecoration: "none", display: "inline-block", marginBottom: 12 }}>
+        <Link href="/admin/clients" style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.35, textDecoration: "none", display: "inline-block", marginBottom: 12 }}>
           ← Clients
         </Link>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 20 }}>
           <div>
-            <h1 style={{ fontSize: 24, fontWeight: 400, opacity: 0.9, letterSpacing: "-0.015em", marginBottom: 4 }}>{client.name}</h1>
-            <div style={{ ...mono, fontSize: 9, opacity: 0.45 }}>{client.contact_name} &nbsp;·&nbsp; {client.contact_email}</div>
+            <h1 style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-title)", opacity: "var(--op-full)" as any, letterSpacing: "-0.015em", marginBottom: 4 }}>{client.name}</h1>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: "var(--op-muted)" as any }}>{client.contact_name} &nbsp;·&nbsp; {client.contact_email}</div>
           </div>
           <div style={{ display: "flex", gap: 8, paddingBottom: 20 }}>
             <Link href={`/admin/projects/new?client=${params.id}`} style={actionBtn}>+ Project</Link>
-            <button onClick={inviteClient} disabled={inviting} style={{ ...actionBtn, opacity: inviting ? 0.4 : 0.6, cursor: inviting ? "default" : "pointer", border: "0.5px solid rgba(15,15,14,0.2)", background: "transparent", color: "#0F0F0E" }}>
+            <button onClick={inviteClient} disabled={inviting} style={{ ...actionBtn, opacity: inviting ? 0.4 : 0.6, cursor: inviting ? "default" : "pointer", border: "0.5px solid rgba(15,15,14,0.2)", background: "transparent", color: "var(--ink)" }}>
               {inviting ? "Sending…" : inviteStatus === "sent" ? "Invite sent ✓" : "Invite to portal"}
             </button>
             <Link href={`/admin/invoices/new?client=${params.id}`} style={actionBtn}>+ Invoice</Link>
-            <Link href={`/admin/proposals/new?client=${params.id}`} style={{ ...actionBtn, background: "#0F0F0E", color: "#F4F1EC", opacity: 1 }}>+ Proposal</Link>
+            <Link href={`/admin/proposals/new?client=${params.id}`} style={{ ...actionBtn, background: "var(--ink)", color: "var(--cream)", opacity: 1 }}>+ Proposal</Link>
           </div>
         </div>
         <div style={{ display: "flex" }}>
           {TABS.map((tab, i) => (
-            <button key={tab} onClick={() => setActiveTab(i)} style={{ ...mono, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", padding: "10px 20px", background: "transparent", border: "none", borderBottom: activeTab === i ? "1.5px solid #0F0F0E" : "1.5px solid transparent", cursor: "pointer", opacity: activeTab === i ? 0.88 : 0.5, color: "#0F0F0E" }}>
+            <button key={tab} onClick={() => setActiveTab(i)} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.14em", textTransform: "uppercase", padding: "10px 20px", background: "transparent", border: "none", borderBottom: activeTab === i ? "1.5px solid var(--ink)" : "1.5px solid transparent", cursor: "pointer", opacity: activeTab === i ? 0.88 : 0.5, color: "var(--ink)" }}>
               {tab}
             </button>
           ))}
@@ -252,7 +243,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
 
           {projects.length > 1 && (
             <div style={{ marginBottom: 24 }}>
-              <select value={selectedProject?.id ?? ""} onChange={e => setSelectedProject(projects.find(p => p.id === e.target.value))} style={{ ...mono, fontSize: 9, background: "transparent", border: "0.5px solid rgba(15,15,14,0.15)", padding: "7px 12px", color: "#0F0F0E", outline: "none", cursor: "pointer" }}>
+              <select value={selectedProject?.id ?? ""} onChange={e => setSelectedProject(projects.find(p => p.id === e.target.value))} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", background: "transparent", border: "0.5px solid rgba(15,15,14,0.15)", padding: "7px 12px", color: "var(--ink)", outline: "none", cursor: "pointer" }}>
                 {projects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
               </select>
             </div>
@@ -262,26 +253,25 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
           {activeTab === 0 && (
             <div>
               {!selectedProject ? (
-                <div style={{ ...serif, fontSize: 13, opacity: 0.4, paddingTop: 32 }}>
+                <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.4, paddingTop: 32 }}>
                   No projects yet. <Link href={`/admin/projects/new?client=${params.id}`} style={{ opacity: 0.6 }}>Create one →</Link>
                 </div>
               ) : (
                 <>
-                  {/* Project info */}
                   <div style={{ marginBottom: 32 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
-                      <div style={{ fontSize: 18, opacity: 0.88, letterSpacing: "-0.01em" }}>{selectedProject.title}</div>
+                      <div style={{ fontFamily: "var(--font-sans)", fontSize: 18, opacity: "var(--op-full)" as any, letterSpacing: "-0.01em" }}>{selectedProject.title}</div>
                       <ProjectStatusBadge status={selectedProject.status} />
                     </div>
-                    {selectedProject.scope && <div style={{ ...serif, fontSize: 13, opacity: 0.5, lineHeight: 1.6 }}>{selectedProject.scope}</div>}
+                    {selectedProject.scope && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-muted)" as any, lineHeight: 1.6 }}>{selectedProject.scope}</div>}
                     {selectedProject.total_weeks && (
                       <div style={{ marginTop: 12 }}>
                         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-                          <span style={{ ...mono, fontSize: 8, opacity: 0.4 }}>Week {selectedProject.current_week ?? 0} of {selectedProject.total_weeks}</span>
-                          <span style={{ ...mono, fontSize: 8, opacity: 0.4 }}>{Math.round(((selectedProject.current_week ?? 0) / selectedProject.total_weeks) * 100)}%</span>
+                          <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.4 }}>Week {selectedProject.current_week ?? 0} of {selectedProject.total_weeks}</span>
+                          <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.4 }}>{Math.round(((selectedProject.current_week ?? 0) / selectedProject.total_weeks) * 100)}%</span>
                         </div>
                         <div style={{ height: 1.5, background: "rgba(15,15,14,0.1)" }}>
-                          <div style={{ height: 1.5, width: `${Math.round(((selectedProject.current_week ?? 0) / selectedProject.total_weeks) * 100)}%`, background: "#0F0F0E", opacity: 0.4 }} />
+                          <div style={{ height: 1.5, width: `${Math.round(((selectedProject.current_week ?? 0) / selectedProject.total_weeks) * 100)}%`, background: "var(--ink)", opacity: 0.4 }} />
                         </div>
                       </div>
                     )}
@@ -297,26 +287,26 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                         supabase.from("deliverables").insert({ project_id: selectedProject.id, name: name.trim(), status: "not_started", sort_order: deliverables.length }).select().single().then(({ data }) => {
                           if (data) setProjects(ps => ps.map(p => p.id === selectedProject.id ? { ...p, deliverables: [...(p.deliverables ?? []), data] } : p))
                         })
-                      }} style={{ ...mono, fontSize: 7, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.45, background: "none", border: "0.5px solid rgba(15,15,14,0.2)", padding: "5px 10px", cursor: "pointer", color: "#0F0F0E" }}>
+                      }} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.45, background: "none", border: "0.5px solid rgba(15,15,14,0.2)", padding: "5px 10px", cursor: "pointer", color: "var(--ink)" }}>
                         + Add
                       </button>
                     </div>
                     {deliverables.length === 0 ? (
-                      <div style={{ ...serif, fontSize: 13, opacity: 0.35, padding: "16px 0" }}>No deliverables yet.</div>
+                      <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.35, padding: "16px 0" }}>No deliverables yet.</div>
                     ) : deliverables.map((del: any) => (
                       <div key={del.id} style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)", padding: "14px 0" }}>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
                           <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: 14, opacity: 0.85, marginBottom: 4 }}>{del.name}</div>
-                            {del.description && <div style={{ ...serif, fontSize: 12, opacity: 0.45, lineHeight: 1.6 }}>{del.description}</div>}
+                            <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-full)" as any, marginBottom: 4 }}>{del.name}</div>
+                            {del.description && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: "var(--op-muted)" as any, lineHeight: 1.6 }}>{del.description}</div>}
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
                             <div style={{ display: "flex", gap: 3 }}>
                               {Array.from({ length: del.revision_max ?? 3 }).map((_: any, i: number) => (
-                                <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: i < (del.revision_used ?? 0) ? "#0F0F0E" : "transparent", border: "0.5px solid rgba(15,15,14,0.3)", opacity: i < (del.revision_used ?? 0) ? 0.7 : 0.3 }} />
+                                <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: i < (del.revision_used ?? 0) ? "var(--ink)" : "transparent", border: "0.5px solid rgba(15,15,14,0.3)", opacity: i < (del.revision_used ?? 0) ? 0.7 : 0.3 }} />
                               ))}
                             </div>
-                            <select value={del.status} onChange={e => updateDeliverableStatus(del.id, e.target.value)} style={{ ...mono, fontSize: 8, letterSpacing: "0.08em", textTransform: "uppercase", background: "transparent", border: "0.5px solid rgba(15,15,14,0.15)", padding: "5px 8px", color: statusColors[del.status] ?? "#0F0F0E", outline: "none", cursor: "pointer" }}>
+                            <select value={del.status} onChange={e => updateDeliverableStatus(del.id, e.target.value)} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.08em", textTransform: "uppercase", background: "transparent", border: "0.5px solid rgba(15,15,14,0.15)", padding: "5px 8px", color: statusColors[del.status] ?? "var(--ink)", outline: "none", cursor: "pointer" }}>
                               {Object.entries(statusLabels).map(([val, label]) => <option key={val} value={val}>{label}</option>)}
                             </select>
                           </div>
@@ -330,50 +320,46 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                   <div style={{ marginBottom: 40 }}>
                     <SectionHeader label="Decision log" />
                     <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-                      <input value={logInput} onChange={e => setLogInput(e.target.value)} onKeyDown={e => e.key === "Enter" && addLogEntry()} placeholder="Log an approved direction, decision, or note…" style={{ flex: 1, ...serif, fontSize: 13, background: "rgba(255,255,255,0.4)", border: "0.5px solid rgba(15,15,14,0.12)", padding: "9px 12px", color: "#0F0F0E", outline: "none" }} />
-                      <button onClick={addLogEntry} style={{ ...mono, fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase", background: "#0F0F0E", color: "#F4F1EC", border: "none", padding: "0 16px", cursor: "pointer", whiteSpace: "nowrap" }}>Add</button>
+                      <input value={logInput} onChange={e => setLogInput(e.target.value)} onKeyDown={e => e.key === "Enter" && addLogEntry()} placeholder="Log an approved direction, decision, or note…" style={{ flex: 1, fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", background: "rgba(255,255,255,0.4)", border: "0.5px solid rgba(15,15,14,0.12)", padding: "9px 12px", color: "var(--ink)", outline: "none" }} />
+                      <button onClick={addLogEntry} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", background: "var(--ink)", color: "var(--cream)", border: "none", padding: "0 16px", cursor: "pointer", whiteSpace: "nowrap" }}>Add</button>
                     </div>
                     {decisionLog.map(entry => (
                       <div key={entry.id} style={{ display: "flex", gap: 16, padding: "10px 0", borderBottom: "0.5px solid rgba(15,15,14,0.06)" }}>
-                        <div style={{ ...mono, fontSize: 9, opacity: 0.4, minWidth: 52, paddingTop: 1 }}>{new Date(entry.logged_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
-                        <div style={{ ...serif, fontSize: 13, opacity: 0.65, lineHeight: 1.55, flex: 1 }}>{entry.entry}</div>
-                        <button onClick={() => deleteLogEntry(entry.id)} style={{ ...mono, fontSize: 9, opacity: 0.3, background: "none", border: "none", cursor: "pointer", color: "#0F0F0E", flexShrink: 0, paddingTop: 1 }}>×</button>
+                        <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.4, minWidth: 52, paddingTop: 1 }}>{new Date(entry.logged_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
+                        <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-muted)" as any, lineHeight: 1.55, flex: 1 }}>{entry.entry}</div>
+                        <button onClick={() => deleteLogEntry(entry.id)} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.3, background: "none", border: "none", cursor: "pointer", color: "var(--ink)", flexShrink: 0, paddingTop: 1 }}>×</button>
                       </div>
                     ))}
-                    {decisionLog.length === 0 && <div style={{ ...serif, fontSize: 13, opacity: 0.3, padding: "12px 0" }}>No decisions logged yet.</div>}
+                    {decisionLog.length === 0 && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.3, padding: "12px 0" }}>No decisions logged yet.</div>}
                   </div>
 
                   {/* Time tracking */}
                   <div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 }}>
                       <SectionHeader label="Time tracking" />
-                      {totalMinutes > 0 && (
-                        <div style={{ ...mono, fontSize: 8, opacity: 0.45 }}>Total: {formatMinutes(totalMinutes)}</div>
-                      )}
+                      {totalMinutes > 0 && <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: "var(--op-muted)" as any }}>Total: {formatMinutes(totalMinutes)}</div>}
                     </div>
-
                     <div style={{ border: "0.5px solid rgba(15,15,14,0.12)", padding: "16px 20px", background: timerRunning ? "rgba(107,143,113,0.06)" : "rgba(255,255,255,0.35)", marginBottom: 16, transition: "background 0.3s" }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: timerRunning ? 12 : 0 }}>
-                        <div style={{ ...mono, fontSize: timerRunning ? 22 : 13, opacity: timerRunning ? 0.9 : 0.45 }}>
+                        <div style={{ fontFamily: "var(--font-mono)", fontSize: timerRunning ? 22 : "var(--text-body)", opacity: timerRunning ? 0.9 : 0.45 }}>
                           {timerRunning ? formatDuration(timerSeconds) : "Ready to track"}
                         </div>
-                        <button onClick={timerRunning ? stopTimer : startTimer} style={{ ...mono, fontSize: 8, letterSpacing: "0.14em", textTransform: "uppercase", background: timerRunning ? "#c0392b" : "#0F0F0E", color: "#F4F1EC", border: "none", padding: "8px 16px", cursor: "pointer", transition: "background 0.2s" }}>
+                        <button onClick={timerRunning ? stopTimer : startTimer} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.14em", textTransform: "uppercase", background: timerRunning ? "var(--danger)" : "var(--ink)", color: "var(--cream)", border: "none", padding: "8px 16px", cursor: "pointer", transition: "background 0.2s" }}>
                           {timerRunning ? "Stop" : "Start timer"}
                         </button>
                       </div>
                       {timerRunning && (
-                        <input value={timerNote} onChange={e => setTimerNote(e.target.value)} placeholder="What are you working on? (optional)" style={{ width: "100%", boxSizing: "border-box", fontSize: 12, background: "transparent", border: "none", borderBottom: "0.5px solid rgba(15,15,14,0.15)", padding: "6px 0", color: "#0F0F0E", outline: "none" }} />
+                        <input value={timerNote} onChange={e => setTimerNote(e.target.value)} placeholder="What are you working on? (optional)" style={{ width: "100%", boxSizing: "border-box", fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", background: "transparent", border: "none", borderBottom: "0.5px solid rgba(15,15,14,0.15)", padding: "6px 0", color: "var(--ink)", outline: "none" }} />
                       )}
                     </div>
-
                     {timeEntries.map(entry => (
                       <div key={entry.id} style={{ display: "flex", gap: 16, padding: "10px 0", borderBottom: "0.5px solid rgba(15,15,14,0.06)", alignItems: "baseline" }}>
-                        <div style={{ ...mono, fontSize: 9, opacity: 0.3, minWidth: 52 }}>{new Date(entry.started_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
-                        <div style={{ ...mono, fontSize: 11, opacity: 0.7, minWidth: 48 }}>{formatMinutes(entry.duration_minutes ?? 0)}</div>
-                        <div style={{ ...serif, fontSize: 12, opacity: 0.55, flex: 1 }}>{entry.note ?? "—"}</div>
+                        <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.3, minWidth: 52 }}>{new Date(entry.started_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
+                        <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-sm)", opacity: 0.7, minWidth: 48 }}>{formatMinutes(entry.duration_minutes ?? 0)}</div>
+                        <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-muted)" as any, flex: 1 }}>{entry.note ?? "—"}</div>
                       </div>
                     ))}
-                    {timeEntries.length === 0 && <div style={{ ...serif, fontSize: 12, opacity: 0.3, padding: "8px 0" }}>No time logged yet.</div>}
+                    {timeEntries.length === 0 && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.3, padding: "8px 0" }}>No time logged yet.</div>}
                   </div>
                 </>
               )}
@@ -385,20 +371,20 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
             <div>
               <SectionHeader label={selectedProject ? `${selectedProject.title} — slides` : "Presentation"} />
               {slides.length === 0 ? (
-                <div style={{ ...serif, fontSize: 13, opacity: 0.4, padding: "16px 0" }}>No slides yet. Upload presentation files to get started.</div>
+                <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.4, padding: "16px 0" }}>No slides yet. Upload presentation files to get started.</div>
               ) : (
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
                   {slides.map((slide, i) => (
                     <div key={slide.id} style={{ position: "relative", border: "0.5px solid rgba(15,15,14,0.12)", background: "rgba(255,255,255,0.3)", aspectRatio: "4/3", overflow: "hidden" }}>
                       <img src={slide.image_url} alt={slide.caption ?? `Slide ${i + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                       <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(15,15,14,0.5)", padding: "6px 8px" }}>
-                        <div style={{ ...mono, fontSize: 7, color: "#F4F1EC", opacity: 0.7 }}>{slide.caption ?? `Slide ${i + 1}`}</div>
+                        <div style={{ fontFamily: "var(--font-mono)", fontSize: 7, color: "var(--cream)", opacity: 0.7 }}>{slide.caption ?? `Slide ${i + 1}`}</div>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
-              <div style={{ ...mono, fontSize: 8, opacity: 0.3, marginTop: 16, lineHeight: 1.7 }}>Slide upload coming soon. Client sees slides in this order on the review screen.</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.3, marginTop: 16, lineHeight: 1.7 }}>Slide upload coming soon.</div>
             </div>
           )}
 
@@ -407,23 +393,23 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
             <div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16 }}>
                 <SectionHeader label="Invoices" />
-                <Link href={`/admin/invoices/new?client=${params.id}`} style={{ ...mono, fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.5, textDecoration: "none" }}>+ New invoice</Link>
+                <Link href={`/admin/invoices/new?client=${params.id}`} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.5, textDecoration: "none" }}>+ New invoice</Link>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "80px 1fr 120px 100px", gap: 16, padding: "8px 0", borderBottom: "0.5px solid rgba(15,15,14,0.1)" }}>
-                {["#", "Description", "Amount", "Status"].map(h => <div key={h} style={{ ...mono, fontSize: 7, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.5 }}>{h}</div>)}
+                {["#", "Description", "Amount", "Status"].map(h => <div key={h} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.5 }}>{h}</div>)}
               </div>
               {invoices.map(inv => (
                 <div key={inv.id} style={{ display: "grid", gridTemplateColumns: "80px 1fr 120px 100px", gap: 16, padding: "14px 0", borderBottom: "0.5px solid rgba(15,15,14,0.07)", alignItems: "center" }}>
-                  <div style={{ ...mono, fontSize: 10, opacity: 0.4 }}>#{inv.invoice_number}</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.4 }}>#{inv.invoice_number}</div>
                   <div>
-                    <div style={{ fontSize: 13, opacity: 0.82 }}>{inv.description}</div>
-                    {inv.due_date && <div style={{ ...mono, fontSize: 9, opacity: 0.4, marginTop: 2 }}>Due {new Date(inv.due_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</div>}
+                    <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-full)" as any }}>{inv.description}</div>
+                    {inv.due_date && <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.4, marginTop: 2 }}>Due {new Date(inv.due_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</div>}
                   </div>
-                  <div style={{ ...mono, fontSize: 13, opacity: 0.75 }}>${(inv.amount / 100).toLocaleString()}</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-body)", opacity: "var(--op-body)" as any }}>${(inv.amount / 100).toLocaleString()}</div>
                   <InvStatusBadge status={inv.status} />
                 </div>
               ))}
-              {invoices.length === 0 && <div style={{ ...serif, fontSize: 13, opacity: 0.5, padding: "32px 0" }}>No invoices yet.</div>}
+              {invoices.length === 0 && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.5, padding: "32px 0" }}>No invoices yet.</div>}
             </div>
           )}
 
@@ -431,43 +417,42 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
           {activeTab === 3 && (
             <div>
               {!latestProposal ? (
-                <div style={{ ...serif, fontSize: 13, opacity: 0.4, paddingTop: 16 }}>
+                <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.4, paddingTop: 16 }}>
                   No proposals yet. <Link href={`/admin/proposals/new?client=${params.id}`} style={{ opacity: 0.6 }}>Create one →</Link>
                 </div>
               ) : (
                 <>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 20 }}>
                     <div>
-                      <div style={{ fontSize: 18, opacity: 0.88, letterSpacing: "-0.01em", marginBottom: 4 }}>{latestProposal.title}</div>
-                      <div style={{ ...mono, fontSize: 8, opacity: 0.4 }}>
+                      <div style={{ fontFamily: "var(--font-sans)", fontSize: 18, opacity: "var(--op-full)" as any, letterSpacing: "-0.01em", marginBottom: 4 }}>{latestProposal.title}</div>
+                      <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.4 }}>
                         Sent {new Date(latestProposal.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
                         {latestProposal.viewed_at && ` · Viewed ${new Date(latestProposal.viewed_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
                       </div>
                     </div>
-                    <Link href={`/admin/proposals/${latestProposal.id}`} style={{ ...mono, fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.5, textDecoration: "none", border: "0.5px solid rgba(15,15,14,0.2)", padding: "7px 14px" }}>View detail →</Link>
+                    <Link href={`/admin/proposals/${latestProposal.id}`} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.5, textDecoration: "none", border: "0.5px solid rgba(15,15,14,0.2)", padding: "7px 14px" }}>View detail →</Link>
                   </div>
                   <div style={{ background: "rgba(255,255,255,0.3)", border: "0.5px solid rgba(15,15,14,0.1)", padding: "20px 24px", marginBottom: 16 }}>
                     {(latestProposal.proposal_items ?? []).sort((a: any, b: any) => a.sort_order - b.sort_order).map((item: any) => (
                       <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "8px 0", borderBottom: "0.5px solid rgba(15,15,14,0.07)" }}>
                         <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-                          <span style={{ fontSize: 13, opacity: item.accepted ? 0.82 : 0.35 }}>{item.name}</span>
-                          {item.accepted && item.phase === "now" && <span style={{ ...mono, fontSize: 7, color: "#6B8F71" }}>accepted</span>}
-                          {item.accepted && item.phase === "later" && <span style={{ ...mono, fontSize: 7, color: "#B07D3A" }}>phase 2</span>}
-                          {!item.accepted && <span style={{ ...mono, fontSize: 7, opacity: 0.3 }}>declined</span>}
+                          <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: item.accepted ? "var(--op-full)" as any : 0.35 }}>{item.name}</span>
+                          {item.accepted && item.phase === "now"   && <span style={{ fontFamily: "var(--font-mono)", fontSize: 7, color: "var(--sage)" }}>accepted</span>}
+                          {item.accepted && item.phase === "later" && <span style={{ fontFamily: "var(--font-mono)", fontSize: 7, color: "var(--amber)" }}>phase 2</span>}
+                          {!item.accepted && <span style={{ fontFamily: "var(--font-mono)", fontSize: 7, opacity: 0.3 }}>declined</span>}
                         </div>
-                        <span style={{ ...mono, fontSize: 12, opacity: item.accepted ? 0.7 : 0.25 }}>${(item.price / 100).toLocaleString()}</span>
+                        <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-body)", opacity: item.accepted ? "var(--op-body)" as any : 0.25 }}>${(item.price / 100).toLocaleString()}</span>
                       </div>
                     ))}
                   </div>
-                  {latestProposal.client_note && <div style={{ fontSize: 13, opacity: 0.6, lineHeight: 1.7, fontStyle: "italic", padding: "12px 0" }}>"{latestProposal.client_note}"</div>}
-                  {latestProposal.stripe_session_id && <div style={{ ...mono, fontSize: 9, opacity: 0.35, marginTop: 8 }}>Stripe session: {latestProposal.stripe_session_id}</div>}
+                  {latestProposal.client_note && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-muted)" as any, lineHeight: 1.7, fontStyle: "italic", padding: "12px 0" }}>"{latestProposal.client_note}"</div>}
                   {proposals.length > 1 && (
                     <div style={{ marginTop: 32 }}>
                       <SectionHeader label="Previous proposals" />
                       {proposals.slice(1).map(p => (
                         <div key={p.id} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "0.5px solid rgba(15,15,14,0.07)" }}>
-                          <span style={{ fontSize: 13, opacity: 0.65 }}>{p.title}</span>
-                          <Link href={`/admin/proposals/${p.id}`} style={{ ...mono, fontSize: 8, opacity: 0.4, textDecoration: "none" }}>View →</Link>
+                          <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-muted)" as any }}>{p.title}</span>
+                          <Link href={`/admin/proposals/${p.id}`} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.4, textDecoration: "none" }}>View →</Link>
                         </div>
                       ))}
                     </div>
@@ -481,49 +466,49 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
         {/* Right sidebar */}
         <div style={{ padding: "32px 28px", borderLeft: "0.5px solid rgba(15,15,14,0.08)" }}>
           <div style={{ marginBottom: 28 }}>
-            <div style={{ ...mono, fontSize: 7, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.5, marginBottom: 12 }}>Client</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.5, marginBottom: 12 }}>Client</div>
             {[
-              { label: "Contact", value: client.contact_name },
-              { label: "Email", value: client.contact_email },
+              { label: "Contact",  value: client.contact_name },
+              { label: "Email",    value: client.contact_email },
               { label: "Projects", value: String(projects.length) },
             ].map(row => (
               <div key={row.label} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "0.5px solid rgba(15,15,14,0.06)" }}>
-                <span style={{ ...mono, fontSize: 9, opacity: 0.5 }}>{row.label}</span>
-                <span style={{ fontSize: 12, opacity: 0.7, textAlign: "right", maxWidth: 160, wordBreak: "break-all" }}>{row.value}</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: "var(--op-muted)" as any }}>{row.label}</span>
+                <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: "var(--op-body)" as any, textAlign: "right", maxWidth: 160, wordBreak: "break-all" }}>{row.value}</span>
               </div>
             ))}
-            {client.notes && <div style={{ fontSize: 12, opacity: 0.45, lineHeight: 1.6, marginTop: 10 }}>{client.notes}</div>}
-            <Link href="/library" target="_blank" style={{ ...mono, display: "inline-block", marginTop: 14, fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase", color: "#0F0F0E", opacity: 0.45, textDecoration: "none", border: "0.5px solid rgba(15,15,14,0.2)", padding: "7px 14px" }}>
+            {client.notes && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: "var(--op-muted)" as any, lineHeight: 1.6, marginTop: 10 }}>{client.notes}</div>}
+            <Link href="/library" target="_blank" style={{ fontFamily: "var(--font-mono)", display: "inline-block", marginTop: 14, fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--ink)", opacity: "var(--op-muted)" as any, textDecoration: "none", border: "0.5px solid rgba(15,15,14,0.2)", padding: "7px 14px" }}>
               Preview brand library ↗
             </Link>
           </div>
 
           <div style={{ marginBottom: 28 }}>
-            <div style={{ ...mono, fontSize: 7, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.5, marginBottom: 12 }}>Financials</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.5, marginBottom: 12 }}>Financials</div>
             {[
-              { label: "Contract value", value: `$${(contractVal / 100).toLocaleString()}`, color: undefined },
-              { label: "Collected", value: `$${(collected / 100).toLocaleString()}`, color: "#6B8F71" },
-              { label: "Outstanding", value: `$${(outstanding / 100).toLocaleString()}`, color: outstanding > 0 ? "#B07D3A" : undefined },
-              { label: "On delivery", value: `$${(onDelivery / 100).toLocaleString()}`, color: undefined },
+              { label: "Contract value", value: `$${(contractVal / 100).toLocaleString()}`,   color: undefined },
+              { label: "Collected",      value: `$${(collected / 100).toLocaleString()}`,     color: "var(--sage)" },
+              { label: "Outstanding",    value: `$${(outstanding / 100).toLocaleString()}`,   color: outstanding > 0 ? "var(--amber)" : undefined },
+              { label: "On delivery",    value: `$${(onDelivery / 100).toLocaleString()}`,    color: undefined },
             ].map(row => (
               <div key={row.label} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "0.5px solid rgba(15,15,14,0.06)" }}>
-                <span style={{ ...mono, fontSize: 9, opacity: 0.5 }}>{row.label}</span>
-                <span style={{ ...mono, fontSize: 12, color: row.color ?? "#0F0F0E", opacity: row.color ? 1 : 0.65 }}>{row.value}</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: "var(--op-muted)" as any }}>{row.label}</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-sm)", color: row.color ?? "var(--ink)", opacity: row.color ? 1 : "var(--op-body)" as any }}>{row.value}</span>
               </div>
             ))}
           </div>
 
           <div>
-            <div style={{ ...mono, fontSize: 7, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.5, marginBottom: 12 }}>Messages</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.5, marginBottom: 12 }}>Messages</div>
             {projects.length > 0 && (
               <div style={{ marginBottom: 16 }}>
                 {projects.length > 1 && (
-                  <select value={replyProjectId} onChange={e => setReplyProjectId(e.target.value)} style={{ ...mono, fontSize: 8, background: "transparent", border: "0.5px solid rgba(15,15,14,0.12)", padding: "5px 8px", color: "#0F0F0E", outline: "none", width: "100%", marginBottom: 6 }}>
+                  <select value={replyProjectId} onChange={e => setReplyProjectId(e.target.value)} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", background: "transparent", border: "0.5px solid rgba(15,15,14,0.12)", padding: "5px 8px", color: "var(--ink)", outline: "none", width: "100%", marginBottom: 6 }}>
                     {projects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
                   </select>
                 )}
-                <textarea value={replyText} onChange={e => setReplyText(e.target.value)} placeholder={`Reply to ${client.contact_name}…`} rows={3} style={{ width: "100%", boxSizing: "border-box", fontSize: 12, background: "rgba(255,255,255,0.4)", border: "0.5px solid rgba(15,15,14,0.12)", padding: "9px 12px", color: "#0F0F0E", resize: "none", outline: "none", marginBottom: 6, lineHeight: 1.5 }} />
-                <button onClick={sendReply} disabled={sendingReply || !replyText.trim()} style={{ width: "100%", ...mono, fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase", background: "transparent", border: "0.5px solid rgba(15,15,14,0.15)", padding: "9px", color: "#0F0F0E", opacity: sendingReply || !replyText.trim() ? 0.3 : 0.6, cursor: sendingReply || !replyText.trim() ? "default" : "pointer" }}>
+                <textarea value={replyText} onChange={e => setReplyText(e.target.value)} placeholder={`Reply to ${client.contact_name}…`} rows={3} style={{ width: "100%", boxSizing: "border-box", fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", background: "rgba(255,255,255,0.4)", border: "0.5px solid rgba(15,15,14,0.12)", padding: "9px 12px", color: "var(--ink)", resize: "none", outline: "none", marginBottom: 6, lineHeight: 1.5 }} />
+                <button onClick={sendReply} disabled={sendingReply || !replyText.trim()} style={{ width: "100%", fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", background: "transparent", border: "0.5px solid rgba(15,15,14,0.15)", padding: "9px", color: "var(--ink)", opacity: sendingReply || !replyText.trim() ? 0.3 : 0.6, cursor: sendingReply || !replyText.trim() ? "default" : "pointer" }}>
                   {sendingReply ? "Sending…" : "Send reply"}
                 </button>
               </div>
@@ -532,14 +517,14 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
               {messages.map(msg => (
                 <div key={msg.id} style={{ padding: "10px 0", borderBottom: "0.5px solid rgba(15,15,14,0.06)" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                    <span style={{ ...mono, fontSize: 8, opacity: 0.45, textTransform: "uppercase", letterSpacing: "0.08em" }}>{msg.from_client ? msg.sender_name : "Studio Cinq"}</span>
-                    <span style={{ ...mono, fontSize: 8, opacity: 0.25 }}>{new Date(msg.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: "var(--op-muted)" as any, textTransform: "uppercase", letterSpacing: "0.08em" }}>{msg.from_client ? msg.sender_name : "Studio Cinq"}</span>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: "var(--op-ghost)" as any }}>{new Date(msg.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
                   </div>
-                  {msg.projects?.title && <div style={{ ...mono, fontSize: 8, opacity: 0.35, marginBottom: 3 }}>{msg.projects.title}</div>}
-                  <div style={{ fontSize: 12, opacity: 0.7, lineHeight: 1.55 }}>{msg.body}</div>
+                  {msg.projects?.title && <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.35, marginBottom: 3 }}>{msg.projects.title}</div>}
+                  <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-body)" as any, lineHeight: 1.55 }}>{msg.body}</div>
                 </div>
               ))}
-              {messages.length === 0 && <div style={{ fontSize: 12, opacity: 0.3, paddingTop: 8 }}>No messages yet.</div>}
+              {messages.length === 0 && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.3, paddingTop: 8 }}>No messages yet.</div>}
             </div>
           </div>
         </div>
@@ -567,27 +552,27 @@ const formatMinutes = (minutes: number) => {
 
 function SectionHeader({ label }: { label: string }) {
   return (
-    <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 7, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.5, marginBottom: 14 }}>
+    <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.5, marginBottom: 14 }}>
       {label}
     </div>
   )
 }
 
 function ProjectStatusBadge({ status }: { status: string }) {
-  const colors: Record<string, string> = { active: "#6B8F71", complete: "rgba(15,15,14,0.4)", on_hold: "#B07D3A", proposal_sent: "#B07D3A" }
+  const colors: Record<string, string> = { active: "var(--sage)", complete: "rgba(15,15,14,0.4)", on_hold: "var(--amber)", proposal_sent: "var(--amber)" }
   const labels: Record<string, string> = { active: "Active", complete: "Complete", on_hold: "On hold", proposal_sent: "Proposal sent" }
-  return <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 7, letterSpacing: "0.1em", textTransform: "uppercase", color: colors[status] ?? "rgba(15,15,14,0.4)" }}>{labels[status] ?? status}</span>
+  return <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", color: colors[status] ?? "rgba(15,15,14,0.4)" }}>{labels[status] ?? status}</span>
 }
 
 function InvStatusBadge({ status }: { status: string }) {
-  const colors: Record<string, string> = { paid: "#6B8F71", sent: "#B07D3A", overdue: "#c0392b", draft: "rgba(15,15,14,0.35)" }
-  return <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 8, letterSpacing: "0.08em", textTransform: "uppercase", color: colors[status] ?? "rgba(15,15,14,0.4)" }}>{status}</span>
+  const colors: Record<string, string> = { paid: "var(--sage)", sent: "var(--amber)", overdue: "var(--danger)", draft: "rgba(15,15,14,0.35)" }
+  return <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.08em", textTransform: "uppercase", color: colors[status] ?? "rgba(15,15,14,0.4)" }}>{status}</span>
 }
 
 const actionBtn: React.CSSProperties = {
-  fontFamily: "'Matter SemiMono', monospace",
-  fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase",
-  color: "#0F0F0E", opacity: 0.6, textDecoration: "none",
+  fontFamily: "var(--font-mono)",
+  fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase",
+  color: "var(--ink)", opacity: 0.6, textDecoration: "none",
   border: "0.5px solid rgba(15,15,14,0.2)", padding: "8px 14px",
   display: "inline-block",
 }
