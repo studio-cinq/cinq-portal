@@ -141,3 +141,10 @@ body {
   .del-row-mobile     { flex-wrap: wrap; gap: 10px !important; }
   .del-actions-mobile { flex-wrap: wrap; gap: 8px !important; }
 }
+
+@media (max-width: 768px) {
+  .nav-links-desktop { display: none !important; }
+  .nav-right-desktop { display: none !important; }
+  .nav-hamburger     { display: flex !important; }
+  .nav-mobile-menu   { display: block !important; }
+}
