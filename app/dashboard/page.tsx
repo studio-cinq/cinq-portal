@@ -152,16 +152,17 @@ const invoices = invoicesRaw as any[] | null
 
             return (
               <Link
-                key={project.id}
-                href={`/projects/${project.id}`}
-                style={{
-                  display: "flex", alignItems: "baseline",
-                  justifyContent: "space-between",
-                  padding: "clamp(18px, 2.5vh, 28px) 0",
-                  borderBottom: "0.5px solid rgba(15,15,14,0.08)",
-                  textDecoration: "none",
-                  gap: 24,
-                }}
+              key={project.id}
+              href={`/projects/${project.id}`}
+              className="project-row"
+              style={{
+                display: "flex", alignItems: "baseline",
+                justifyContent: "space-between",
+                padding: "clamp(18px, 2.5vh, 28px) 0",
+                borderBottom: "0.5px solid rgba(15,15,14,0.08)",
+                textDecoration: "none",
+                gap: 24,
+              }}
               >
                 <div style={{ display: "flex", alignItems: "baseline", gap: 20, flex: 1, minWidth: 0 }}>
                   <span style={{ fontSize: 9, color: "#0F0F0E", opacity: 0.2, flexShrink: 0, letterSpacing: "0.08em" }}>
@@ -175,8 +176,8 @@ const invoices = invoicesRaw as any[] | null
                     {project.title}
                   </span>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 32, flexShrink: 0 }}>
-                  <span style={{ fontSize: 8, letterSpacing: "0.1em", textTransform: "uppercase", color: "#0F0F0E", opacity: 0.28 }}>
+                <div className="project-row-right" style={{ display: "flex", alignItems: "center", gap: 32, flexShrink: 0 }}>
+                  <span className="project-scope" style={{ fontSize: 8, letterSpacing: "0.1em", textTransform: "uppercase", color: "#0F0F0E", opacity: 0.28 }}>
                     {project.scope}
                   </span>
                   <StatusDot status={rowStatus} />

@@ -33,7 +33,7 @@ export default async function InvoicesPage() {
     <>
       <PortalNav clientName={client?.name} />
 
-      <main style={{
+      <main lassName="layout-grid" style={{
         display: "grid",
         gridTemplateColumns: "1fr 300px",
         maxWidth: 1100,
@@ -42,7 +42,7 @@ export default async function InvoicesPage() {
       }}>
 
         {/* Left */}
-        <div style={{ padding: "40px 40px 64px 48px", borderRight: "0.5px solid rgba(15,15,14,0.08)" }}>
+        <div className="layout-left" style={{ padding: "40px 40px 64px 48px", borderRight: "0.5px solid rgba(15,15,14,0.08)" }}>
 
           <div style={{ fontSize: 8, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.5, marginBottom: 8 }}>&bull; Invoices</div>
           <div style={{ fontWeight: 300, fontSize: 24, letterSpacing: "-0.01em", opacity: 0.88, marginBottom: 36 }}>
@@ -82,7 +82,7 @@ export default async function InvoicesPage() {
         </div>
 
         {/* Right sidebar */}
-        <div style={{ padding: "40px 28px" }}>
+        <div className="layout-sidebar" style={{ padding: "40px 28px" }}>
 
           <div style={sidebarLabel}>Payment summary</div>
           <div style={{ marginBottom: 28 }}>

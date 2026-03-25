@@ -124,3 +124,20 @@ body {
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(15,15,14,0.15); border-radius: 2px; }
+
+/* -- Responsive -- */
+@media (max-width: 768px) {
+  .layout-grid        { display: block !important; }
+  .layout-left        { padding: 32px 24px 48px !important; border-right: none !important; }
+  .layout-sidebar     { padding: 24px 20px 40px !important; border-top: 0.5px solid rgba(15,15,14,0.1); }
+  .hide-mobile        { display: none !important; }
+  .page-pad           { padding: 32px 24px !important; }
+  .hero-pad           { padding: 32px 24px 28px !important; flex-direction: column !important; align-items: flex-start !important; gap: 20px; }
+  .library-grid       { display: block !important; }
+  .logo-grid-mobile   { grid-template-columns: 1fr 1fr !important; }
+  .project-row        { flex-wrap: wrap; gap: 12px !important; }
+  .project-row-right  { gap: 12px !important; }
+  .project-scope      { display: none !important; }
+  .del-row-mobile     { flex-wrap: wrap; gap: 10px !important; }
+  .del-actions-mobile { flex-wrap: wrap; gap: 8px !important; }
+}

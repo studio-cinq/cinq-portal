@@ -72,7 +72,7 @@ export default async function LibraryPage() {
       <PortalNav clientName={client?.name} />
 
       {/* Hero */}
-      <div style={{
+      <div className="hero-pad" style={{
         background: "#1A1916",
         padding: "44px 48px 40px",
         display: "flex",
@@ -119,7 +119,7 @@ export default async function LibraryPage() {
       {!isUnlocked ? (
         <LockedState />
       ) : (
-        <main style={{
+        <main className="library-grid" style={{
           padding: "44px 48px 56px",
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
@@ -134,7 +134,7 @@ export default async function LibraryPage() {
             {logoAssets.length > 0 && (
               <>
                 <SectionLabel>Logo files</SectionLabel>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 40 }}>
+                <div className="logo-grid-mobile" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 40 }}>
                   {logoAssets.map((asset: any) => (
                     <AssetTile
                       key={asset.id}

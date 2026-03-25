@@ -67,7 +67,7 @@ export default async function ProjectPage({ params }: { params: { id: string } }
     <>
       <PortalNav clientName={client?.name} />
 
-      <main style={{
+      <main className="layout-grid" style={{
         display: "grid",
         gridTemplateColumns: "1fr 260px",
         maxWidth: 1100,
@@ -76,7 +76,7 @@ export default async function ProjectPage({ params }: { params: { id: string } }
       }}>
 
         {/* Left */}
-        <div style={{ padding: "40px 40px 64px 48px", borderRight: "0.5px solid rgba(15,15,14,0.08)" }}>
+        <div className="layout-left" style={{ padding: "40px 40px 64px 48px", borderRight: "0.5px solid rgba(15,15,14,0.08)" }}>
 
           <Link href="/dashboard" style={{
             fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase",
@@ -126,7 +126,7 @@ export default async function ProjectPage({ params }: { params: { id: string } }
                   <div style={{ fontWeight: 300, fontSize: 14, opacity: 0.82, letterSpacing: "-0.01em" }}>
                     {del.name}
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 20, flexShrink: 0 }}>
+                  <div className="del-actions-mobile" style={{ display: "flex", alignItems: "center", gap: 20, flexShrink: 0 }}>
                     {/* Revision dots */}
                     {del.revision_max > 0 && (
                       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
@@ -201,7 +201,7 @@ export default async function ProjectPage({ params }: { params: { id: string } }
         </div>
 
         {/* Right sidebar */}
-        <div style={{ padding: "40px 28px" }}>
+        <div className="layout-sidebar" style={{ padding: "40px 28px" }}>
 
           {/* Next step */}
           {needsReview && (
