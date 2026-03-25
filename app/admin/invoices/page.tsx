@@ -18,9 +18,9 @@ export default async function AdminInvoicesPage() {
   const totalDraft      = invoices?.filter(i => i.status === "draft").length ?? 0
 
   return (
-    <>"1fr 140px 120px 100px 80px 60px"
+    <>
       <PortalNav isAdmin />
-      <main style={{ maxWidth: 1200, margin: "0 auto", padding: "40px 48px" }}>
+      <main className="admin-page-pad" style={{ maxWidth: 1200, margin: "0 auto", padding: "40px 48px" }}>
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 36 }}>
           <div style={{ fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.5 }}>
@@ -43,14 +43,14 @@ export default async function AdminInvoicesPage() {
         </div>
 
         {/* Header */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 140px 120px 100px 80px 60px", gap: 16, paddingBottom: 10, borderBottom: "0.5px solid rgba(15,15,14,0.12)" }}>
+        <div className="admin-table-header" style={{ display: "grid", gridTemplateColumns: "1fr 140px 120px 100px 80px 60px", gap: 16, paddingBottom: 10, borderBottom: "0.5px solid rgba(15,15,14,0.12)" }}>
           {["Invoice", "Client", "Amount", "Due", "Status", ""].map(h => (
             <div key={h} style={{ fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.45 }}>{h}</div>
           ))}
         </div>
 
         {invoices?.map(inv => (
-          <div key={inv.id} style={{
+          <div className="admin-invoice-row" key={inv.id} style={{
             display: "grid",
             gridTemplateColumns: "1fr 140px 120px 100px 80px 60px",
             gap: 16, alignItems: "center",
@@ -61,7 +61,7 @@ export default async function AdminInvoicesPage() {
               <div style={{ fontSize: 13, fontWeight: 300, opacity: 0.88 }}>{inv.description}</div>
               <div style={{ fontSize: 9, opacity: 0.45, marginTop: 2 }}>#{inv.invoice_number}</div>
             </div>
-            <div style={{ fontSize: 11, opacity: 0.65 }}>{(inv.clients as any)?.name}</div>
+            <div className="admin-client-col-hide" style={{ fontSize: 11, opacity: 0.65 }}>{(inv.clients as any)?.name}</div>
             <div style={{ fontSize: 13, fontWeight: 300, opacity: 0.85 }}>${(inv.amount / 100).toLocaleString()}</div>
             <div style={{ fontSize: 10, opacity: 0.55 }}>
               {inv.due_date ? new Date(inv.due_date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}

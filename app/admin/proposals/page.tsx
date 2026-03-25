@@ -17,7 +17,7 @@ export default async function AdminProposalsPage() {
   return (
     <>
       <PortalNav isAdmin />
-      <main style={{ maxWidth: 1200, margin: "0 auto", padding: "40px 48px" }}>
+      <main className="admin-page-pad" style={{ maxWidth: 1200, margin: "0 auto", padding: "40px 48px" }}>
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 36 }}>
           <div style={{ fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.5 }}>
@@ -33,7 +33,7 @@ export default async function AdminProposalsPage() {
         </div>
 
         {/* Header */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 160px 120px 100px 110px 80px 100px 60px", gap: 16, paddingBottom: 10, borderBottom: "0.5px solid rgba(15,15,14,0.12)" }}>
+        <div className="admin-table-header" style={{ display: "grid", gridTemplateColumns: "1fr 160px 120px 100px 110px 80px 100px 60px", gap: 16, paddingBottom: 10, borderBottom: "0.5px solid rgba(15,15,14,0.12)" }}>
         {["Proposal", "Client", "Value", "Expires", "Viewed", "Status", "", ""].map(h => (
             <div key={h} style={{ fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.45 }}>{h}</div>
           ))}
@@ -46,6 +46,7 @@ export default async function AdminProposalsPage() {
           return (
             <div
               key={proposal.id}
+              className="admin-proposal-row"
               style={{
                 display: "grid",
                 gridTemplateColumns: "1fr 160px 120px 100px 110px 80px 100px 60px",

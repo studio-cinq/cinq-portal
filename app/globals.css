@@ -148,3 +148,15 @@ body {
   .nav-hamburger     { display: flex !important; }
   .nav-mobile-menu   { display: block !important; }
 }
+
+/* Admin pages */
+.admin-page-pad       { padding: 32px 20px !important; }
+.admin-stats-grid     { grid-template-columns: 1fr 1fr !important; }
+.admin-table-header   { display: none !important; }
+.admin-client-row     { grid-template-columns: 1fr auto !important; }
+.admin-client-col-hide { display: none !important; }
+.admin-invoice-row    { grid-template-columns: 1fr auto !important; }
+.admin-proposal-row   { grid-template-columns: 1fr auto !important; }
+.admin-studio-grid    { display: block !important; }
+.admin-studio-left    { border-right: none !important; padding: 24px 20px !important; }
+.admin-studio-right   { padding: 24px 20px !important; border-top: 0.5px solid rgba(15,15,14,0.1); }

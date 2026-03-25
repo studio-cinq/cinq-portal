@@ -36,7 +36,7 @@ export default async function AdminStudioPage() {
     <>
       <PortalNav isAdmin />
 
-      <main style={{
+      <main className="admin-studio-grid" style={{
         display: "grid",
         gridTemplateColumns: "1fr 280px",
         maxWidth: 1200,
@@ -45,10 +45,10 @@ export default async function AdminStudioPage() {
       }}>
 
         {/* Left */}
-        <div style={{ padding: "36px 36px 48px 40px", borderRight: "0.5px solid rgba(15,15,14,0.12)" }}>
+        <div className="admin-studio-left" style={{ padding: "36px 36px 48px 40px", borderRight: "0.5px solid rgba(15,15,14,0.12)" }}>
 
           {/* Stats */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 36 }}>
+          <div className="admin-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 36 }}>
             <StatCard value={String(clients?.length ?? 0)} label="Total clients" />
             <StatCard value={String(activeCount)} label="Active projects" />
             <StatCard value={String(attentionCount)} label="Need attention" highlight={attentionCount > 0} />
@@ -129,7 +129,7 @@ export default async function AdminStudioPage() {
 </div>
 
         {/* Right sidebar */}
-        <div style={{ padding: "36px 28px" }}>
+        <div className="admin-studio-right" style={{ padding: "36px 28px" }}>
 
           {/* Needs attention */}
           <div style={sidebarLabel}>Needs your attention</div>

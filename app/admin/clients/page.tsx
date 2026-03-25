@@ -16,7 +16,7 @@ export default async function AdminClientsPage() {
   return (
     <>
       <PortalNav isAdmin />
-      <main style={{ maxWidth: 1200, margin: "0 auto", padding: "40px 48px" }}>
+      <main className="admin-page-pad" style={{ maxWidth: 1200, margin: "0 auto", padding: "40px 48px" }}>
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 36 }}>
           <div style={{ fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.5 }}>
@@ -32,7 +32,7 @@ export default async function AdminClientsPage() {
         </div>
 
         {/* Header */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 160px 120px 80px 60px", gap: 24, paddingBottom: 10, borderBottom: "0.5px solid rgba(15,15,14,0.12)" }}>
+        <div className="admin-table-header" style={{ display: "grid", gridTemplateColumns: "1fr 160px 120px 80px 60px", gap: 24, paddingBottom: 10, borderBottom: "0.5px solid rgba(15,15,14,0.12)" }}>
           {["Client", "Contact", "Projects", "", ""].map(h => (
             <div key={h} style={{ fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.45 }}>{h}</div>
           ))}
@@ -44,17 +44,18 @@ export default async function AdminClientsPage() {
 
           return (
             <Link
-              key={client.id}
-              href={`/admin/clients/${client.id}`}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 160px 120px 80px 60px",
-                gap: 24, alignItems: "center",
-                padding: "18px 0",
-                borderBottom: "0.5px solid rgba(15,15,14,0.08)",
-                textDecoration: "none",
-              }}
-            >
+  key={client.id}
+  href={`/admin/clients/${client.id}`}
+  className="admin-client-row"
+  style={{
+    display: "grid",
+    gridTemplateColumns: "1fr 160px 120px 80px 60px",
+    gap: 24, alignItems: "center",
+    padding: "18px 0",
+    borderBottom: "0.5px solid rgba(15,15,14,0.08)",
+    textDecoration: "none",
+  }}
+>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 300, opacity: 0.88, letterSpacing: "-0.01em" }}>
                   {client.name}
@@ -66,12 +67,12 @@ export default async function AdminClientsPage() {
                 )}
               </div>
 
-              <div>
-                <div style={{ fontSize: 11, opacity: 0.75 }}>{client.contact_name}</div>
-                <div style={{ fontSize: 9, opacity: 0.45, marginTop: 2 }}>{client.contact_email}</div>
-              </div>
+              <div className="admin-client-col-hide">
+  <div style={{ fontSize: 11, opacity: 0.75 }}>{client.contact_name}</div>
+  <div style={{ fontSize: 9, opacity: 0.45, marginTop: 2 }}>{client.contact_email}</div>
+</div>
 
-              <div style={{ fontSize: 11, opacity: 0.65 }}>
+              <div className="admin-client-col-hide" style={{ fontSize: 11, opacity: 0.65 }}>
                 {activeProjects > 0
                   ? <span style={{ color: "#6B8F71" }}>{activeProjects} active</span>
                   : <span style={{ opacity: 0.4 }}>—</span>
@@ -81,7 +82,6 @@ export default async function AdminClientsPage() {
                 )}
               </div>
 
-              <div style={{ textAlign: "right", fontSize: 11, opacity: 0.3 }}>&rarr;</div>
               <div style={{ textAlign: "right", fontSize: 11, opacity: 0.3 }}>&rarr;</div>
 <DeleteButton endpoint="/api/admin/delete/client" id={client.id} confirm={`Delete ${client.name}? This will also delete all their projects, invoices, and proposals. This cannot be undone.`} />
             </Link>
