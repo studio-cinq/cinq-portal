@@ -127,3 +127,49 @@ export default function PortalNav({ clientName, isAdmin }: NavProps) {
             position: "fixed", top: 56, left: 0, right: 0, zIndex: 99,
             background: "rgba(244,241,236,0.98)",
             borderBottom: "0.5px solid rgba(15,15,14,0.1)",
+            backdropFilter: "blur(8px)",
+            padding: "12px 0 20px",
+          }}
+        >
+          {links.map(link => {
+            const active = pathname === link.href || pathname.startsWith(link.href + "/")
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setOpen(false)}
+                style={{
+                  ...mono,
+                  display: "block",
+                  padding: "14px 24px",
+                  fontSize: 11,
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  color: "#0F0F0E",
+                  opacity: active ? 0.88 : 0.4,
+                  textDecoration: "none",
+                  borderBottom: "0.5px solid rgba(15,15,14,0.06)",
+                }}
+              >
+                {link.label}
+              </Link>
+            )
+          })}
+          <button
+            onClick={handleSignOut}
+            style={{
+              ...mono,
+              display: "block", width: "100%", textAlign: "left",
+              padding: "14px 24px",
+              fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase",
+              color: "#0F0F0E", opacity: 0.32,
+              background: "none", border: "none", cursor: "pointer",
+            }}
+          >
+            Sign out
+          </button>
+        </div>
+      )}
+    </>
+  )
+}
