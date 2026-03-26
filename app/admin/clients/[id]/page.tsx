@@ -236,10 +236,10 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
       </div>
 
       {/* Main layout */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", minHeight: "calc(100vh - 180px)", maxWidth: 1400, margin: "0 auto" }}>
+      <div className="admin-studio-grid" style={{ display: "grid", gridTemplateColumns: "1fr 280px", minHeight: "calc(100vh - 180px)", maxWidth: 1400, margin: "0 auto" }}>
 
         {/* Left */}
-        <div style={{ padding: "32px 40px 60px", borderRight: "0.5px solid rgba(15,15,14,0.08)" }}>
+        <div className="admin-studio-left" style={{ padding: "32px 40px 60px", borderRight: "0.5px solid rgba(15,15,14,0.08)" }}>
 
           {projects.length > 1 && (
             <div style={{ marginBottom: 24 }}>
@@ -464,7 +464,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
         </div>
 
         {/* Right sidebar */}
-        <div style={{ padding: "32px 28px", borderLeft: "0.5px solid rgba(15,15,14,0.08)" }}>
+        <div className="admin-studio-right" style={{ padding: "32px 28px", borderLeft: "0.5px solid rgba(15,15,14,0.08)" }}>
           <div style={{ marginBottom: 28 }}>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.5, marginBottom: 12 }}>Client</div>
             {[
