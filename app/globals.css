@@ -58,8 +58,8 @@
   --ink:        #0F0F0E;
   --cream:      #F4F1EC;
   --cream-dark: #E8E0D4;
-  --sage:       #6B8F71;
-  --amber:      #B07D3A;
+  --sage:       #7A7F6A;
+  --amber:      #8A2E2A;
   --danger:     #c0392b;
   --bg-grad:    linear-gradient(160deg, #F4F1EC 0%, #E8E0D4 100%);
 
@@ -81,7 +81,7 @@
   --op-body:   0.72;  /* body text */
   --op-muted:  0.65;  /* secondary text */
   --op-faint:  0.50;  /* labels, placeholders */
-  --op-ghost:  0.35;  /* very subtle */
+  --op-ghost:  0.45;  /* very subtle */
 
   /* Spacing */
   --nav-h:      56px;
