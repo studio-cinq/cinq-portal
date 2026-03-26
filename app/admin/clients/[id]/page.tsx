@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
 import PortalNav from "@/components/portal/Nav"
 import MarkPaidButton from "@/components/portal/MarkPaidButton"
+import { useToast } from "@/components/portal/Toast"
 import Link from "next/link"
 
 const TABS = ["Project", "Presentation", "Invoices", "Proposal"]
@@ -45,6 +46,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
   const [sendingReply, setSendingReply]       = useState(false)
   const [inviting, setInviting]               = useState(false)
   const [inviteStatus, setInviteStatus]       = useState<"idle" | "sent">("idle")
+  const { show: showToast, ToastContainer }   = useToast()
 
   useEffect(() => { loadAll() }, [params.id])
 
@@ -117,6 +119,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
       ...p,
       deliverables: p.deliverables?.map((d: any) => d.id === deliverableId ? { ...d, status } : d)
     })))
+    showToast(`Status → ${statusLabels[status] ?? status}`)
   }
 
   async function addLogEntry() {
@@ -125,11 +128,13 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
       .insert({ project_id: selectedProject.id, entry: logInput.trim() }).select().single()
     if (data) setDecisionLog(prev => [data, ...prev])
     setLogInput("")
+    showToast("Decision logged")
   }
 
   async function deleteLogEntry(id: string) {
     await supabase.from("decision_log").delete().eq("id", id)
     setDecisionLog(prev => prev.filter(e => e.id !== id))
+    showToast("Entry removed", "info")
   }
 
   async function sendReply() {
@@ -142,6 +147,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
     if (data) setMessages(prev => [data, ...prev])
     setReplyText("")
     setSendingReply(false)
+    showToast("Reply sent")
   }
 
   async function inviteClient() {
@@ -151,13 +157,19 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
       body: JSON.stringify({ email: client.contact_email, clientName: client.contact_name }),
     })
     setInviting(false)
-    if (res.ok) setInviteStatus("sent")
+    if (res.ok) {
+      setInviteStatus("sent")
+      showToast("Invite email sent")
+    } else {
+      showToast("Invite failed — try again", "error")
+    }
   }
 
   async function startTimer() {
     setTimerStart(new Date())
     setTimerSeconds(0)
     setTimerRunning(true)
+    showToast("Timer started", "info")
   }
 
   async function stopTimer() {
@@ -176,6 +188,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
     setTimerStart(null)
     setTimerSeconds(0)
     setTimerNote("")
+    showToast(`Time logged — ${formatMinutes(durationMinutes)}`)
   }
 
   if (loading) return (
@@ -543,6 +556,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
           </div>
         </div>
       </div>
+      <ToastContainer />
     </>
   )
 }
