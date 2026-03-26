@@ -67,6 +67,18 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
 
           {/* Actions */}
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+            <Link
+              href={`/admin/proposals/${proposal.id}/edit`}
+              style={{
+                fontFamily: "'Matter SemiMono', monospace",
+                fontSize: 8, letterSpacing: "0.14em", textTransform: "uppercase",
+                color: "#0F0F0E", textDecoration: "none",
+                border: "0.5px solid rgba(15,15,14,0.2)", padding: "8px 14px",
+                opacity: 0.6,
+              }}
+            >
+              Edit
+            </Link>
             <CopyLinkButton id={proposal.id} />
             <Link
               href={`/proposals/${proposal.id}`}

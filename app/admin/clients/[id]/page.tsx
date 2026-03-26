@@ -218,6 +218,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
             <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: "var(--op-muted)" as any }}>{client.contact_name} &nbsp;·&nbsp; {client.contact_email}</div>
           </div>
           <div style={{ display: "flex", gap: 8, paddingBottom: 20 }}>
+            <Link href={`/admin/clients/${params.id}/edit`} style={actionBtn}>Edit</Link>
             <Link href={`/admin/projects/new?client=${params.id}`} style={actionBtn}>+ Project</Link>
             <button onClick={inviteClient} disabled={inviting} style={{ ...actionBtn, opacity: inviting ? 0.4 : 0.6, cursor: inviting ? "default" : "pointer", border: "0.5px solid rgba(15,15,14,0.2)", background: "transparent", color: "var(--ink)" }}>
               {inviting ? "Sending…" : inviteStatus === "sent" ? "Invite sent ✓" : "Invite to portal"}
@@ -395,11 +396,11 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                 <SectionHeader label="Invoices" />
                 <Link href={`/admin/invoices/new?client=${params.id}`} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.5, textDecoration: "none" }}>+ New invoice</Link>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "80px 1fr 120px 100px", gap: 16, padding: "8px 0", borderBottom: "0.5px solid rgba(15,15,14,0.1)" }}>
-                {["#", "Description", "Amount", "Status"].map(h => <div key={h} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.5 }}>{h}</div>)}
+              <div style={{ display: "grid", gridTemplateColumns: "80px 1fr 120px 100px 50px", gap: 16, padding: "8px 0", borderBottom: "0.5px solid rgba(15,15,14,0.1)" }}>
+                {["#", "Description", "Amount", "Status", ""].map(h => <div key={h} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.5 }}>{h}</div>)}
               </div>
               {invoices.map(inv => (
-                <div key={inv.id} style={{ display: "grid", gridTemplateColumns: "80px 1fr 120px 100px", gap: 16, padding: "14px 0", borderBottom: "0.5px solid rgba(15,15,14,0.07)", alignItems: "center" }}>
+                <div key={inv.id} style={{ display: "grid", gridTemplateColumns: "80px 1fr 120px 100px 50px", gap: 16, padding: "14px 0", borderBottom: "0.5px solid rgba(15,15,14,0.07)", alignItems: "center" }}>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.4 }}>#{inv.invoice_number}</div>
                   <div>
                     <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-full)" as any }}>{inv.description}</div>
@@ -407,6 +408,9 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                   </div>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-body)", opacity: "var(--op-body)" as any }}>${(inv.amount / 100).toLocaleString()}</div>
                   <InvStatusBadge status={inv.status} />
+                  <Link href={`/admin/invoices/${inv.id}/edit`} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.35, textDecoration: "none" }}>
+                    Edit
+                  </Link>
                 </div>
               ))}
               {invoices.length === 0 && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.5, padding: "32px 0" }}>No invoices yet.</div>}
