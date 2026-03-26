@@ -115,7 +115,7 @@ export default function NewProposalPage() {
   return (
     <>
       <PortalNav isAdmin />
-      <main style={{ maxWidth: 860, margin: "0 auto", padding: "40px 48px 80px" }}>
+      <main className="form-page-pad" style={{ maxWidth: 860, margin: "0 auto", padding: "40px 48px 80px" }}>
 
         <Link href="/admin/proposals" style={{ fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.4, textDecoration: "none", display: "inline-block", marginBottom: 28 }}>
           ← Proposals
@@ -134,7 +134,7 @@ export default function NewProposalPage() {
             </select>
           </Field>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 180px", gap: 16 }}>
+          <div className="form-grid-2col" style={{ display: "grid", gridTemplateColumns: "1fr 180px", gap: 16 }}>
             <Field label="Proposal title">
               <input type="text" value={form.title} onChange={e => setField("title", e.target.value)} placeholder="Brand Identity & Launch" style={inputStyle} />
             </Field>
@@ -180,7 +180,7 @@ export default function NewProposalPage() {
                 </div>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 160px", gap: 12 }}>
+                  <div className="form-grid-2col" style={{ display: "grid", gridTemplateColumns: "1fr 160px", gap: 12 }}>
                     <Field label="Name">
                       <input type="text" value={item.name} onChange={e => setItem(i, "name", e.target.value)} placeholder="Brand Identity" style={inputStyle} />
                     </Field>
@@ -199,7 +199,7 @@ export default function NewProposalPage() {
                     />
                   </Field>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+                  <div className="form-grid-3col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
                     <Field label="Timeline min (weeks)">
                       <input type="number" value={item.timeline_min} onChange={e => setItem(i, "timeline_min", e.target.value)} style={inputStyle} />
                     </Field>

@@ -128,7 +128,7 @@ export default function EditClientPage({ params }: { params: { id: string } }) {
   return (
     <>
       <PortalNav isAdmin />
-      <main style={{ maxWidth: 640, margin: "0 auto", padding: "48px 48px 80px" }}>
+      <main className="form-page-pad" style={{ maxWidth: 640, margin: "0 auto", padding: "48px 48px 80px" }}>
 
         {/* Header */}
         <Link href={`/admin/clients/${params.id}`} style={{ ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.35, textDecoration: "none", display: "inline-block", marginBottom: 28 }}>
@@ -156,7 +156,7 @@ export default function EditClientPage({ params }: { params: { id: string } }) {
             />
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
+          <div className="form-grid-2col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
             <div>
               <label style={labelStyle}>Contact name *</label>
               <input

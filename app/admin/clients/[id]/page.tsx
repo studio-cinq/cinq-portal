@@ -222,16 +222,16 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
       <PortalNav isAdmin />
 
       {/* Client header */}
-      <div style={{ borderBottom: "0.5px solid rgba(15,15,14,0.08)", background: "rgba(244,241,236,0.5)", padding: "20px 48px 0" }}>
+      <div className="client-header-pad" style={{ borderBottom: "0.5px solid rgba(15,15,14,0.08)", background: "rgba(244,241,236,0.5)", padding: "20px 48px 0" }}>
         <Link href="/admin/clients" style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.35, textDecoration: "none", display: "inline-block", marginBottom: 12 }}>
           ← Clients
         </Link>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 20 }}>
+        <div className="client-header-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 20 }}>
           <div>
             <h1 style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-title)", opacity: "var(--op-full)" as any, letterSpacing: "-0.015em", marginBottom: 4 }}>{client.name}</h1>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: "var(--op-muted)" as any }}>{client.contact_name} &nbsp;·&nbsp; {client.contact_email}</div>
           </div>
-          <div style={{ display: "flex", gap: 8, paddingBottom: 20 }}>
+          <div className="client-actions" style={{ display: "flex", gap: 8, paddingBottom: 20 }}>
             <Link href={`/admin/clients/${params.id}/edit`} style={actionBtn}>Edit</Link>
             <Link href={`/admin/projects/new?client=${params.id}`} style={actionBtn}>+ Project</Link>
             <button onClick={inviteClient} disabled={inviting} style={{ ...actionBtn, opacity: inviting ? 0.4 : 0.6, cursor: inviting ? "default" : "pointer", border: "0.5px solid rgba(15,15,14,0.2)", background: "transparent", color: "var(--ink)" }}>
@@ -241,7 +241,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
             <Link href={`/admin/proposals/new?client=${params.id}`} style={{ ...actionBtn, background: "var(--ink)", color: "var(--cream)", opacity: 1 }}>+ Proposal</Link>
           </div>
         </div>
-        <div style={{ display: "flex" }}>
+        <div className="client-tabs" style={{ display: "flex" }}>
           {TABS.map((tab, i) => (
             <button key={tab} onClick={() => setActiveTab(i)} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.14em", textTransform: "uppercase", padding: "10px 20px", background: "transparent", border: "none", borderBottom: activeTab === i ? "1.5px solid var(--ink)" : "1.5px solid transparent", cursor: "pointer", opacity: activeTab === i ? 0.88 : 0.5, color: "var(--ink)" }}>
               {tab}

@@ -88,7 +88,7 @@ export default function NewClientPage() {
   return (
     <>
       <PortalNav isAdmin />
-      <main style={{ maxWidth: 640, margin: "0 auto", padding: "48px 48px 80px" }}>
+      <main className="form-page-pad" style={{ maxWidth: 640, margin: "0 auto", padding: "48px 48px 80px" }}>
 
         {/* Header */}
         <div style={{ marginBottom: 48 }}>
@@ -113,7 +113,7 @@ export default function NewClientPage() {
             />
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
+          <div className="form-grid-2col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
             <div>
               <label style={labelStyle}>Contact name *</label>
               <input

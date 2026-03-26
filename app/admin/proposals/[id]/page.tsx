@@ -38,7 +38,7 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
   return (
     <>
       <PortalNav isAdmin />
-      <main style={{ maxWidth: 1000, margin: "0 auto", padding: "40px 48px 80px" }}>
+      <main className="form-page-pad" style={{ maxWidth: 1000, margin: "0 auto", padding: "40px 48px 80px" }}>
 
         {/* Back */}
         <Link href="/admin/proposals" style={{
@@ -97,7 +97,7 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
         </div>
 
         {/* Meta grid */}
-        <div style={{
+        <div className="admin-stats-grid" style={{
           display: "grid", gridTemplateColumns: "repeat(4, 1fr)",
           gap: 0, marginBottom: 48,
           border: "0.5px solid rgba(15,15,14,0.1)",
@@ -164,7 +164,7 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
           ))}
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: 48, alignItems: "start" }}>
+        <div className="layout-grid" style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: 48, alignItems: "start" }}>
 
           {/* Left — content */}
           <div>

@@ -161,25 +161,35 @@ body {
   .project-scope      { display: none !important; }
   .del-row-mobile     { flex-wrap: wrap; gap: 10px !important; }
   .del-actions-mobile { flex-wrap: wrap; gap: 8px !important; }
-}
 
-@media (max-width: 768px) {
+  /* Nav */
   .nav-links-desktop { display: none !important; }
   .nav-right-desktop { display: none !important; }
   .nav-hamburger     { display: flex !important; }
   .nav-mobile-menu   { display: block !important; }
-}
 
-/* Admin pages */
-.admin-studio-table-header { display: none !important; }
-.admin-studio-client-row   { grid-template-columns: 1fr auto !important; }
-.admin-page-pad       { padding: 32px 20px !important; }
-.admin-stats-grid     { grid-template-columns: 1fr 1fr !important; }
-.admin-table-header   { display: none !important; }
-.admin-client-row     { grid-template-columns: 1fr auto !important; }
-.admin-client-col-hide { display: none !important; }
-.admin-invoice-row    { grid-template-columns: 1fr auto !important; }
-.admin-proposal-row   { grid-template-columns: 1fr auto !important; }
-.admin-studio-grid    { display: block !important; }
-.admin-studio-left    { border-right: none !important; padding: 24px 20px !important; }
-.admin-studio-right   { padding: 24px 20px !important; border-top: 0.5px solid rgba(15,15,14,0.1); }
+  /* Admin pages */
+  .admin-studio-table-header { display: none !important; }
+  .admin-studio-client-row   { grid-template-columns: 1fr auto !important; }
+  .admin-page-pad       { padding: 32px 20px !important; }
+  .admin-stats-grid     { grid-template-columns: 1fr 1fr !important; }
+  .admin-table-header   { display: none !important; }
+  .admin-client-row     { grid-template-columns: 1fr auto !important; }
+  .admin-client-col-hide { display: none !important; }
+  .admin-invoice-row    { grid-template-columns: 1fr auto !important; }
+  .admin-proposal-row   { grid-template-columns: 1fr auto !important; }
+  .admin-studio-grid    { display: block !important; }
+  .admin-studio-left    { border-right: none !important; padding: 24px 20px !important; }
+  .admin-studio-right   { padding: 24px 20px !important; border-top: 0.5px solid rgba(15,15,14,0.1); }
+
+  /* Client workspace header */
+  .client-header-pad    { padding: 16px 20px 0 !important; }
+  .client-header-row    { flex-direction: column !important; align-items: flex-start !important; gap: 16px !important; }
+  .client-actions       { flex-wrap: wrap !important; gap: 6px !important; padding-bottom: 12px !important; }
+  .client-tabs          { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+
+  /* Form pages (new + edit) */
+  .form-page-pad        { padding: 32px 20px 60px !important; }
+  .form-grid-2col       { grid-template-columns: 1fr !important; }
+  .form-grid-3col       { grid-template-columns: 1fr !important; }
+}

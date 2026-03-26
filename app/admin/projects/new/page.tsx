@@ -90,7 +90,7 @@ function NewProjectPageInner() {
   return (
     <>
       <PortalNav isAdmin />
-      <main style={{ maxWidth: 640, margin: "0 auto", padding: "48px 48px 80px" }}>
+      <main className="form-page-pad" style={{ maxWidth: 640, margin: "0 auto", padding: "48px 48px 80px" }}>
 
         <Link href="/admin/studio" style={{ ...mono, fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.4, textDecoration: "none", display: "inline-block", marginBottom: 28 }}>
           ← Studio
@@ -159,7 +159,7 @@ function NewProjectPageInner() {
           </div>
 
           {/* Dates */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
+          <div className="form-grid-2col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
             <div>
               <label style={labelStyle}>Start date <span style={{ opacity: 0.5 }}>(optional)</span></label>
               <input
@@ -181,7 +181,7 @@ function NewProjectPageInner() {
           </div>
 
           {/* Timeline */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
+          <div className="form-grid-2col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
             <div>
               <label style={labelStyle}>Total weeks <span style={{ opacity: 0.5 }}>(optional)</span></label>
               <input
