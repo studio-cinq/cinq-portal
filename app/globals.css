@@ -69,7 +69,7 @@
   --font-mono:  'Matter SemiMono', 'DM Mono', monospace;
 
   /* Font sizes */
-  --text-eyebrow: 8px;    /* ALL CAPS labels, nav, tags */
+  --text-eyebrow: 9px;    /* ALL CAPS labels, nav, tags */
   --text-sm:      11px;   /* secondary info, metadata */
   --text-body:    13px;   /* main body text */
   --text-lg:      15px;   /* slightly larger body */
