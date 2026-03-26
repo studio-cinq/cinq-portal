@@ -377,7 +377,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
             {proposal.overview && (
               <div style={{ marginBottom: 52 }}>
                 <div style={{ ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.38, marginBottom: 18 }}>Overview</div>
-                <div style={{ ...serif, fontSize: "var(--text-body)", lineHeight: 1.85, opacity: 0.72, whiteSpace: "pre-wrap" }}>{proposal.overview}</div>
+                <div style={{ ...body, fontSize: "var(--text-body)", lineHeight: 1.85, opacity: 0.72, whiteSpace: "pre-wrap" }}>{proposal.overview}</div>
               </div>
             )}
 
@@ -403,7 +403,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
 
             {proposal.closing && (
               <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)", paddingTop: 40 }}>
-                <div style={{ ...serif, fontSize: "var(--text-body)", lineHeight: 1.85, opacity: 0.65, whiteSpace: "pre-wrap", marginBottom: 20 }}>{proposal.closing}</div>
+                <div style={{ ...body, fontSize: "var(--text-body)", lineHeight: 1.85, opacity: 0.65, whiteSpace: "pre-wrap", marginBottom: 20 }}>{proposal.closing}</div>
                 <div style={{ ...mono, fontSize: "var(--text-sm)", opacity: 0.4 }}>Kacie Yates · Studio Cinq</div>
               </div>
             )}
