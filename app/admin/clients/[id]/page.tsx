@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
 import PortalNav from "@/components/portal/Nav"
+import MarkPaidButton from "@/components/portal/MarkPaidButton"
 import Link from "next/link"
 
 const TABS = ["Project", "Presentation", "Invoices", "Proposal"]
@@ -396,11 +397,11 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                 <SectionHeader label="Invoices" />
                 <Link href={`/admin/invoices/new?client=${params.id}`} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.5, textDecoration: "none" }}>+ New invoice</Link>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "80px 1fr 120px 100px 50px", gap: 16, padding: "8px 0", borderBottom: "0.5px solid rgba(15,15,14,0.1)" }}>
-                {["#", "Description", "Amount", "Status", ""].map(h => <div key={h} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.5 }}>{h}</div>)}
+              <div style={{ display: "grid", gridTemplateColumns: "80px 1fr 120px 100px 80px 50px", gap: 16, padding: "8px 0", borderBottom: "0.5px solid rgba(15,15,14,0.1)" }}>
+                {["#", "Description", "Amount", "Status", "", ""].map((h, i) => <div key={`${h}-${i}`} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.5 }}>{h}</div>)}
               </div>
               {invoices.map(inv => (
-                <div key={inv.id} style={{ display: "grid", gridTemplateColumns: "80px 1fr 120px 100px 50px", gap: 16, padding: "14px 0", borderBottom: "0.5px solid rgba(15,15,14,0.07)", alignItems: "center" }}>
+                <div key={inv.id} style={{ display: "grid", gridTemplateColumns: "80px 1fr 120px 100px 80px 50px", gap: 16, padding: "14px 0", borderBottom: "0.5px solid rgba(15,15,14,0.07)", alignItems: "center" }}>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.4 }}>#{inv.invoice_number}</div>
                   <div>
                     <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-full)" as any }}>{inv.description}</div>
@@ -408,6 +409,15 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                   </div>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-body)", opacity: "var(--op-body)" as any }}>${(inv.amount / 100).toLocaleString()}</div>
                   <InvStatusBadge status={inv.status} />
+                  <div>
+                    {["sent", "overdue"].includes(inv.status) && (
+                      <MarkPaidButton
+                        invoiceId={inv.id}
+                        invoiceNumber={inv.invoice_number}
+                        onMarked={() => setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, status: "paid", paid_at: new Date().toISOString() } : i))}
+                      />
+                    )}
+                  </div>
                   <Link href={`/admin/invoices/${inv.id}/edit`} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.35, textDecoration: "none" }}>
                     Edit
                   </Link>
@@ -482,7 +492,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
               </div>
             ))}
             {client.notes && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: "var(--op-muted)" as any, lineHeight: 1.6, marginTop: 10 }}>{client.notes}</div>}
-            <Link href="/library" target="_blank" style={{ fontFamily: "var(--font-mono)", display: "inline-block", marginTop: 14, fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--ink)", opacity: "var(--op-muted)" as any, textDecoration: "none", border: "0.5px solid rgba(15,15,14,0.2)", padding: "7px 14px" }}>
+            <Link href={`/admin/library/${params.id}`} target="_blank" style={{ fontFamily: "var(--font-mono)", display: "inline-block", marginTop: 14, fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--ink)", opacity: "var(--op-muted)" as any, textDecoration: "none", border: "0.5px solid rgba(15,15,14,0.2)", padding: "7px 14px" }}>
               Preview brand library ↗
             </Link>
           </div>
