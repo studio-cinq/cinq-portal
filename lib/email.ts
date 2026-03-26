@@ -182,3 +182,77 @@ export async function sendInvoiceEmail(p: InvoiceSentPayload) {
     html,
   })
 }
+
+// ─── Proposal reminder — to client ────────────────────────────────────────────
+
+interface ProposalReminderPayload {
+  proposalId: string;
+  proposalTitle: string;
+  clientName: string;
+  contactName: string;
+  contactEmail: string;
+  dayMark: 14 | 28;
+  expiresAt?: string | null;
+}
+
+export async function sendProposalReminderToClient(p: ProposalReminderPayload) {
+  const proposalUrl = `${PORTAL_URL}/proposals/${p.proposalId}`;
+
+  const expiresLine = p.expiresAt
+    ? new Date(p.expiresAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+    : null;
+
+  const bodyText = p.dayMark === 14
+    ? `<p>Hi ${p.contactName} — just a gentle follow-up. Your proposal from Studio Cinq has been waiting for your review for about two weeks.</p>
+       <p>If you have questions or would like to talk through the scope, I'm always happy to hop on a quick call.</p>`
+    : `<p>Hi ${p.contactName} — circling back on your proposal from Studio Cinq. It's been about a month since we sent it over${expiresLine ? `, and it expires on ${expiresLine}` : ""}.</p>
+       <p>If the timing isn't right, no worries at all — just let me know and we can revisit when it makes sense.</p>`;
+
+  const html = emailShell(`
+    <div class="body">
+      ${bodyText}
+      <div class="meta">
+        <p><strong>Proposal</strong> &nbsp;${p.proposalTitle}</p>
+        ${expiresLine ? `<p><strong>Expires</strong> &nbsp;${expiresLine}</p>` : ""}
+      </div>
+      <a class="cta" href="${proposalUrl}" style="color:#FAF8F5;text-decoration:none;">View proposal →</a>
+    </div>
+  `);
+
+  return resend.emails.send({
+    from: "Studio Cinq <portal@studiocinq.com>",
+    to: p.contactEmail,
+    subject: p.dayMark === 14
+      ? `Following up — ${p.proposalTitle}`
+      : `Your proposal is waiting — ${p.proposalTitle}`,
+    html,
+  });
+}
+
+// ─── Proposal reminder — to admin (Kacie) ─────────────────────────────────────
+
+export async function sendProposalReminderToAdmin(p: ProposalReminderPayload) {
+  const proposalUrl = `${PORTAL_URL}/admin/proposals/${p.proposalId}`;
+
+  const html = emailShell(`
+    <div class="body">
+      <p>${p.contactName} at <strong>${p.clientName}</strong> hasn't responded to their proposal after ${p.dayMark} days.</p>
+      <div class="meta">
+        <p><strong>Proposal</strong> &nbsp;${p.proposalTitle}</p>
+        <p><strong>Client</strong> &nbsp;${p.clientName} (${p.contactName})</p>
+        <p><strong>Contact</strong> &nbsp;${p.contactEmail}</p>
+        <p><strong>Days since sent</strong> &nbsp;${p.dayMark}</p>
+        ${p.expiresAt ? `<p><strong>Expires</strong> &nbsp;${new Date(p.expiresAt).toLocaleDateString("en-US", { month: "long", day: "numeric" })}</p>` : ""}
+      </div>
+      <p>A reminder was also sent to the client. You may want to follow up personally.</p>
+      <a class="cta" href="${proposalUrl}" style="color:#FAF8F5;text-decoration:none;">View proposal →</a>
+    </div>
+  `);
+
+  return resend.emails.send({
+    from: "Studio Cinq Portal <portal@studiocinq.com>",
+    to: STUDIO_EMAIL,
+    subject: `Proposal reminder (${p.dayMark}d) — ${p.clientName}`,
+    html,
+  });
+}
