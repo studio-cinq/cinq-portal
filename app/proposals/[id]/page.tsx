@@ -12,6 +12,10 @@ const serif: React.CSSProperties = {
   fontFamily: "'PP Writer', 'Cormorant Garamond', Georgia, serif",
 }
 
+const body: React.CSSProperties = {
+  fontFamily: "var(--font-sans)",
+}
+
 export default function ProposalPage({ params }: { params: { id: string } }) {
   const [proposal, setProposal]     = useState<any>(null)
   const [items, setItems]           = useState<any[]>([])
@@ -138,7 +142,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
               {item.description && (
                 <div style={{ fontSize: "var(--text-body)", opacity: 0.55, lineHeight: 1.75, letterSpacing: "0.01em" }}>
                   {item.description.split(/\r?\n/).map((line: string, i: number) => (
-                    <div key={i} style={{ ...serif, display: "flex", gap: 8, marginBottom: line.trim() ? 4 : 0 }}>
+                    <div key={i} style={{ ...body, display: "flex", gap: 8, marginBottom: line.trim() ? 4 : 0 }}>
                       {line.trim().startsWith('—') || line.trim().startsWith('-') || line.trim().startsWith('•')
                         ? <><span style={{ opacity: 0.4, flexShrink: 0 }}>—</span><span>{line.replace(/^[\-—•]\s*/, '')}</span></>
                         : <span>{line}</span>
@@ -213,7 +217,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
           </div>
         ))}
         {items.every((_, i) => !checked[i]) && (
-          <div style={{ ...serif, fontSize: "var(--text-body)", opacity: 0.3, paddingTop: 8 }}>No items selected.</div>
+          <div style={{ ...body, fontSize: "var(--text-body)", opacity: 0.3, paddingTop: 8 }}>No items selected.</div>
         )}
       </div>
 
@@ -265,13 +269,13 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
       )}
 
       {isAccepted && (
-        <div style={{ ...serif, fontSize: "var(--text-body)", opacity: 0.6, lineHeight: 1.7 }}>
+        <div style={{ ...body, fontSize: "var(--text-body)", opacity: 0.6, lineHeight: 1.7 }}>
           Proposal accepted — thank you. We'll be in touch shortly.
         </div>
       )}
 
       {isExpired && (
-        <div style={{ ...serif, fontSize: "var(--text-body)", opacity: 0.5, lineHeight: 1.7 }}>
+        <div style={{ ...body, fontSize: "var(--text-body)", opacity: 0.5, lineHeight: 1.7 }}>
           This proposal has expired. Please reach out to request an updated version.
         </div>
       )}
@@ -323,7 +327,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
             {proposal.overview && (
               <div style={{ marginBottom: 44 }}>
                 <div style={{ ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.38, marginBottom: 14 }}>Overview</div>
-                <div style={{ ...serif, fontSize: "var(--text-body)", lineHeight: 1.85, opacity: 0.72, whiteSpace: "pre-wrap" }}>{proposal.overview}</div>
+                <div style={{ ...body, fontSize: "var(--text-body)", lineHeight: 1.85, opacity: 0.72, whiteSpace: "pre-wrap" }}>{proposal.overview}</div>
               </div>
             )}
 
@@ -349,7 +353,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
 
             {proposal.closing && (
               <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)", paddingTop: 36 }}>
-                <div style={{ ...serif, fontSize: "var(--text-body)", lineHeight: 1.85, opacity: 0.65, whiteSpace: "pre-wrap", marginBottom: 16 }}>{proposal.closing}</div>
+                <div style={{ ...body, fontSize: "var(--text-body)", lineHeight: 1.85, opacity: 0.65, whiteSpace: "pre-wrap", marginBottom: 16 }}>{proposal.closing}</div>
                 <div style={{ ...mono, fontSize: "var(--text-sm)", opacity: 0.4 }}>Kacie Yates · Studio Cinq</div>
               </div>
             )}
