@@ -171,6 +171,8 @@ body {
 }
 
 /* Admin pages */
+.admin-studio-table-header { display: none !important; }
+.admin-studio-client-row   { grid-template-columns: 1fr auto !important; }
 .admin-page-pad       { padding: 32px 20px !important; }
 .admin-stats-grid     { grid-template-columns: 1fr 1fr !important; }
 .admin-table-header   { display: none !important; }

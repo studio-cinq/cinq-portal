@@ -52,7 +52,7 @@ export default async function AdminStudioPage() {
           {/* Clients table */}
           <div style={sectionLabel}>All clients</div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "200px 1fr 140px 120px 60px", gap: 16, paddingBottom: 10, marginBottom: 2 }}>
+          <div className="admin-studio-table-header" style={{ display: "grid", gridTemplateColumns: "200px 1fr 140px 120px 60px", gap: 16, paddingBottom: 10, marginBottom: 2 }}>
             {["Client", "Projects", "Status", "Outstanding", ""].map(h => (
               <div key={h} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--ink)", opacity: 0.45 }}>{h}</div>
             ))}
@@ -71,6 +71,7 @@ export default async function AdminStudioPage() {
                 <Link
                   key={client.id}
                   href={`/admin/clients/${client.id}`}
+                  className="admin-studio-client-row"
                   style={{
                     display: "grid", gridTemplateColumns: "200px 1fr 140px 120px 60px",
                     gap: 16, alignItems: "center",
