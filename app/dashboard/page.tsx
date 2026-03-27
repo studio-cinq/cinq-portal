@@ -2,6 +2,7 @@ import { createServerComponentClient } from "@/lib/supabase-server"
 import Link from "next/link"
 import PortalNav from "@/components/portal/Nav"
 import UpcomingEvents from "@/components/portal/UpcomingEvents"
+import ActivityTracker from "@/components/portal/ActivityTracker"
 
 function StatusDot({ status }: { status: string }) {
   const colors: Record<string, string> = {
@@ -104,6 +105,7 @@ export default async function DashboardPage() {
   return (
     <>
       <PortalNav clientName={client?.name} />
+      <ActivityTracker />
 
       <main style={{
         padding: "clamp(40px, 8vh, 64px) clamp(24px, 5vw, 48px)",

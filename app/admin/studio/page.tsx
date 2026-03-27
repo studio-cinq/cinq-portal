@@ -85,6 +85,11 @@ export default async function AdminStudioPage() {
                     </div>
                     <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-eyebrow)", opacity: "var(--op-muted)" as any, marginTop: 2 }}>
                       {client.contact_name}
+                      {client.last_seen_at && (
+                        <span style={{ opacity: 0.5, marginLeft: 8 }}>
+                          · seen {new Date(client.last_seen_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                        </span>
+                      )}
                     </div>
                   </div>
 

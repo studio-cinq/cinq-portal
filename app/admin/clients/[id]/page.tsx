@@ -449,22 +449,82 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
           {/* ── Tab 1: Presentation ── */}
           {activeTab === 1 && (
             <div>
-              <SectionHeader label={selectedProject ? `${selectedProject.title} — slides` : "Presentation"} />
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16 }}>
+                <SectionHeader label={selectedProject ? `${selectedProject.title} — slides` : "Presentation"} />
+                {selectedProject && (
+                  <label style={{
+                    fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
+                    letterSpacing: "0.12em", textTransform: "uppercase",
+                    opacity: 0.6, cursor: "pointer",
+                    border: "0.5px solid rgba(15,15,14,0.2)", padding: "7px 14px",
+                  }}>
+                    + Upload slides
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      style={{ display: "none" }}
+                      onChange={async (e) => {
+                        const files = e.target.files
+                        if (!files || !selectedProject) return
+                        for (let i = 0; i < files.length; i++) {
+                          const file = files[i]
+                          const ext = file.name.split(".").pop() ?? "png"
+                          const path = `${selectedProject.id}/${Date.now()}-${i}.${ext}`
+                          const { error: uploadErr } = await supabase.storage.from("presentations").upload(path, file)
+                          if (uploadErr) { console.error("[upload]", uploadErr); continue }
+                          const { data: urlData } = supabase.storage.from("presentations").getPublicUrl(path)
+                          const imageUrl = urlData.publicUrl
+                          const { data: slide } = await supabase.from("presentation_slides").insert({
+                            project_id: selectedProject.id,
+                            image_url: imageUrl,
+                            caption: file.name.replace(/\.[^.]+$/, ""),
+                            sort_order: slides.length + i,
+                          }).select().single()
+                          if (slide) setSlides(prev => [...prev, slide])
+                        }
+                        showToast(`${files.length} slide${files.length > 1 ? "s" : ""} uploaded`)
+                        e.target.value = ""
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
+
               {slides.length === 0 ? (
-                <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.4, padding: "16px 0", lineHeight: 1.7 }}>No presentation slides yet — this is where design concepts and direction will live once uploaded.</div>
+                <div style={{
+                  border: "1px dashed rgba(15,15,14,0.12)", padding: "48px 24px",
+                  textAlign: "center", background: "rgba(255,255,255,0.2)",
+                }}>
+                  <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.4, marginBottom: 8, lineHeight: 1.7 }}>
+                    No presentation slides yet.
+                  </div>
+                  <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: 0.25, lineHeight: 1.7 }}>
+                    Upload images to build out the presentation for this project.
+                  </div>
+                </div>
               ) : (
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
                   {slides.map((slide, i) => (
                     <div key={slide.id} style={{ position: "relative", border: "0.5px solid rgba(15,15,14,0.12)", background: "rgba(255,255,255,0.3)", aspectRatio: "4/3", overflow: "hidden" }}>
                       <img src={slide.image_url} alt={slide.caption ?? `Slide ${i + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(15,15,14,0.5)", padding: "6px 8px" }}>
+                      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(15,15,14,0.5)", padding: "6px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <div style={{ fontFamily: "var(--font-mono)", fontSize: 7, color: "var(--cream)", opacity: 0.7 }}>{slide.caption ?? `Slide ${i + 1}`}</div>
+                        <button
+                          onClick={async () => {
+                            await supabase.from("presentation_slides").delete().eq("id", slide.id)
+                            setSlides(prev => prev.filter(s => s.id !== slide.id))
+                            showToast("Slide removed", "info")
+                          }}
+                          style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--cream)", opacity: 0.5, background: "none", border: "none", cursor: "pointer", padding: "0 2px" }}
+                        >
+                          ✕
+                        </button>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.3, marginTop: 16, lineHeight: 1.7 }}>Slide upload coming soon.</div>
             </div>
           )}
 
@@ -712,6 +772,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
               { label: "Contact",  value: client.contact_name },
               { label: "Email",    value: client.contact_email },
               { label: "Projects", value: String(projects.length) },
+              { label: "Last seen", value: client.last_seen_at ? new Date(client.last_seen_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "Never" },
             ].map(row => (
               <div key={row.label} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "0.5px solid rgba(15,15,14,0.06)" }}>
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: "var(--op-muted)" as any }}>{row.label}</span>

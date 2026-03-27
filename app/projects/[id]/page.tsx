@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import PortalNav from "@/components/portal/Nav"
 import MessageForm from "@/components/portal/MessageForm"
+import SlideViewer from "@/components/portal/SlideViewer"
 
 export default async function ProjectPage({ params }: { params: { id: string } }) {
   const supabase = await createServerComponentClient()
@@ -30,6 +31,10 @@ export default async function ProjectPage({ params }: { params: { id: string } }
   const { data: invoices } = await supabase
     .from("invoices").select("*")
     .eq("project_id", project.id).in("status", ["sent", "overdue"])
+
+  const { data: slides } = await supabase
+    .from("presentation_slides").select("*")
+    .eq("project_id", project.id).order("sort_order")
 
   const needsReview = deliverables?.find(d => d.status === "awaiting_approval")
 
@@ -149,6 +154,19 @@ export default async function ProjectPage({ params }: { params: { id: string } }
               </div>
             ))}
           </div>
+
+          {/* Presentation */}
+          {slides && slides.length > 0 && (
+            <div style={{ marginBottom: 36 }}>
+              <div style={sectionStyle}>Presentation</div>
+              <div style={{
+                background: "var(--ink)", padding: "32px 24px",
+                display: "flex", flexDirection: "column", alignItems: "center",
+              }}>
+                <SlideViewer slides={slides as any} />
+              </div>
+            </div>
+          )}
 
           {/* Decision log */}
           <div style={sectionStyle}>Decision log</div>
