@@ -1,9 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { supabase } from "@/lib/supabase"
 import PortalNav from "@/components/portal/Nav"
-import Calendar from "@/components/portal/Calendar"
 import { useToast } from "@/components/portal/Toast"
 import Link from "next/link"
 
@@ -14,11 +13,22 @@ const TYPE_COLORS: Record<string, string> = {
   invoice_due:  "var(--ink)",
 }
 
-const TYPE_LABELS: Record<string, string> = {
-  meeting:      "Meeting",
-  presentation: "Presentation",
-  milestone:    "Milestone",
-  invoice_due:  "Invoice due",
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+
+function toDateStr(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+}
+
+function fmtTime(time: string | null) {
+  if (!time) return null
+  const [h, m] = time.split(":")
+  const hour = parseInt(h)
+  return `${hour === 0 ? 12 : hour > 12 ? hour - 12 : hour}:${m} ${hour >= 12 ? "PM" : "AM"}`
+}
+
+function getWeekStart(d: Date) {
+  const day = d.getDay()
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() - day)
 }
 
 export default function AdminCalendarPage() {
@@ -28,8 +38,11 @@ export default function AdminCalendarPage() {
   const [projects, setProjects]   = useState<any[]>([])
   const [loading, setLoading]     = useState(true)
   const [saving, setSaving]       = useState(false)
+  const [view, setView]           = useState<"week" | "month">("week")
+  const [viewDate, setViewDate]   = useState(new Date())
   const [filterClient, setFilterClient] = useState("")
   const [filterType, setFilterType]     = useState("")
+  const [showAdd, setShowAdd]     = useState(false)
   const { show: showToast, ToastContainer } = useToast()
 
   const [form, setForm] = useState({
@@ -41,14 +54,12 @@ export default function AdminCalendarPage() {
 
   async function loadAll() {
     setLoading(true)
-
     const [evtRes, invRes, cliRes, projRes] = await Promise.all([
       supabase.from("events").select("*, clients(name), projects(title)").order("event_date"),
       supabase.from("invoices").select("*, clients(name), projects(title)").in("status", ["sent", "overdue"]).not("due_date", "is", null),
       supabase.from("clients").select("id, name").order("name"),
       supabase.from("projects").select("id, title, client_id").order("title"),
     ])
-
     setEvents(evtRes.data ?? [])
     setInvoices(invRes.data ?? [])
     setClients(cliRes.data ?? [])
@@ -56,8 +67,7 @@ export default function AdminCalendarPage() {
     setLoading(false)
   }
 
-  // Combine manual events + auto invoice events
-  const allEvents = [
+  const allEvents = useMemo(() => [
     ...events.map((e: any) => ({
       id: e.id, title: e.title, event_date: e.event_date, event_time: e.event_time,
       type: e.type, client_name: e.clients?.name ?? "—", client_id: e.client_id,
@@ -69,35 +79,75 @@ export default function AdminCalendarPage() {
       client_name: (inv.clients as any)?.name ?? "—", client_id: inv.client_id,
       project_title: (inv.projects as any)?.title ?? null, notes: null, is_auto: true,
     })),
-  ]
+  ], [events, invoices])
 
-  // Apply filters
-  const filteredEvents = allEvents.filter(e => {
+  const filteredEvents = useMemo(() => allEvents.filter(e => {
     if (filterClient && e.client_id !== filterClient) return false
     if (filterType && e.type !== filterType) return false
     return true
-  }).sort((a, b) => a.event_date.localeCompare(b.event_date) || (a.event_time ?? "").localeCompare(b.event_time ?? ""))
+  }), [allEvents, filterClient, filterType])
 
-  // Filtered projects for the form based on selected client
-  const formProjects = form.client_id
-    ? projects.filter(p => p.client_id === form.client_id)
-    : []
+  const eventsByDate = useMemo(() => {
+    const map: Record<string, typeof filteredEvents> = {}
+    for (const e of filteredEvents) {
+      if (!map[e.event_date]) map[e.event_date] = []
+      map[e.event_date].push(e)
+    }
+    for (const key of Object.keys(map)) {
+      map[key].sort((a, b) => (a.event_time ?? "").localeCompare(b.event_time ?? ""))
+    }
+    return map
+  }, [filteredEvents])
 
+  const formProjects = form.client_id ? projects.filter(p => p.client_id === form.client_id) : []
+  const todayStr = toDateStr(new Date())
+
+  // ── Navigation ─────────────────────────────────────────
+  function navPrev() {
+    if (view === "week") setViewDate(d => new Date(d.getFullYear(), d.getMonth(), d.getDate() - 7))
+    else setViewDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1))
+  }
+  function navNext() {
+    if (view === "week") setViewDate(d => new Date(d.getFullYear(), d.getMonth(), d.getDate() + 7))
+    else setViewDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1))
+  }
+  function goToday() { setViewDate(new Date()) }
+
+  // ── Week data ──────────────────────────────────────────
+  const weekStart = getWeekStart(viewDate)
+  const weekDays = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(weekStart)
+    d.setDate(d.getDate() + i)
+    return d
+  })
+  const weekLabel = (() => {
+    const first = weekDays[0], last = weekDays[6]
+    if (first.getMonth() === last.getMonth()) {
+      return `${first.toLocaleDateString("en-US", { month: "long" })} ${first.getDate()}–${last.getDate()}, ${first.getFullYear()}`
+    }
+    return `${first.toLocaleDateString("en-US", { month: "short" })} ${first.getDate()} – ${last.toLocaleDateString("en-US", { month: "short" })} ${last.getDate()}, ${last.getFullYear()}`
+  })()
+
+  // ── Month data ─────────────────────────────────────────
+  const monthLabel = viewDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })
+  const monthFirstDay = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).getDay()
+  const monthDaysCount = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate()
+  const monthCells: (Date | null)[] = []
+  for (let i = 0; i < monthFirstDay; i++) monthCells.push(null)
+  for (let d = 1; d <= monthDaysCount; d++) monthCells.push(new Date(viewDate.getFullYear(), viewDate.getMonth(), d))
+
+  // ── Actions ────────────────────────────────────────────
   async function addEvent() {
     if (!form.client_id || !form.title.trim() || !form.event_date) return
     setSaving(true)
     const res = await fetch("/api/admin/events", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        client_id: form.client_id,
-        project_id: form.project_id || null,
-        title: form.title.trim(),
-        event_date: form.event_date,
+        client_id: form.client_id, project_id: form.project_id || null,
+        title: form.title.trim(), event_date: form.event_date,
         event_time: form.event_time || null,
         duration_minutes: form.duration_minutes ? parseInt(form.duration_minutes) : null,
-        type: form.type,
-        notes: form.notes.trim() || null,
+        type: form.type, notes: form.notes.trim() || null,
       }),
     })
     const json = await res.json()
@@ -106,6 +156,7 @@ export default function AdminCalendarPage() {
       const { data } = await supabase.from("events").select("*, clients(name), projects(title)").eq("id", json.event.id).single()
       if (data) setEvents(prev => [...prev, data].sort((a: any, b: any) => a.event_date.localeCompare(b.event_date)))
       setForm({ client_id: "", project_id: "", title: "", event_date: "", event_time: "", duration_minutes: "", type: "meeting", notes: "" })
+      setShowAdd(false)
       showToast("Event added")
     } else {
       showToast("Failed to add event", "error")
@@ -114,8 +165,7 @@ export default function AdminCalendarPage() {
 
   async function deleteEvent(id: string) {
     const res = await fetch("/api/admin/events", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
+      method: "DELETE", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     })
     if (res.ok) {
@@ -123,19 +173,6 @@ export default function AdminCalendarPage() {
       showToast("Event removed", "info")
     }
   }
-
-  function formatTime(time: string | null) {
-    if (!time) return null
-    const [h, m] = time.split(":")
-    const hour = parseInt(h)
-    return `${hour === 0 ? 12 : hour > 12 ? hour - 12 : hour}:${m} ${hour >= 12 ? "PM" : "AM"}`
-  }
-
-  // Upcoming vs past
-  const today = new Date()
-  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`
-  const upcoming = filteredEvents.filter(e => e.event_date >= todayStr)
-  const past = filteredEvents.filter(e => e.event_date < todayStr).reverse()
 
   if (loading) return (
     <>
@@ -149,14 +186,36 @@ export default function AdminCalendarPage() {
   return (
     <>
       <PortalNav isAdmin />
-      <main style={{ maxWidth: 1200, margin: "0 auto", padding: "36px 40px 60px" }} className="admin-page-pad">
+      <main style={{ maxWidth: 1200, margin: "0 auto", padding: "28px 40px 60px" }} className="admin-page-pad">
 
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 32 }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.5 }}>
-            Calendar — {upcoming.length} upcoming
+        {/* Header bar */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <button onClick={navPrev} style={navBtnStyle}>←</button>
+            <button onClick={goToday} style={{ ...navBtnStyle, opacity: 0.45, fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", padding: "4px 10px", border: "0.5px solid rgba(15,15,14,0.15)" }}>
+              Today
+            </button>
+            <button onClick={navNext} style={navBtnStyle}>→</button>
+            <span style={{ fontFamily: "var(--font-sans)", fontSize: 18, letterSpacing: "-0.01em", opacity: 0.85 }}>
+              {view === "week" ? weekLabel : monthLabel}
+            </span>
           </div>
-          {/* Filters */}
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", border: "0.5px solid rgba(15,15,14,0.15)" }}>
+              {(["week", "month"] as const).map(v => (
+                <button key={v} onClick={() => setView(v)} style={{
+                  fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
+                  letterSpacing: "0.1em", textTransform: "uppercase",
+                  padding: "6px 14px", border: "none", cursor: "pointer",
+                  background: view === v ? "var(--ink)" : "transparent",
+                  color: view === v ? "var(--cream)" : "var(--ink)",
+                  opacity: view === v ? 1 : 0.4, transition: "all 0.2s",
+                }}>
+                  {v}
+                </button>
+              ))}
+            </div>
             <select value={filterClient} onChange={e => setFilterClient(e.target.value)} style={filterSelect}>
               <option value="">All clients</option>
               {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -168,206 +227,246 @@ export default function AdminCalendarPage() {
               <option value="milestone">Milestones</option>
               <option value="invoice_due">Invoice dues</option>
             </select>
+            <button onClick={() => setShowAdd(s => !s)} style={{
+              fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
+              letterSpacing: "0.12em", textTransform: "uppercase",
+              background: showAdd ? "rgba(15,15,14,0.08)" : "transparent",
+              border: "0.5px solid rgba(15,15,14,0.2)", padding: "6px 14px",
+              cursor: "pointer", color: "var(--ink)", opacity: 0.65,
+            }}>
+              + Event
+            </button>
           </div>
         </div>
 
-        <div className="admin-studio-grid" style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: 36 }}>
+        {/* Add event form (collapsible) */}
+        {showAdd && (
+          <div style={{ background: "rgba(255,255,255,0.4)", border: "0.5px solid rgba(15,15,14,0.1)", padding: "20px 24px", marginBottom: 24 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 140px 100px", gap: 12, marginBottom: 12 }} className="form-grid-2col">
+              <div>
+                <div style={labelSm}>Client *</div>
+                <select value={form.client_id} onChange={e => setForm(f => ({ ...f, client_id: e.target.value, project_id: "" }))} style={inputSm}>
+                  <option value="">Select…</option>
+                  {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <div style={labelSm}>Title *</div>
+                <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Brand review call" style={inputSm} />
+              </div>
+              <div>
+                <div style={labelSm}>Date *</div>
+                <input type="date" value={form.event_date} onChange={e => setForm(f => ({ ...f, event_date: e.target.value }))} style={inputSm} />
+              </div>
+              <div>
+                <div style={labelSm}>Time</div>
+                <input type="time" value={form.event_time} onChange={e => setForm(f => ({ ...f, event_time: e.target.value }))} style={inputSm} />
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "140px 1fr 1fr 100px", gap: 12, alignItems: "end" }} className="form-grid-2col">
+              <div>
+                <div style={labelSm}>Type</div>
+                <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} style={inputSm}>
+                  <option value="meeting">Meeting</option>
+                  <option value="presentation">Presentation</option>
+                  <option value="milestone">Milestone</option>
+                </select>
+              </div>
+              <div>
+                <div style={labelSm}>Project</div>
+                <select value={form.project_id} onChange={e => setForm(f => ({ ...f, project_id: e.target.value }))} disabled={!form.client_id} style={{ ...inputSm, opacity: form.client_id ? 1 : 0.4 }}>
+                  <option value="">—</option>
+                  {formProjects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
+                </select>
+              </div>
+              <div>
+                <div style={labelSm}>Notes</div>
+                <input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Optional…" style={inputSm} />
+              </div>
+              <button onClick={addEvent} disabled={saving || !form.client_id || !form.title.trim() || !form.event_date} style={{
+                fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase",
+                background: "var(--ink)", color: "var(--cream)", border: "none", padding: "9px 16px",
+                cursor: saving || !form.client_id || !form.title.trim() || !form.event_date ? "default" : "pointer",
+                opacity: saving || !form.client_id || !form.title.trim() || !form.event_date ? 0.3 : 1,
+                height: "fit-content",
+              }}>
+                {saving ? "…" : "Add"}
+              </button>
+            </div>
+          </div>
+        )}
 
-          {/* Left — Calendar + legend + add form */}
-          <div className="admin-studio-left" style={{ borderRight: "0.5px solid rgba(15,15,14,0.08)", paddingRight: 36 }}>
-            <Calendar events={filteredEvents.map(e => ({ id: e.id, event_date: e.event_date, type: e.type, title: e.title }))} />
+        {/* ── WEEK VIEW ─────────────────────────────────── */}
+        {view === "week" && (
+          <div style={{ border: "0.5px solid rgba(15,15,14,0.1)", overflow: "hidden" }}>
+            {/* Day headers */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", borderBottom: "0.5px solid rgba(15,15,14,0.1)" }}>
+              {weekDays.map(day => {
+                const ds = toDateStr(day)
+                const isToday = ds === todayStr
+                return (
+                  <div key={ds} style={{
+                    padding: "12px 10px 10px",
+                    borderRight: "0.5px solid rgba(15,15,14,0.06)",
+                    background: isToday ? "rgba(15,15,14,0.04)" : "transparent",
+                  }}>
+                    <div style={{ fontFamily: "var(--font-mono)", fontSize: 7, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.4, marginBottom: 4 }}>
+                      {DAY_LABELS[day.getDay()]}
+                    </div>
+                    <div style={{
+                      fontFamily: "var(--font-sans)", fontSize: 18, letterSpacing: "-0.01em",
+                      opacity: isToday ? 0.95 : 0.5, fontWeight: isToday ? 500 : 400,
+                      display: "inline-flex", alignItems: "center", justifyContent: "center",
+                      width: 28, height: 28, borderRadius: "50%",
+                      background: isToday ? "var(--ink)" : "transparent",
+                      color: isToday ? "var(--cream)" : "var(--ink)",
+                    }}>
+                      {day.getDate()}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            {/* Event cells */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", minHeight: 360 }}>
+              {weekDays.map(day => {
+                const ds = toDateStr(day)
+                const isToday = ds === todayStr
+                const dayEvents = eventsByDate[ds] ?? []
+                return (
+                  <div key={ds} style={{
+                    padding: "8px 6px", borderRight: "0.5px solid rgba(15,15,14,0.06)",
+                    background: isToday ? "rgba(15,15,14,0.02)" : "transparent",
+                    minHeight: 120, display: "flex", flexDirection: "column", gap: 4,
+                  }}>
+                    {dayEvents.map(evt => (
+                      <EventChip key={evt.id} evt={evt} onDelete={!evt.is_auto ? () => deleteEvent(evt.id) : undefined} />
+                    ))}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
-            {/* Legend */}
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 16, paddingTop: 12, borderTop: "0.5px solid rgba(15,15,14,0.08)" }}>
-              {[
-                { label: "Meeting", color: "var(--amber)" },
-                { label: "Milestone", color: "var(--sage)" },
-                { label: "Invoice", color: "var(--ink)" },
-              ].map(l => (
-                <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                  <div style={{ width: 5, height: 5, borderRadius: "50%", background: l.color, opacity: 0.7 }} />
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 7, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.45 }}>{l.label}</span>
+        {/* ── MONTH VIEW ────────────────────────────────── */}
+        {view === "month" && (
+          <div style={{ border: "0.5px solid rgba(15,15,14,0.1)", overflow: "hidden" }}>
+            {/* Day labels */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", borderBottom: "0.5px solid rgba(15,15,14,0.1)" }}>
+              {DAY_LABELS.map(d => (
+                <div key={d} style={{
+                  fontFamily: "var(--font-mono)", fontSize: 7, letterSpacing: "0.1em",
+                  textTransform: "uppercase", opacity: 0.4,
+                  padding: "10px 10px 8px", borderRight: "0.5px solid rgba(15,15,14,0.06)",
+                }}>
+                  {d}
                 </div>
               ))}
             </div>
-
-            {/* Quick add */}
-            <div style={{ marginTop: 28, paddingTop: 24, borderTop: "0.5px solid rgba(15,15,14,0.08)" }}>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.5, marginBottom: 14 }}>Quick add</div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <div>
-                  <div style={labelSm}>Client *</div>
-                  <select value={form.client_id} onChange={e => { setForm(f => ({ ...f, client_id: e.target.value, project_id: "" })) }} style={inputSm}>
-                    <option value="">Select…</option>
-                    {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-                </div>
-
-                <div>
-                  <div style={labelSm}>Title *</div>
-                  <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Brand review call" style={inputSm} />
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  <div>
-                    <div style={labelSm}>Date *</div>
-                    <input type="date" value={form.event_date} onChange={e => setForm(f => ({ ...f, event_date: e.target.value }))} style={inputSm} />
+            {/* Day cells */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)" }}>
+              {monthCells.map((day, i) => {
+                if (!day) return <div key={`empty-${i}`} style={{ minHeight: 100, borderRight: "0.5px solid rgba(15,15,14,0.06)", borderBottom: "0.5px solid rgba(15,15,14,0.06)", background: "rgba(15,15,14,0.02)" }} />
+                const ds = toDateStr(day)
+                const isToday = ds === todayStr
+                const dayEvents = eventsByDate[ds] ?? []
+                return (
+                  <div key={ds} style={{
+                    minHeight: 100, padding: "6px 6px 4px",
+                    borderRight: "0.5px solid rgba(15,15,14,0.06)",
+                    borderBottom: "0.5px solid rgba(15,15,14,0.06)",
+                    background: isToday ? "rgba(15,15,14,0.04)" : "transparent",
+                  }}>
+                    <div style={{
+                      fontFamily: "var(--font-sans)", fontSize: 11,
+                      opacity: isToday ? 0.95 : 0.4, fontWeight: isToday ? 500 : 400,
+                      display: "inline-flex", alignItems: "center", justifyContent: "center",
+                      width: 22, height: 22, borderRadius: "50%",
+                      background: isToday ? "var(--ink)" : "transparent",
+                      color: isToday ? "var(--cream)" : "var(--ink)",
+                      marginBottom: 3,
+                    }}>
+                      {day.getDate()}
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                      {dayEvents.slice(0, 3).map(evt => (
+                        <EventChip key={evt.id} evt={evt} compact onDelete={!evt.is_auto ? () => deleteEvent(evt.id) : undefined} />
+                      ))}
+                      {dayEvents.length > 3 && (
+                        <div style={{ fontFamily: "var(--font-mono)", fontSize: 7, opacity: 0.35, paddingLeft: 4 }}>
+                          +{dayEvents.length - 3} more
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <div style={labelSm}>Time</div>
-                    <input type="time" value={form.event_time} onChange={e => setForm(f => ({ ...f, event_time: e.target.value }))} style={inputSm} />
-                  </div>
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  <div>
-                    <div style={labelSm}>Type</div>
-                    <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} style={inputSm}>
-                      <option value="meeting">Meeting</option>
-                      <option value="presentation">Presentation</option>
-                      <option value="milestone">Milestone</option>
-                    </select>
-                  </div>
-                  <div>
-                    <div style={labelSm}>Project</div>
-                    <select value={form.project_id} onChange={e => setForm(f => ({ ...f, project_id: e.target.value }))} disabled={!form.client_id} style={{ ...inputSm, opacity: form.client_id ? 1 : 0.4 }}>
-                      <option value="">—</option>
-                      {formProjects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <div style={labelSm}>Notes</div>
-                  <input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Optional…" style={inputSm} />
-                </div>
-
-                <button onClick={addEvent} disabled={saving || !form.client_id || !form.title.trim() || !form.event_date} style={{
-                  fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase",
-                  background: "var(--ink)", color: "var(--cream)", border: "none", padding: "10px",
-                  cursor: saving || !form.client_id || !form.title.trim() || !form.event_date ? "default" : "pointer",
-                  opacity: saving || !form.client_id || !form.title.trim() || !form.event_date ? 0.3 : 1,
-                  transition: "opacity 0.2s",
-                }}>
-                  {saving ? "Adding…" : "Add event"}
-                </button>
-              </div>
+                )
+              })}
             </div>
           </div>
-
-          {/* Right — Event list */}
-          <div className="admin-studio-right">
-
-            {/* Upcoming */}
-            {upcoming.length > 0 && (
-              <div style={{ marginBottom: 36 }}>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.5, marginBottom: 14 }}>
-                  Upcoming
-                </div>
-                {upcoming.map(evt => (
-                  <EventRow key={evt.id} evt={evt} todayStr={todayStr} formatTime={formatTime} onDelete={!evt.is_auto ? () => deleteEvent(evt.id) : undefined} />
-                ))}
-              </div>
-            )}
-
-            {upcoming.length === 0 && (
-              <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.35, padding: "20px 0 36px" }}>
-                No upcoming events{filterClient || filterType ? " matching this filter" : ""}. Add one from the left panel.
-              </div>
-            )}
-
-            {/* Past */}
-            {past.length > 0 && (
-              <div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.35, marginBottom: 14 }}>
-                  Past
-                </div>
-                {past.slice(0, 10).map(evt => (
-                  <EventRow key={evt.id} evt={evt} todayStr={todayStr} formatTime={formatTime} onDelete={!evt.is_auto ? () => deleteEvent(evt.id) : undefined} dimmed />
-                ))}
-                {past.length > 10 && (
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.3, paddingTop: 8 }}>
-                    + {past.length - 10} more past events
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
+        )}
       </main>
       <ToastContainer />
     </>
   )
 }
 
-function EventRow({ evt, todayStr, formatTime, onDelete, dimmed }: {
-  evt: any; todayStr: string; formatTime: (t: string | null) => string | null;
-  onDelete?: () => void; dimmed?: boolean
-}) {
-  const isToday = evt.event_date === todayStr
-  const dateObj = new Date(evt.event_date + "T00:00:00")
+// ── Event chip ───────────────────────────────────────────
+function EventChip({ evt, compact, onDelete }: { evt: any; compact?: boolean; onDelete?: () => void }) {
+  const [hovered, setHovered] = useState(false)
+  const bgColors: Record<string, string> = {
+    meeting: "rgba(176,125,58,0.12)", presentation: "rgba(176,125,58,0.10)",
+    milestone: "rgba(107,143,113,0.12)", invoice_due: "rgba(15,15,14,0.06)",
+  }
 
   return (
-    <div style={{
-      display: "flex", justifyContent: "space-between", alignItems: "flex-start",
-      padding: "13px 0", borderBottom: "0.5px solid rgba(15,15,14,0.07)", gap: 12,
-      opacity: dimmed ? 0.5 : 1,
-    }}>
-      <div style={{ flex: 1 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
-          <span style={{
-            fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
-            letterSpacing: "0.08em", textTransform: "uppercase",
-            opacity: isToday ? 0.85 : 0.45,
-            color: isToday ? "var(--amber)" : "var(--ink)",
-            minWidth: 55,
-          }}>
-            {isToday ? "Today" : dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-          </span>
-          {evt.event_time && (
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.3 }}>
-              {formatTime(evt.event_time)}
-            </span>
-          )}
-          <span style={{
-            fontFamily: "var(--font-mono)", fontSize: 7, letterSpacing: "0.1em", textTransform: "uppercase",
-            padding: "2px 7px",
-            border: `0.5px solid ${TYPE_COLORS[evt.type] ?? "var(--ink)"}40`,
-            color: TYPE_COLORS[evt.type] ?? "var(--ink)",
-          }}>
-            {TYPE_LABELS[evt.type] ?? evt.type}
-          </span>
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: bgColors[evt.type] ?? "rgba(15,15,14,0.05)",
+        borderLeft: `2px solid ${TYPE_COLORS[evt.type] ?? "var(--ink)"}`,
+        padding: compact ? "2px 5px" : "5px 8px 4px",
+        position: "relative", cursor: "default",
+      }}
+    >
+      {evt.event_time && !compact && (
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 7, opacity: 0.45, marginBottom: 1 }}>
+          {fmtTime(evt.event_time)}
         </div>
-        <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-body)" as any, marginBottom: 2 }}>
-          {evt.title}
-        </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
-          <Link href={`/admin/clients/${evt.client_id}`} style={{
-            fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
-            opacity: 0.4, textDecoration: "none",
-          }}>
-            {evt.client_name}
-          </Link>
-          {evt.project_title && (
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.25 }}>
-              · {evt.project_title}
-            </span>
-          )}
-        </div>
-        {evt.notes && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: 0.35, marginTop: 4, lineHeight: 1.5 }}>{evt.notes}</div>}
+      )}
+      <div style={{
+        fontFamily: "var(--font-sans)", fontSize: compact ? 9 : 11,
+        opacity: 0.8, lineHeight: 1.3,
+        whiteSpace: compact ? "nowrap" : "normal",
+        overflow: "hidden", textOverflow: "ellipsis",
+      }}>
+        {evt.title}
       </div>
-      {onDelete && (
-        <button onClick={onDelete} style={{
-          fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
-          opacity: 0.2, background: "none", border: "none", cursor: "pointer",
-          color: "var(--ink)", flexShrink: 0, padding: "2px 6px",
+      {!compact && (
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 7, opacity: 0.35, marginTop: 1 }}>
+          {evt.client_name}{evt.project_title ? ` · ${evt.project_title}` : ""}
+        </div>
+      )}
+      {onDelete && hovered && (
+        <button onClick={(e) => { e.stopPropagation(); onDelete() }} style={{
+          position: "absolute", top: 2, right: 3,
+          fontFamily: "var(--font-mono)", fontSize: 9,
+          background: "rgba(255,255,255,0.8)", border: "none",
+          cursor: "pointer", color: "var(--ink)", opacity: 0.4,
+          padding: "0 3px", lineHeight: 1,
         }}>
           ✕
         </button>
       )}
     </div>
   )
+}
+
+const navBtnStyle: React.CSSProperties = {
+  fontFamily: "var(--font-mono)", fontSize: 13,
+  background: "none", border: "none", cursor: "pointer",
+  color: "var(--ink)", opacity: 0.4, padding: "4px 8px",
 }
 
 const filterSelect: React.CSSProperties = {
@@ -384,6 +483,6 @@ const labelSm: React.CSSProperties = {
 const inputSm: React.CSSProperties = {
   width: "100%", boxSizing: "border-box",
   fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)",
-  background: "rgba(255,255,255,0.4)", border: "0.5px solid rgba(15,15,14,0.12)",
+  background: "rgba(255,255,255,0.5)", border: "0.5px solid rgba(15,15,14,0.12)",
   padding: "8px 10px", color: "var(--ink)", outline: "none",
 }
