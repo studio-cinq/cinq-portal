@@ -37,7 +37,9 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     const optionalItems = allItems.filter((i: any) => i.is_optional)
     const baseTotal = baseItems.reduce((s: number, i: any) => s + (i.price ?? 0), 0)
     const optionalTotal = optionalItems.reduce((s: number, i: any) => s + (i.price ?? 0), 0)
-    const deposit = Math.round(baseTotal * 0.5)
+    const schedule = Array.isArray(proposal.payment_schedule) ? proposal.payment_schedule as number[] : [50, 50]
+    const depositPct = schedule[0] ?? 50
+    const deposit = Math.round(baseTotal * (depositPct / 100))
 
     const doc = new jsPDF({ unit: "pt", format: "letter" })
     const W = doc.internal.pageSize.getWidth()
@@ -263,11 +265,17 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
     doc.setFontSize(9)
     setColor(doc, INK, 0.5)
-    doc.text("50% deposit due now", marginL, y)
+    doc.text(`${depositPct}% deposit due now`, marginL, y)
     doc.text(`$${(deposit / 100).toLocaleString()}`, W - marginR, y, { align: "right" })
     y += 14
 
-    doc.text("Remaining 50% invoiced at completion", marginL, y)
+    if (schedule.length === 2) {
+      doc.text(`Remaining ${schedule[1]}% invoiced at completion`, marginL, y)
+    } else if (schedule.length === 3) {
+      doc.text(`${schedule[1]}% at midpoint · ${schedule[2]}% at completion`, marginL, y)
+    } else if (depositPct === 100) {
+      doc.text("Full payment due now", marginL, y)
+    }
     y += 18
 
     if (optionalTotal > 0) {

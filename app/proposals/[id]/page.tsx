@@ -68,16 +68,27 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
   function toggleItem(i: number) { setChecked(c => c.map((v, idx) => idx === i ? !v : v)) }
   function setPhase(i: number, phase: "now" | "later") { setPhases(p => p.map((v, idx) => idx === i ? phase : v)) }
 
+  const schedule = Array.isArray(proposal?.payment_schedule) ? proposal.payment_schedule as number[] : [50, 50]
+  const depositPct = schedule[0] ?? 50
+
   const phase1Total = items.reduce((sum, item, i) => {
     if (!checked[i] || phases[i] !== "now") return sum
     return sum + (item.price ?? 0)
   }, 0)
 
-  const deposit       = Math.round(phase1Total * 0.5)
+  const deposit       = Math.round(phase1Total * (depositPct / 100))
   const baseItems     = items.filter(i => !i.is_optional)
   const optionalItems = items.filter(i => i.is_optional)
   const baseTotal     = baseItems.reduce((s, i) => s + (i.price ?? 0), 0)
   const optionalTotal = optionalItems.reduce((s, i) => s + (i.price ?? 0), 0)
+
+  const scheduleLabel = schedule.map((p, i) => {
+    if (i === 0) return `${p}% deposit due now`
+    if (schedule.length === 2 && i === 1) return `${p}% invoiced at completion`
+    if (schedule.length === 3 && i === 1) return `${p}% at project midpoint`
+    if (schedule.length === 3 && i === 2) return `${p}% at completion`
+    return `${p}%`
+  })
 
   async function handleConfirm() {
     if (phase1Total === 0) return
@@ -85,7 +96,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
     await supabase.from("proposals").update({ status: "accepted", client_note: note || null }).eq("id", params.id)
     const res = await fetch("/api/proposal-checkout", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ proposalId: params.id, amount: deposit, clientName: proposal?.clients?.name ?? "", title: proposal?.title ?? "Proposal deposit" }),
+      body: JSON.stringify({ proposalId: params.id, amount: deposit, depositPct, clientName: proposal?.clients?.name ?? "", title: proposal?.title ?? "Proposal deposit" }),
     })
     const { url } = await res.json()
     if (url) window.location.href = url
@@ -231,7 +242,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
         </span>
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 28 }}>
-        <span style={{ ...mono, fontSize: "var(--text-eyebrow)", opacity: 0.38 }}>50% deposit due now</span>
+        <span style={{ ...mono, fontSize: "var(--text-eyebrow)", opacity: 0.38 }}>{scheduleLabel[0]}</span>
         <span style={{ ...mono, fontSize: "var(--text-body)", opacity: 0.6 }}>${(deposit / 100).toLocaleString()}</span>
       </div>
 
@@ -263,7 +274,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
             {submitting ? "Redirecting…" : "Confirm & pay deposit"}
           </button>
           <div style={{ ...mono, fontSize: "var(--text-eyebrow)", opacity: 0.3, letterSpacing: "0.03em", lineHeight: 1.8 }}>
-            Remaining 50% invoiced at project completion.<br />
+            {scheduleLabel.slice(1).map((l, i) => <span key={i}>{l}{i < scheduleLabel.length - 2 ? ". " : ""}</span>)}<br />
             Scheduled items confirmed at no cost today.
           </div>
         </>

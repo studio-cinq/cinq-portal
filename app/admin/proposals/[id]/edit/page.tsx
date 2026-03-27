@@ -34,13 +34,14 @@ export default function EditProposalPage({ params }: { params: { id: string } })
   const [error, setError]       = useState<string | null>(null)
 
   const [form, setForm] = useState({
-    client_id:    "",
-    title:        "",
-    subtitle:     "",
-    overview:     "",
-    closing:      "",
-    expires_at:   "",
-    status:       "sent",
+    client_id:        "",
+    title:            "",
+    subtitle:         "",
+    overview:         "",
+    closing:          "",
+    expires_at:       "",
+    status:           "sent",
+    payment_schedule: "50/50",
   })
 
   const [items, setItems] = useState<LineItem[]>([emptyItem()])
@@ -55,14 +56,16 @@ export default function EditProposalPage({ params }: { params: { id: string } })
 
       if (proposalRes.data) {
         const p = proposalRes.data as any
+        const schedule = Array.isArray(p.payment_schedule) ? p.payment_schedule.join("/") : "50/50"
         setForm({
-          client_id:    p.client_id ?? "",
-          title:        p.title ?? "",
-          subtitle:     p.subtitle ?? "",
-          overview:     p.overview ?? "",
-          closing:      p.closing ?? "",
-          expires_at:   p.expires_at ?? "",
-          status:       p.status ?? "sent",
+          client_id:        p.client_id ?? "",
+          title:            p.title ?? "",
+          subtitle:         p.subtitle ?? "",
+          overview:         p.overview ?? "",
+          closing:          p.closing ?? "",
+          expires_at:       p.expires_at ?? "",
+          status:           p.status ?? "sent",
+          payment_schedule: schedule,
         })
       }
 
@@ -116,6 +119,8 @@ export default function EditProposalPage({ params }: { params: { id: string } })
     }
     setSaving(true)
 
+    const schedule = form.payment_schedule.split("/").map(Number)
+
     // 1. Update proposal
     const { error: proposalError } = await supabase
       .from("proposals")
@@ -127,7 +132,8 @@ export default function EditProposalPage({ params }: { params: { id: string } })
         closing:    form.closing || null,
         expires_at: form.expires_at || null,
         status:     form.status,
-      })
+        payment_schedule: schedule,
+      } as any)
       .eq("id", params.id)
 
     if (proposalError) {
@@ -244,14 +250,24 @@ export default function EditProposalPage({ params }: { params: { id: string } })
             <input type="text" value={form.subtitle} onChange={e => setField("subtitle", e.target.value)} placeholder="A focused scope for your spring launch." style={inputStyle} />
           </Field>
 
-          <Field label="Status">
-            <select value={form.status} onChange={e => setField("status", e.target.value)} style={inputStyle}>
-              <option value="draft">Draft</option>
-              <option value="sent">Sent</option>
-              <option value="accepted">Accepted</option>
-              <option value="declined">Declined</option>
-            </select>
-          </Field>
+          <div className="form-grid-2col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <Field label="Payment schedule">
+              <select value={form.payment_schedule} onChange={e => setField("payment_schedule", e.target.value)} style={inputStyle}>
+                <option value="50/50">50% deposit · 50% on completion</option>
+                <option value="50/25/25">50% deposit · 25% midpoint · 25% completion</option>
+                <option value="100">100% upfront</option>
+                <option value="33/33/34">33% · 33% · 34% (three equal payments)</option>
+              </select>
+            </Field>
+            <Field label="Status">
+              <select value={form.status} onChange={e => setField("status", e.target.value)} style={inputStyle}>
+                <option value="draft">Draft</option>
+                <option value="sent">Sent</option>
+                <option value="accepted">Accepted</option>
+                <option value="declined">Declined</option>
+              </select>
+            </Field>
+          </div>
         </Section>
 
         {/* Section: Overview */}

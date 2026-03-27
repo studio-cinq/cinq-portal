@@ -24,7 +24,9 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
   const optionalItems = items.filter(i => i.is_optional)
   const baseTotal     = baseItems.reduce((s: number, i: any) => s + (i.price ?? 0), 0)
   const optionalTotal = optionalItems.reduce((s: number, i: any) => s + (i.price ?? 0), 0)
-  const deposit       = Math.round(baseTotal * 0.5)
+  const schedule      = Array.isArray(proposal.payment_schedule) ? proposal.payment_schedule as number[] : [50, 50]
+  const depositPct    = schedule[0] ?? 50
+  const deposit       = Math.round(baseTotal * (depositPct / 100))
 
   const isExpired  = proposal.expires_at && new Date(proposal.expires_at) < new Date()
   const isAccepted = proposal.status === "accepted"
@@ -135,7 +137,7 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
               value: `$${(baseTotal / 100).toLocaleString()}`,
             },
             {
-              label: "Deposit (50%)",
+              label: `Deposit (${depositPct}%)`,
               value: `$${(deposit / 100).toLocaleString()}`,
             },
           ].map((cell, i) => (
@@ -255,7 +257,7 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
                 <span style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 18, opacity: 0.88 }}>${(baseTotal / 100).toLocaleString()}</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 8, opacity: 0.35 }}>Deposit (50%)</span>
+                <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 8, opacity: 0.35 }}>Deposit ({depositPct}%)</span>
                 <span style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 13, opacity: 0.55 }}>${(deposit / 100).toLocaleString()}</span>
               </div>
               {optionalTotal > 0 && (

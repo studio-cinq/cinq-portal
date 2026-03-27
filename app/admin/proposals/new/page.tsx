@@ -29,13 +29,14 @@ export default function NewProposalPage() {
   const [loading, setLoading] = useState(false)
 
   const [form, setForm] = useState({
-    client_id:    "",
-    title:        "",
-    subtitle:     "",
-    overview:     "",
-    closing:      "",
-    expires_at:   "",
-    status:       "sent",
+    client_id:        "",
+    title:            "",
+    subtitle:         "",
+    overview:         "",
+    closing:          "",
+    expires_at:       "",
+    status:           "sent",
+    payment_schedule: "50/50",
   })
 
   const [items, setItems] = useState<LineItem[]>([emptyItem()])
@@ -61,6 +62,8 @@ export default function NewProposalPage() {
     if (!form.client_id || !form.title) return
     setLoading(true)
 
+    const schedule = form.payment_schedule.split("/").map(Number)
+
     const { data: proposal, error } = await supabase
       .from("proposals")
       .insert({
@@ -70,8 +73,9 @@ export default function NewProposalPage() {
         overview:   form.overview || null,
         closing:    form.closing || null,
         expires_at: form.expires_at || null,
+        payment_schedule: schedule,
         status,
-      })
+      } as any)
       .select()
       .single()
 
@@ -145,6 +149,15 @@ export default function NewProposalPage() {
 
           <Field label="Subtitle (shown under title)">
             <input type="text" value={form.subtitle} onChange={e => setField("subtitle", e.target.value)} placeholder="A focused scope for your spring launch." style={inputStyle} />
+          </Field>
+
+          <Field label="Payment schedule">
+            <select value={form.payment_schedule} onChange={e => setField("payment_schedule", e.target.value)} style={inputStyle}>
+              <option value="50/50">50% deposit · 50% on completion</option>
+              <option value="50/25/25">50% deposit · 25% midpoint · 25% completion</option>
+              <option value="100">100% upfront</option>
+              <option value="33/33/34">33% · 33% · 34% (three equal payments)</option>
+            </select>
           </Field>
         </Section>
 
