@@ -1,6 +1,7 @@
 import { createServerComponentClient } from "@/lib/supabase-server"
 import PortalNav from "@/components/portal/Nav"
 import PayInvoiceButton from "@/components/portal/PayInvoiceButton"
+import DownloadPDFButton from "@/components/portal/DownloadPDFButton"
 
 export default async function InvoicesPage() {
   const supabase = await createServerComponentClient()
@@ -158,18 +159,14 @@ function InvoiceCard({ inv, variant }: { inv: any; variant: "paid" | "due" | "lo
 
       {variant === "due" && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12, paddingTop: 14, borderTop: "0.5px solid rgba(15,15,14,0.07)" }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.32, letterSpacing: "0.04em" }}>
-            Paying now keeps your project on schedule.
-          </div>
+          <DownloadPDFButton type="invoice" id={inv.id} label="↓ Invoice PDF" />
           <PayInvoiceButton invoiceId={inv.id} amount={inv.amount} />
         </div>
       )}
 
       {variant === "paid" && (
         <div style={{ paddingTop: 12, borderTop: "0.5px solid rgba(15,15,14,0.07)" }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.28, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer" }}>
-            &#8675; &nbsp;Download receipt
-          </span>
+          <DownloadPDFButton type="invoice" id={inv.id} label="↓ Download receipt" />
         </div>
       )}
 

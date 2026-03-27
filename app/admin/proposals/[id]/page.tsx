@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import PortalNav from "@/components/portal/Nav"
 import CopyLinkButton from "@/components/portal/CopyLinkButton"
+import DownloadPDFButton from "@/components/portal/DownloadPDFButton"
 
 export default async function AdminProposalDetailPage({ params }: { params: { id: string } }) {
   const supabase = await createServerComponentClient()
@@ -79,6 +80,7 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
             >
               Edit
             </Link>
+            <DownloadPDFButton type="proposal" id={proposal.id} />
             <CopyLinkButton id={proposal.id} />
             <Link
               href={`/proposals/${proposal.id}`}

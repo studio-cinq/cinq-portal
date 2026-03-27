@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
 import CinqLogo from "@/components/CinqLogo"
+import DownloadPDFButton from "@/components/portal/DownloadPDFButton"
 
 const mono: React.CSSProperties = {
   fontFamily: "var(--font-mono)",
@@ -296,6 +297,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
       }}>
         <CinqLogo width={18} />
         <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 10 : 20 }}>
+          <DownloadPDFButton type="proposal" id={params.id} label={isMobile ? "↓ PDF" : "↓ Download PDF"} />
           {proposal.expires_at && !isExpired && (
             <span style={{ ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--amber)", opacity: 0.85 }}>
               Exp. {new Date(proposal.expires_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
