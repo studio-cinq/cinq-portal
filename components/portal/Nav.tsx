@@ -21,6 +21,7 @@ const ADMIN_LINKS = [
   { href: "/admin/clients",   label: "Clients"   },
   { href: "/admin/proposals", label: "Proposals" },
   { href: "/admin/invoices",  label: "Invoices"  },
+  { href: "/admin/calendar",  label: "Calendar"  },
 ]
 
 export default function PortalNav({ clientName, isAdmin }: NavProps) {
