@@ -115,11 +115,18 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
               color: statusColors[proposal.status],
             },
             {
-              label: "Viewed",
+              label: "First viewed",
               value: proposal.viewed_at
                 ? new Date(proposal.viewed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
                 : "Not yet",
               color: proposal.viewed_at ? "#6B8F71" : undefined,
+            },
+            {
+              label: "Last viewed",
+              value: proposal.last_viewed_at
+                ? new Date(proposal.last_viewed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })
+                : proposal.viewed_at ? "Same as first" : "—",
+              color: proposal.last_viewed_at ? "#6B8F71" : undefined,
             },
             {
               label: "Sent",
@@ -140,11 +147,11 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
               label: `Deposit (${depositPct}%)`,
               value: `$${(deposit / 100).toLocaleString()}`,
             },
-          ].map((cell, i) => (
+          ].map((cell, i, arr) => (
             <div key={i} style={{
               padding: "16px 20px",
               borderRight: (i + 1) % 4 !== 0 ? "0.5px solid rgba(15,15,14,0.1)" : "none",
-              borderBottom: i < 4 ? "0.5px solid rgba(15,15,14,0.1)" : "none",
+              borderBottom: i < arr.length - (arr.length % 4 || 4) ? "0.5px solid rgba(15,15,14,0.1)" : "none",
             }}>
               <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 7, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.4, marginBottom: 6 }}>
                 {cell.label}

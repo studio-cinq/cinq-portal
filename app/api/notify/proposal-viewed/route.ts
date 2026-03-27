@@ -6,7 +6,7 @@ const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function POST(req: Request) {
   try {
-    const { proposalId } = await req.json()
+    const { proposalId, isReturnView } = await req.json()
     if (!proposalId) return NextResponse.json({ error: "Missing proposalId" }, { status: 400 })
 
 
@@ -32,14 +32,21 @@ export async function POST(req: Request) {
       year: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short",
     })
 
+    const heading = isReturnView
+      ? `${client.contact_name} is looking at their proposal again`
+      : `${client.contact_name} opened a proposal`
+    const subject = isReturnView
+      ? `Proposal revisited — ${client.name}`
+      : `Proposal opened — ${client.name}`
+
     await resend.emails.send({
       from: "Studio Cinq Portal <portal@studiocinq.com>",
       to: process.env.ADMIN_EMAIL ?? "kacie@studiocinq.com",
-      subject: `Proposal opened — ${client.name}`,
+      subject,
       html: `
         <div style="font-family:Georgia,serif;max-width:500px;margin:40px auto;color:#1C1916">
           <p style="font-family:monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;opacity:0.4">Studio Cinq · Portal</p>
-          <h2 style="font-weight:normal;font-size:20px;margin:8px 0 24px">${client.contact_name} opened a proposal</h2>
+          <h2 style="font-weight:normal;font-size:20px;margin:8px 0 24px">${heading}</h2>
           <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:28px">
             <tr><td style="padding:8px 0;border-bottom:1px solid #eee;opacity:0.5;width:120px">Proposal</td><td style="padding:8px 0;border-bottom:1px solid #eee">${proposal.title}</td></tr>
             <tr><td style="padding:8px 0;border-bottom:1px solid #eee;opacity:0.5">Client</td><td style="padding:8px 0;border-bottom:1px solid #eee">${client.name}</td></tr>

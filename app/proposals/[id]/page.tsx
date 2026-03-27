@@ -45,11 +45,31 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
       setProposal(prop)
 
       if (!prop.viewed_at) {
-        await supabase.from("proposals").update({ viewed_at: new Date().toISOString() }).eq("id", params.id)
+        // First view — record both timestamps, notify admin
+        await supabase.from("proposals").update({
+          viewed_at: new Date().toISOString(),
+          last_viewed_at: new Date().toISOString(),
+        } as any).eq("id", params.id)
         fetch("/api/notify/proposal-viewed", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ proposalId: params.id }),
         }).catch((err) => console.error("[notify] proposal-viewed:", err))
+      } else {
+        // Return visit — always update last_viewed_at
+        const now = new Date()
+        await supabase.from("proposals").update({
+          last_viewed_at: now.toISOString(),
+        } as any).eq("id", params.id)
+
+        // Re-notify if 24+ hours since last view
+        const lastView = prop.last_viewed_at ? new Date(prop.last_viewed_at) : new Date(prop.viewed_at)
+        const hoursSince = (now.getTime() - lastView.getTime()) / (1000 * 60 * 60)
+        if (hoursSince >= 24) {
+          fetch("/api/notify/proposal-viewed", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ proposalId: params.id, isReturnView: true }),
+          }).catch((err) => console.error("[notify] proposal-revisit:", err))
+        }
       }
 
       const { data: propItems } = await supabase
