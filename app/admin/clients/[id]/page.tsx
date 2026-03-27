@@ -341,7 +341,10 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                   <div style={{ marginBottom: 32 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
                       <div style={{ fontFamily: "var(--font-sans)", fontSize: 18, opacity: "var(--op-full)" as any, letterSpacing: "-0.01em" }}>{selectedProject.title}</div>
-                      <ProjectStatusBadge status={selectedProject.status} />
+                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <Link href={`/admin/projects/${selectedProject.id}/edit`} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.35, textDecoration: "none" }}>Edit</Link>
+                        <ProjectStatusBadge status={selectedProject.status} />
+                      </div>
                     </div>
                     {selectedProject.scope && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-muted)" as any, lineHeight: 1.6 }}>{selectedProject.scope}</div>}
                     {selectedProject.total_weeks && (

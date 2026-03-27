@@ -186,7 +186,7 @@ export default function NewProposalPage() {
                     {item.is_recommended && <span style={{ fontSize: 7, letterSpacing: "0.1em", textTransform: "uppercase", color: "#6B8F71", border: "0.5px solid rgba(107,143,113,0.3)", padding: "2px 7px" }}>Recommended</span>}
                   </div>
                   {items.length > 1 && (
-                    <button onClick={() => removeItem(i)} style={{ fontSize: 8, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.3, background: "none", border: "none", cursor: "pointer", color: "#0F0F0E", fontFamily: "'Jost', sans-serif" }}>
+                    <button onClick={() => removeItem(i)} style={{ fontSize: 8, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.3, background: "none", border: "none", cursor: "pointer", color: "#0F0F0E", fontFamily: "var(--font-sans)" }}>
                       Remove
                     </button>
                   )}
@@ -242,7 +242,7 @@ export default function NewProposalPage() {
             ))}
 
             <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.1)", paddingTop: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <button onClick={addItem} style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.5, background: "none", border: "0.5px solid rgba(15,15,14,0.2)", padding: "10px 20px", cursor: "pointer", color: "#0F0F0E", fontFamily: "'Jost', sans-serif" }}>
+              <button onClick={addItem} style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.5, background: "none", border: "0.5px solid rgba(15,15,14,0.2)", padding: "10px 20px", cursor: "pointer", color: "#0F0F0E", fontFamily: "var(--font-sans)" }}>
                 + Add item
               </button>
               <div style={{ textAlign: "right" }}>
@@ -304,14 +304,14 @@ const inputStyle: React.CSSProperties = {
   background: "rgba(255,255,255,0.4)",
   border: "0.5px solid rgba(15,15,14,0.15)",
   padding: "10px 12px",
-  fontFamily: "'Jost', sans-serif",
+  fontFamily: "var(--font-sans)",
   fontSize: 12, fontWeight: 300,
   color: "#0F0F0E", outline: "none",
 }
 
 const btnStyle: React.CSSProperties = {
   padding: "12px 28px",
-  fontFamily: "'Jost', sans-serif",
+  fontFamily: "var(--font-sans)",
   fontSize: 9, letterSpacing: "0.14em",
   textTransform: "uppercase",
   cursor: "pointer", border: "none",

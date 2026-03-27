@@ -28,8 +28,8 @@ export default function PayInvoiceButton({
       onClick={handlePay}
       disabled={loading}
       style={{
-        background: "#0F0F0E", border: "none",
-        padding: "11px 24px", fontFamily: "'Jost', sans-serif",
+        background: "var(--ink)", border: "none",
+        padding: "11px 24px", fontFamily: "var(--font-sans)",
         fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase",
         color: "#EDE8E0", cursor: loading ? "default" : "pointer",
         opacity: loading ? 0.4 : 1, whiteSpace: "nowrap",

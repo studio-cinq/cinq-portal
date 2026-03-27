@@ -26,7 +26,8 @@ function LoginPageInner() {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     setLoading(false)
     if (error) { setError("Incorrect email or password. Please try again."); return }
-    window.location.href = email === "kacie@studiocinq.com" ? "/admin/studio" : "/dashboard"
+    // Middleware detects session + /login and redirects to correct destination using ADMIN_EMAIL env var
+    window.location.href = "/login"
   }
 
   async function handleReset(e: React.FormEvent) {

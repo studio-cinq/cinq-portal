@@ -36,8 +36,8 @@ export default function ColorSwatches({ colors }: { colors: ColorSwatch[] }) {
               {copied === c.hex ? "Copied" : "Copy"}
             </div>
           </div>
-          <div style={{ fontSize: 9, color: "#0F0F0E", opacity: 0.6, marginBottom: 2 }}>{c.name}</div>
-          <div style={{ fontSize: 8, color: "#0F0F0E", opacity: 0.28, letterSpacing: "0.04em", fontFamily: "monospace" }}>{c.hex}</div>
+          <div style={{ fontSize: 9, color: "var(--ink)", opacity: 0.6, marginBottom: 2 }}>{c.name}</div>
+          <div style={{ fontSize: 8, color: "var(--ink)", opacity: 0.28, letterSpacing: "0.04em", fontFamily: "monospace" }}>{c.hex}</div>
         </div>
       ))}
     </div>

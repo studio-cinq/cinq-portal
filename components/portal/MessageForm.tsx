@@ -13,12 +13,13 @@ export default function MessageForm({ projectId }: { projectId: string }) {
     setSending(true)
 
     const { data: { user } } = await supabase.auth.getUser()
+    const messageBody = body.trim()
 
     await supabase.from("messages").insert({
       project_id:  projectId,
       from_client: true,
       sender_name: user?.email ?? "Client",
-      body:        body.trim(),
+      body:        messageBody,
       read:        false,
     })
 
@@ -26,6 +27,17 @@ export default function MessageForm({ projectId }: { projectId: string }) {
     setSent(true)
     setBody("")
     setTimeout(() => setSent(false), 3000)
+
+    // Notify admin (non-blocking)
+    fetch("/api/notify/client-message", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        projectId,
+        messageBody,
+        senderEmail: user?.email ?? "",
+      }),
+    }).catch(() => {})
   }
 
   return (
@@ -40,9 +52,9 @@ export default function MessageForm({ projectId }: { projectId: string }) {
           background: "rgba(255,255,255,0.3)",
           border: "0.5px solid rgba(15,15,14,0.12)",
           padding: "10px 12px",
-          fontFamily: "'Jost', sans-serif",
+          fontFamily: "var(--font-sans)",
           fontSize: 11, fontWeight: 300,
-          color: "#0F0F0E", resize: "none", outline: "none",
+          color: "var(--ink)", resize: "none", outline: "none",
           marginBottom: 8,
         }}
       />
@@ -54,10 +66,10 @@ export default function MessageForm({ projectId }: { projectId: string }) {
           background: "transparent",
           border: "0.5px solid rgba(15,15,14,0.15)",
           padding: 10,
-          fontFamily: "'Jost', sans-serif",
+          fontFamily: "var(--font-sans)",
           fontSize: 8, letterSpacing: "0.14em",
           textTransform: "uppercase",
-          color: "#0F0F0E", opacity: sending ? 0.3 : 0.5,
+          color: "var(--ink)", opacity: sending ? 0.3 : 0.5,
           cursor: sending ? "default" : "pointer",
         }}
       >

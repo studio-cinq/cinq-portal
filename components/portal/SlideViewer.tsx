@@ -89,7 +89,7 @@ function arrowStyle(side: "left" | "right"): React.CSSProperties {
     border: "none",
     cursor: "pointer",
     padding: 12,
-    fontFamily: "'Jost', sans-serif",
+    fontFamily: "var(--font-sans)",
     zIndex: 10,
   }
 }

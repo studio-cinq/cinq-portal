@@ -77,6 +77,17 @@ export default async function InvoicesPage() {
               {upcoming.map(inv => <InvoiceCard key={inv.id} inv={inv} variant="locked" />)}
             </>
           )}
+
+          {due.length === 0 && paid.length === 0 && upcoming.length === 0 && (
+            <div style={{ padding: "48px 0", textAlign: "center" }}>
+              <div style={{ fontFamily: "var(--font-sans)", fontSize: 18, color: "var(--ink)", opacity: 0.5, letterSpacing: "-0.01em", marginBottom: 8 }}>
+                No invoices yet.
+              </div>
+              <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", color: "var(--ink)", opacity: 0.3, lineHeight: 1.7 }}>
+                Invoices will appear here as your project progresses.
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right sidebar */}

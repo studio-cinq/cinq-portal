@@ -87,13 +87,13 @@ export default function ReviewActions({ projectId, deliverableId, revisionsRemai
             background: "rgba(255,255,255,0.35)",
             border: "0.5px solid rgba(15,15,14,0.12)",
             padding: "10px 12px",
-            fontFamily: "'Jost', sans-serif",
+            fontFamily: "var(--font-sans)",
             fontSize: 11, fontWeight: 300,
-            color: "#0F0F0E", resize: "none", outline: "none",
+            color: "var(--ink)", resize: "none", outline: "none",
             marginBottom: 8,
           }}
         />
-        <div style={{ fontSize: 8, color: "#0F0F0E", opacity: 0.22, letterSpacing: "0.04em", lineHeight: 1.6 }}>
+        <div style={{ fontSize: 8, color: "var(--ink)", opacity: 0.22, letterSpacing: "0.04em", lineHeight: 1.6 }}>
           {revisionsRemaining} revision round{revisionsRemaining !== 1 ? "s" : ""} remaining after this one.
         </div>
       </div>
@@ -101,7 +101,7 @@ export default function ReviewActions({ projectId, deliverableId, revisionsRemai
       {/* Approve col */}
       <div style={{ padding: "24px 28px" }}>
         <div style={barLabel}>Your decision</div>
-        <div style={{ fontSize: 10, color: "#0F0F0E", opacity: 0.38, lineHeight: 1.6, marginBottom: 16 }}>
+        <div style={{ fontSize: 10, color: "var(--ink)", opacity: 0.38, lineHeight: 1.6, marginBottom: 16 }}>
           Approving confirms this direction and moves the project to the next deliverable.
         </div>
         <button
@@ -109,8 +109,8 @@ export default function ReviewActions({ projectId, deliverableId, revisionsRemai
           disabled={loading}
           style={{
             width: "100%", boxSizing: "border-box",
-            background: "#0F0F0E", border: "none", padding: 13,
-            fontFamily: "'Jost', sans-serif", fontSize: 9,
+            background: "var(--ink)", border: "none", padding: 13,
+            fontFamily: "var(--font-sans)", fontSize: 9,
             letterSpacing: "0.16em", textTransform: "uppercase",
             color: "#EDE8E0", cursor: loading ? "default" : "pointer",
             opacity: loading ? 0.4 : 1, marginBottom: 8,
@@ -126,9 +126,9 @@ export default function ReviewActions({ projectId, deliverableId, revisionsRemai
             background: "transparent",
             border: "0.5px solid rgba(15,15,14,0.15)",
             padding: 11,
-            fontFamily: "'Jost', sans-serif", fontSize: 9,
+            fontFamily: "var(--font-sans)", fontSize: 9,
             letterSpacing: "0.14em", textTransform: "uppercase",
-            color: "#0F0F0E",
+            color: "var(--ink)",
             opacity: loading || !feedback.trim() || revisionsRemaining <= 0 ? 0.22 : 0.42,
             cursor: loading || !feedback.trim() || revisionsRemaining <= 0 ? "default" : "pointer",
           }}
@@ -142,5 +142,5 @@ export default function ReviewActions({ projectId, deliverableId, revisionsRemai
 
 const barLabel: React.CSSProperties = {
   fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase",
-  color: "#0F0F0E", opacity: 0.28, marginBottom: 12,
+  color: "var(--ink)", opacity: 0.28, marginBottom: 12,
 }
