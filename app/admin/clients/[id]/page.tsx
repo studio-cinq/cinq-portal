@@ -4,10 +4,11 @@ import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
 import PortalNav from "@/components/portal/Nav"
 import MarkPaidButton from "@/components/portal/MarkPaidButton"
+import Calendar from "@/components/portal/Calendar"
 import { useToast } from "@/components/portal/Toast"
 import Link from "next/link"
 
-const TABS = ["Project", "Presentation", "Invoices", "Proposal"]
+const TABS = ["Project", "Presentation", "Invoices", "Proposal", "Calendar"]
 
 const statusColors: Record<string, string> = {
   not_started:       "rgba(15,15,14,0.3)",
@@ -46,6 +47,12 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
   const [sendingReply, setSendingReply]       = useState(false)
   const [inviting, setInviting]               = useState(false)
   const [inviteStatus, setInviteStatus]       = useState<"idle" | "sent">("idle")
+  const [events, setEvents]                   = useState<any[]>([])
+  const [savingEvent, setSavingEvent]         = useState(false)
+  const [eventForm, setEventForm]             = useState({
+    title: "", event_date: "", event_time: "", duration_minutes: "",
+    type: "meeting", project_id: "", notes: "",
+  })
   const { show: showToast, ToastContainer }   = useToast()
 
   useEffect(() => { loadAll() }, [params.id])
@@ -91,6 +98,10 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
     const { data: props } = await supabase.from("proposals").select("*, proposal_items(*)")
       .eq("client_id", params.id).order("created_at", { ascending: false })
     setProposals(props ?? [])
+
+    const { data: evts } = await supabase.from("events").select("*, projects(title)")
+      .eq("client_id", params.id).order("event_date")
+    setEvents(evts ?? [])
 
     setLoading(false)
   }
@@ -162,6 +173,48 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
       showToast("Invite email sent")
     } else {
       showToast("Invite failed — try again", "error")
+    }
+  }
+
+  async function addEvent() {
+    if (!eventForm.title.trim() || !eventForm.event_date) return
+    setSavingEvent(true)
+    const res = await fetch("/api/admin/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        client_id: params.id,
+        project_id: eventForm.project_id || null,
+        title: eventForm.title.trim(),
+        event_date: eventForm.event_date,
+        event_time: eventForm.event_time || null,
+        duration_minutes: eventForm.duration_minutes ? parseInt(eventForm.duration_minutes) : null,
+        type: eventForm.type,
+        notes: eventForm.notes.trim() || null,
+      }),
+    })
+    const json = await res.json()
+    setSavingEvent(false)
+    if (res.ok && json.event) {
+      // Re-fetch with project title join
+      const { data } = await supabase.from("events").select("*, projects(title)").eq("id", json.event.id).single()
+      if (data) setEvents(prev => [...prev, data].sort((a, b) => a.event_date.localeCompare(b.event_date)))
+      setEventForm({ title: "", event_date: "", event_time: "", duration_minutes: "", type: "meeting", project_id: "", notes: "" })
+      showToast("Event added")
+    } else {
+      showToast("Failed to add event", "error")
+    }
+  }
+
+  async function deleteEvent(id: string) {
+    const res = await fetch("/api/admin/events", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    })
+    if (res.ok) {
+      setEvents(prev => prev.filter(e => e.id !== id))
+      showToast("Event removed", "info")
     }
   }
 
@@ -488,9 +541,158 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
               )}
             </div>
           )}
-        </div>
 
-        {/* Right sidebar */}
+          {/* ── Tab 4: Calendar ── */}
+          {activeTab === 4 && (
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 20 }}>
+                <SectionHeader label="Calendar" />
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: 32 }} className="form-grid-2col">
+                {/* Month calendar */}
+                <div>
+                  <Calendar
+                    events={[
+                      ...events.map((e: any) => ({ id: e.id, event_date: e.event_date, type: e.type, title: e.title })),
+                      ...invoices.filter(i => i.due_date && ["sent", "overdue"].includes(i.status)).map((i: any) => ({
+                        id: `inv-${i.id}`, event_date: i.due_date, type: "invoice_due", title: `Invoice #${i.invoice_number}`,
+                      })),
+                    ]}
+                  />
+                  {/* Legend */}
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 16, paddingTop: 12, borderTop: "0.5px solid rgba(15,15,14,0.08)" }}>
+                    {[
+                      { label: "Meeting", color: "var(--amber)" },
+                      { label: "Presentation", color: "var(--amber)" },
+                      { label: "Milestone", color: "var(--sage)" },
+                      { label: "Invoice due", color: "var(--ink)" },
+                    ].map(l => (
+                      <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                        <div style={{ width: 5, height: 5, borderRadius: "50%", background: l.color, opacity: 0.7 }} />
+                        <span style={{ fontFamily: "var(--font-mono)", fontSize: 7, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.45 }}>{l.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Event list */}
+                <div>
+                  {/* All events sorted by date */}
+                  {(() => {
+                    const allCalEvents = [
+                      ...events.map((e: any) => ({
+                        id: e.id, title: e.title, event_date: e.event_date, event_time: e.event_time,
+                        type: e.type, project_title: e.projects?.title ?? null, notes: e.notes, is_auto: false,
+                      })),
+                      ...invoices.filter(i => i.due_date && ["sent", "overdue"].includes(i.status)).map((i: any) => ({
+                        id: `inv-${i.id}`, title: `Invoice #${i.invoice_number} — $${(i.amount / 100).toLocaleString()}`,
+                        event_date: i.due_date, event_time: null, type: "invoice_due",
+                        project_title: null, notes: null, is_auto: true,
+                      })),
+                    ].sort((a, b) => a.event_date.localeCompare(b.event_date))
+
+                    return allCalEvents.length > 0 ? (
+                      <div>
+                        {allCalEvents.map(evt => (
+                          <div key={evt.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "12px 0", borderBottom: "0.5px solid rgba(15,15,14,0.07)", gap: 12 }}>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                                <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.4, minWidth: 60 }}>
+                                  {new Date(evt.event_date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                                </span>
+                                {evt.event_time && (
+                                  <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.3 }}>
+                                    {(() => { const [h, m] = evt.event_time.split(":"); const hr = parseInt(h); return `${hr === 0 ? 12 : hr > 12 ? hr - 12 : hr}:${m} ${hr >= 12 ? "PM" : "AM"}`; })()}
+                                  </span>
+                                )}
+                                <span style={{
+                                  fontFamily: "var(--font-mono)", fontSize: 7, letterSpacing: "0.1em", textTransform: "uppercase",
+                                  padding: "2px 7px",
+                                  border: `0.5px solid ${evt.type === "milestone" ? "rgba(107,143,113,0.3)" : evt.type === "invoice_due" ? "rgba(15,15,14,0.15)" : "rgba(176,125,58,0.3)"}`,
+                                  color: evt.type === "milestone" ? "var(--sage)" : evt.type === "invoice_due" ? "var(--ink)" : "var(--amber)",
+                                  opacity: evt.type === "invoice_due" ? 0.5 : 1,
+                                }}>
+                                  {evt.type === "meeting" ? "Meeting" : evt.type === "presentation" ? "Presentation" : evt.type === "milestone" ? "Milestone" : "Invoice"}
+                                </span>
+                              </div>
+                              <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-body)" as any }}>{evt.title}</div>
+                              {evt.project_title && <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.3, marginTop: 2 }}>{evt.project_title}</div>}
+                              {evt.notes && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: 0.4, marginTop: 4, lineHeight: 1.5 }}>{evt.notes}</div>}
+                            </div>
+                            {!evt.is_auto && (
+                              <button onClick={() => deleteEvent(evt.id)} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.25, background: "none", border: "none", cursor: "pointer", color: "var(--ink)", flexShrink: 0, padding: "2px 4px" }}>✕</button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.35, paddingTop: 8 }}>No events yet. Add one below.</div>
+                    )
+                  })()}
+                </div>
+              </div>
+
+              {/* Add event form */}
+              <div style={{ marginTop: 32, borderTop: "0.5px solid rgba(15,15,14,0.1)", paddingTop: 24 }}>
+                <SectionHeader label="Add event" />
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 140px 100px", gap: 12 }} className="form-grid-3col">
+                    <div>
+                      <div style={formLabel}>Title *</div>
+                      <input value={eventForm.title} onChange={e => setEventForm(f => ({ ...f, title: e.target.value }))} placeholder="Brand review call" style={formInput} />
+                    </div>
+                    <div>
+                      <div style={formLabel}>Date *</div>
+                      <input type="date" value={eventForm.event_date} onChange={e => setEventForm(f => ({ ...f, event_date: e.target.value }))} style={formInput} />
+                    </div>
+                    <div>
+                      <div style={formLabel}>Time</div>
+                      <input type="time" value={eventForm.event_time} onChange={e => setEventForm(f => ({ ...f, event_time: e.target.value }))} style={formInput} />
+                    </div>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }} className="form-grid-3col">
+                    <div>
+                      <div style={formLabel}>Type</div>
+                      <select value={eventForm.type} onChange={e => setEventForm(f => ({ ...f, type: e.target.value }))} style={formInput}>
+                        <option value="meeting">Meeting / call</option>
+                        <option value="presentation">Presentation review</option>
+                        <option value="milestone">Milestone deadline</option>
+                      </select>
+                    </div>
+                    <div>
+                      <div style={formLabel}>Project</div>
+                      <select value={eventForm.project_id} onChange={e => setEventForm(f => ({ ...f, project_id: e.target.value }))} style={formInput}>
+                        <option value="">No project</option>
+                        {projects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <div style={formLabel}>Duration (min)</div>
+                      <input type="number" value={eventForm.duration_minutes} onChange={e => setEventForm(f => ({ ...f, duration_minutes: e.target.value }))} placeholder="60" style={formInput} />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style={formLabel}>Notes</div>
+                    <input value={eventForm.notes} onChange={e => setEventForm(f => ({ ...f, notes: e.target.value }))} placeholder="Optional details…" style={formInput} />
+                  </div>
+
+                  <button onClick={addEvent} disabled={savingEvent || !eventForm.title.trim() || !eventForm.event_date} style={{
+                    fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase",
+                    background: "var(--ink)", color: "var(--cream)", border: "none", padding: "11px 24px",
+                    cursor: savingEvent || !eventForm.title.trim() || !eventForm.event_date ? "default" : "pointer",
+                    opacity: savingEvent || !eventForm.title.trim() || !eventForm.event_date ? 0.35 : 1,
+                    alignSelf: "flex-start", transition: "opacity 0.2s",
+                  }}>
+                    {savingEvent ? "Adding…" : "Add event"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
         <div className="admin-studio-right" style={{ padding: "32px 28px", borderLeft: "0.5px solid rgba(15,15,14,0.08)" }}>
           <div style={{ marginBottom: 28 }}>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.5, marginBottom: 12 }}>Client</div>
@@ -603,4 +805,17 @@ const actionBtn: React.CSSProperties = {
   color: "var(--ink)", opacity: 0.6, textDecoration: "none",
   border: "0.5px solid rgba(15,15,14,0.2)", padding: "8px 14px",
   display: "inline-block",
+}
+
+const formLabel: React.CSSProperties = {
+  fontFamily: "var(--font-mono)",
+  fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase",
+  opacity: 0.45, marginBottom: 6,
+}
+
+const formInput: React.CSSProperties = {
+  width: "100%", boxSizing: "border-box",
+  fontFamily: "var(--font-sans)", fontSize: "var(--text-body)",
+  background: "rgba(255,255,255,0.4)", border: "0.5px solid rgba(15,15,14,0.12)",
+  padding: "9px 12px", color: "var(--ink)", outline: "none",
 }

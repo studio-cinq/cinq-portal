@@ -1,6 +1,7 @@
 import { createServerComponentClient } from "@/lib/supabase-server"
 import Link from "next/link"
 import PortalNav from "@/components/portal/Nav"
+import UpcomingEvents from "@/components/portal/UpcomingEvents"
 
 function StatusDot({ status }: { status: string }) {
   const colors: Record<string, string> = {
@@ -63,6 +64,39 @@ export default async function DashboardPage() {
     .eq("client_id", client?.id ?? "")
     .in("status", ["sent", "overdue"])
   const invoices = invoicesRaw as any[] | null
+
+  // Fetch manual events for this client
+  const { data: eventsRaw } = await supabase
+    .from("events").select("*, projects(title)")
+    .eq("client_id", client?.id ?? "")
+    .order("event_date")
+  const manualEvents = (eventsRaw ?? []).map((e: any) => ({
+    id: e.id,
+    title: e.title,
+    event_date: e.event_date,
+    event_time: e.event_time,
+    type: e.type,
+    project_title: e.projects?.title ?? null,
+    notes: e.notes,
+  }))
+
+  // Auto-generate invoice due date events
+  const { data: allInvoicesRaw } = await supabase
+    .from("invoices").select("*, projects(title)")
+    .eq("client_id", client?.id ?? "")
+    .in("status", ["sent", "overdue"])
+    .not("due_date", "is", null)
+  const invoiceDueEvents = (allInvoicesRaw ?? []).map((inv: any) => ({
+    id: `inv-${inv.id}`,
+    title: `Invoice #${inv.invoice_number} due — $${(inv.amount / 100).toLocaleString()}`,
+    event_date: inv.due_date,
+    event_time: null,
+    type: "invoice_due",
+    project_title: inv.projects?.title ?? null,
+    notes: null,
+  }))
+
+  const allEvents = [...manualEvents, ...invoiceDueEvents]
 
   const hour = new Date().getHours()
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening"
@@ -151,6 +185,9 @@ export default async function DashboardPage() {
             </div>
           </div>
         )}
+
+        {/* Calendar */}
+        <UpcomingEvents events={allEvents} />
 
         {/* Projects */}
         <div style={sectionLabel}>Active projects</div>
