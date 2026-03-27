@@ -151,14 +151,26 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
   async function sendReply() {
     if (!replyText.trim() || !replyProjectId) return
     setSendingReply(true)
+    const messageBody = replyText.trim()
     const { data } = await supabase.from("messages").insert({
       project_id: replyProjectId, from_client: false,
-      sender_name: "Studio Cinq", body: replyText.trim(), read: true,
+      sender_name: "Studio Cinq", body: messageBody, read: true,
     }).select("*, projects(title)").single()
     if (data) setMessages(prev => [data, ...prev])
     setReplyText("")
     setSendingReply(false)
     showToast("Reply sent")
+
+    // Fire email notification to client (non-blocking)
+    fetch("/api/admin/notify-reply", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        clientId: params.id,
+        projectId: replyProjectId,
+        messageBody,
+      }),
+    }).catch(err => console.error("[notify-reply]", err))
   }
 
   async function inviteClient() {

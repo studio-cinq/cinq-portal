@@ -256,3 +256,35 @@ export async function sendProposalReminderToAdmin(p: ProposalReminderPayload) {
     html,
   });
 }
+
+// ─── Message reply notification — to client ───────────────────────────────────
+
+interface MessageReplyPayload {
+  contactName: string;
+  contactEmail: string;
+  clientName: string;
+  projectTitle: string;
+  messagePreview: string;
+}
+
+export async function sendMessageReplyEmail(p: MessageReplyPayload) {
+  const dashboardUrl = `${PORTAL_URL}/dashboard`;
+
+  const html = emailShell(`
+    <div class="body">
+      <p>Hi ${p.contactName} — Kacie left you a message on your ${p.projectTitle} project.</p>
+      <div class="meta">
+        <p><strong>Project</strong> &nbsp;${p.projectTitle}</p>
+        <p style="color:#2C2820;font-style:italic;margin-top:8px">"${p.messagePreview.length > 200 ? p.messagePreview.slice(0, 200) + "…" : p.messagePreview}"</p>
+      </div>
+      <a class="cta" href="${dashboardUrl}" style="color:#FAF8F5;text-decoration:none;">View in portal →</a>
+    </div>
+  `);
+
+  return resend.emails.send({
+    from: "Studio Cinq <portal@studiocinq.com>",
+    to: p.contactEmail,
+    subject: `New message from Kacie — ${p.projectTitle}`,
+    html,
+  });
+}
