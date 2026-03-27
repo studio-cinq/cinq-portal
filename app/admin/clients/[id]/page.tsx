@@ -410,7 +410,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                         <button onClick={() => deleteLogEntry(entry.id)} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.3, background: "none", border: "none", cursor: "pointer", color: "var(--ink)", flexShrink: 0, paddingTop: 1 }}>×</button>
                       </div>
                     ))}
-                    {decisionLog.length === 0 && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.3, padding: "12px 0" }}>No decisions logged yet.</div>}
+                    {decisionLog.length === 0 && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.3, padding: "12px 0", lineHeight: 1.7 }}>No decisions logged yet — add notes here as you and the client align on direction.</div>}
                   </div>
 
                   {/* Time tracking */}
@@ -439,7 +439,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                         <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-muted)" as any, flex: 1 }}>{entry.note ?? "—"}</div>
                       </div>
                     ))}
-                    {timeEntries.length === 0 && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.3, padding: "8px 0" }}>No time logged yet.</div>}
+                    {timeEntries.length === 0 && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.3, padding: "8px 0" }}>No time tracked yet. Start the timer above when you begin working.</div>}
                   </div>
                 </>
               )}
@@ -451,7 +451,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
             <div>
               <SectionHeader label={selectedProject ? `${selectedProject.title} — slides` : "Presentation"} />
               {slides.length === 0 ? (
-                <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.4, padding: "16px 0" }}>No slides yet. Upload presentation files to get started.</div>
+                <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.4, padding: "16px 0", lineHeight: 1.7 }}>No presentation slides yet — this is where design concepts and direction will live once uploaded.</div>
               ) : (
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
                   {slides.map((slide, i) => (
@@ -501,7 +501,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                   </Link>
                 </div>
               ))}
-              {invoices.length === 0 && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.5, padding: "32px 0" }}>No invoices yet.</div>}
+              {invoices.length === 0 && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.35, padding: "32px 0", lineHeight: 1.7 }}>No invoices for this client yet. <Link href={`/admin/invoices/new?client=${params.id}`} style={{ opacity: 0.6, textDecoration: "none", borderBottom: "0.5px solid rgba(15,15,14,0.2)" }}>Send one →</Link></div>}
             </div>
           )}
 
@@ -510,7 +510,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
             <div>
               {!latestProposal ? (
                 <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.4, paddingTop: 16 }}>
-                  No proposals yet. <Link href={`/admin/proposals/new?client=${params.id}`} style={{ opacity: 0.6 }}>Create one →</Link>
+                  No proposals for this client yet. <Link href={`/admin/proposals/new?client=${params.id}`} style={{ opacity: 0.6, textDecoration: "none", borderBottom: "0.5px solid rgba(15,15,14,0.2)" }}>Create one →</Link>
                 </div>
               ) : (
                 <>
@@ -639,7 +639,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                         ))}
                       </div>
                     ) : (
-                      <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.35, paddingTop: 8 }}>No events yet. Add one below.</div>
+                      <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.35, paddingTop: 8, lineHeight: 1.7 }}>No events scheduled yet. Add meetings, milestones, or reviews below.</div>
                     )
                   })()}
                 </div>
@@ -765,7 +765,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                   <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-body)" as any, lineHeight: 1.55 }}>{msg.body}</div>
                 </div>
               ))}
-              {messages.length === 0 && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.3, paddingTop: 8 }}>No messages yet.</div>}
+              {messages.length === 0 && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.3, paddingTop: 8, lineHeight: 1.7 }}>No messages yet. Send the first one to start the conversation.</div>}
             </div>
           </div>
         </div>

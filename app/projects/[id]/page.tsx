@@ -164,7 +164,7 @@ export default async function ProjectPage({ params }: { params: { id: string } }
               </div>
             ))}
             {(!decisionLog || decisionLog.length === 0) && (
-              <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: 0.28, padding: "16px 0" }}>No decisions logged yet.</div>
+              <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: 0.28, padding: "16px 0", lineHeight: 1.7 }}>Decisions and direction notes will appear here as the project progresses.</div>
             )}
           </div>
         </div>

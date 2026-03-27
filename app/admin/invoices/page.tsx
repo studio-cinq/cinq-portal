@@ -80,7 +80,7 @@ export default async function AdminInvoicesPage() {
 
         {(!invoices || invoices.length === 0) && (
           <div style={{ padding: "48px 0", fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-ghost)" as any, textAlign: "center" }}>
-            No invoices yet.
+            No invoices yet — they&apos;ll appear here as you send them to clients.
           </div>
         )}
       </main>

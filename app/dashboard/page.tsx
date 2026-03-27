@@ -249,12 +249,15 @@ export default async function DashboardPage() {
 
           {(!projects || projects.length === 0) && (
             <div style={{
-              padding: "40px 0",
-              fontFamily: "var(--font-sans)",
-              fontSize: "var(--text-body)",
-              color: "var(--ink)", opacity: 0.3,
+              padding: "48px 0",
+              textAlign: "center",
             }}>
-              No active projects yet.
+              <div style={{ fontFamily: "var(--font-sans)", fontSize: 18, color: "var(--ink)", opacity: 0.5, letterSpacing: "-0.01em", marginBottom: 8 }}>
+                Your workspace is being set up.
+              </div>
+              <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", color: "var(--ink)", opacity: 0.3, lineHeight: 1.7 }}>
+                Once your project kicks off, you&apos;ll see deliverables, timelines, and everything you need right here.
+              </div>
             </div>
           )}
         </div>

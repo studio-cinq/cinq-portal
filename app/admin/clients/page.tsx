@@ -85,7 +85,7 @@ export default async function AdminClientsPage() {
 
         {(!clients || clients.length === 0) && (
           <div style={{ padding: "48px 0", fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-ghost)" as any, textAlign: "center" }}>
-            No clients yet. Add your first client to get started.
+            No clients yet — <a href="/admin/clients/new" style={{ opacity: 0.6, textDecoration: "none", borderBottom: "0.5px solid rgba(15,15,14,0.2)" }}>add your first client</a> to get started.
           </div>
         )}
       </main>

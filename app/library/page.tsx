@@ -124,8 +124,8 @@ export default async function LibraryPage() {
             )}
 
             {logoAssets.length === 0 && colors.length === 0 && (
-              <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.4, paddingTop: 16 }}>
-                No logo files or colors added yet.
+              <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.4, paddingTop: 16, lineHeight: 1.7 }}>
+                Logo files and color palettes will appear here once your brand is finalized.
               </div>
             )}
           </div>
@@ -174,8 +174,8 @@ export default async function LibraryPage() {
             )}
 
             {typefaces.length === 0 && allFiles.length === 0 && (
-              <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.4, paddingTop: 16 }}>
-                No files added yet.
+              <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.4, paddingTop: 16, lineHeight: 1.7 }}>
+                Typography and deliverable files will be available here once your project is complete.
               </div>
             )}
           </div>

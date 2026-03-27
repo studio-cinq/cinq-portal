@@ -93,7 +93,7 @@ export default async function AdminLibraryPreviewPage({ params }: { params: { cl
             Nothing here yet.
           </div>
           <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-muted)" as any, lineHeight: 1.8 }}>
-            Upload brand assets, color swatches, and typeface entries for this client and they&apos;ll appear here.
+            Brand assets, color palettes, and typeface files will appear here as you build out this client&apos;s brand library.
           </div>
         </div>
       ) : (
@@ -124,8 +124,8 @@ export default async function AdminLibraryPreviewPage({ params }: { params: { cl
             )}
 
             {logoAssets.length === 0 && colors.length === 0 && (
-              <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.4, paddingTop: 16 }}>
-                No logo files or colors added yet.
+              <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.4, paddingTop: 16, lineHeight: 1.7 }}>
+                Logo files and color palettes will appear here once added.
               </div>
             )}
           </div>
@@ -174,8 +174,8 @@ export default async function AdminLibraryPreviewPage({ params }: { params: { cl
             )}
 
             {typefaces.length === 0 && allFiles.length === 0 && (
-              <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.4, paddingTop: 16 }}>
-                No files added yet.
+              <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.4, paddingTop: 16, lineHeight: 1.7 }}>
+                Typography and deliverable files will appear here once added.
               </div>
             )}
           </div>

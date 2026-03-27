@@ -75,7 +75,7 @@ export default async function AdminProposalsPage() {
 
         {(!proposals || proposals.length === 0) && (
           <div style={{ padding: "48px 0", fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-ghost)" as any, textAlign: "center" }}>
-            No proposals yet.
+            No proposals yet — <a href="/admin/proposals/new" style={{ opacity: 0.6, textDecoration: "none", borderBottom: "0.5px solid rgba(15,15,14,0.2)" }}>create your first proposal</a> to send to a client.
           </div>
         )}
       </main>
