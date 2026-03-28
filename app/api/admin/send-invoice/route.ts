@@ -28,7 +28,7 @@ export async function POST(req: Request) {
       clientName:    client.name,
       contactName:   client.contact_name,
       contactEmail:  client.contact_email,
-      invoiceUrl:    `${portalUrl}/invoices`,
+      invoiceUrl:    `${portalUrl}/invoice/${invoice.id}`,
     })
 
     return NextResponse.json({ ok: true })
