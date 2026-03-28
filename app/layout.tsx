@@ -4,6 +4,10 @@ import "./globals.css"
 export const metadata: Metadata = {
   title: "Studio Cinq — Client Portal",
   description: "Private client workspace for Studio Cinq projects.",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
 }
 
 export default function RootLayout({
