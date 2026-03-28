@@ -46,7 +46,17 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
     due_date:       "",
     status:         "draft",
     unlocks_files:  false,
+    notes:          "",
   })
+
+  const [lineItems, setLineItems] = useState<{ description: string; amount: string }[]>([
+    { description: "", amount: "" },
+  ])
+
+  const total = lineItems.reduce((sum, item) => {
+    const val = parseFloat(item.amount)
+    return sum + (isNaN(val) ? 0 : val)
+  }, 0)
 
   useEffect(() => {
     Promise.all([
@@ -67,7 +77,16 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
           due_date:       inv.due_date ?? "",
           status:         inv.status ?? "draft",
           unlocks_files:  inv.unlocks_files ?? false,
+          notes:          inv.notes ?? "",
         })
+
+        // Load line items from DB
+        if (Array.isArray(inv.line_items) && inv.line_items.length > 0) {
+          setLineItems(inv.line_items.map((item: any) => ({
+            description: item.description ?? "",
+            amount: item.amount ? String(item.amount / 100) : "",
+          })))
+        }
 
         // Load projects for this client
         if (inv.client_id) {
@@ -98,21 +117,48 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
     setSaved(false)
   }
 
+  function updateLineItem(index: number, field: string, value: string) {
+    setLineItems(items => items.map((item, i) => i === index ? { ...item, [field]: value } : item))
+    setSaved(false)
+  }
+
+  function addLineItem() {
+    setLineItems(items => [...items, { description: "", amount: "" }])
+    setSaved(false)
+  }
+
+  function removeLineItem(index: number) {
+    if (lineItems.length <= 1) return
+    setLineItems(items => items.filter((_, i) => i !== index))
+    setSaved(false)
+  }
+
   async function handleSave() {
     setError(null)
     if (!form.client_id)             return setError("Please select a client.")
-    if (!form.description.trim())    return setError("Description is required.")
-    if (!form.amount)                return setError("Amount is required.")
+    if (!form.description.trim())    return setError("Invoice title is required.")
     if (!form.invoice_number.trim()) return setError("Invoice number is required.")
 
+    const validItems = lineItems.filter(item => item.description.trim() && parseFloat(item.amount) > 0)
+
     setSaving(true)
+
+    const items = validItems.map(item => ({
+      description: item.description.trim(),
+      amount: Math.round(parseFloat(item.amount) * 100),
+    }))
+    const totalCents = items.length > 0
+      ? items.reduce((sum, item) => sum + item.amount, 0)
+      : Math.round(parseFloat(form.amount || "0") * 100)
 
     const updatePayload: any = {
       client_id:      form.client_id,
       project_id:     form.project_id || null,
       invoice_number: form.invoice_number.trim(),
       description:    form.description.trim(),
-      amount:         Math.round(parseFloat(form.amount) * 100),
+      amount:         totalCents,
+      line_items:     items.length > 0 ? items : [],
+      notes:          form.notes.trim() || null,
       due_date:       form.due_date || null,
       status:         form.status,
       unlocks_files:  form.unlocks_files,
@@ -223,45 +269,81 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
               <label style={labelStyle}>Invoice number *</label>
               <input
                 style={inputStyle}
-                placeholder="001"
+                placeholder="SC-001"
                 value={form.invoice_number}
                 onChange={e => set("invoice_number", e.target.value)}
               />
             </div>
             <div>
-              <label style={labelStyle}>Amount (USD) *</label>
-              <input
-                style={inputStyle}
-                type="number"
-                placeholder="0"
-                value={form.amount}
-                onChange={e => set("amount", e.target.value)}
-              />
+              <label style={labelStyle}>Due date <span style={{ opacity: 0.5 }}>(optional)</span></label>
+              <input style={inputStyle} type="date" value={form.due_date} onChange={e => set("due_date", e.target.value)} />
             </div>
           </div>
 
-          {/* Description */}
+          {/* Invoice title */}
           <div>
-            <label style={labelStyle}>Description *</label>
+            <label style={labelStyle}>Invoice title *</label>
             <input
               style={inputStyle}
-              placeholder="Brand Identity — 50% deposit"
+              placeholder="Brand Identity — Phase 1"
               value={form.description}
               onChange={e => set("description", e.target.value)}
             />
           </div>
 
-          {/* Due date + Status */}
-          <div className="form-grid-2col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
-            <div>
-              <label style={labelStyle}>Due date <span style={{ opacity: 0.5 }}>(optional)</span></label>
-              <input
-                style={inputStyle}
-                type="date"
-                value={form.due_date}
-                onChange={e => set("due_date", e.target.value)}
-              />
+          {/* Line items */}
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <label style={{ ...labelStyle, marginBottom: 0 }}>Line items</label>
+              <button onClick={addLineItem} style={{
+                fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
+                letterSpacing: "0.12em", textTransform: "uppercase",
+                opacity: 0.5, background: "none",
+                border: "0.5px solid rgba(15,15,14,0.2)", padding: "5px 12px",
+                cursor: "pointer", color: "var(--ink)",
+              }}>
+                + Add item
+              </button>
             </div>
+            {lineItems.map((item, i) => (
+              <div key={i} style={{
+                display: "grid", gridTemplateColumns: "1fr 140px 24px",
+                gap: 16, alignItems: "end", padding: "12px 0",
+                borderTop: i === 0 ? "0.5px solid rgba(15,15,14,0.1)" : "none",
+                borderBottom: "0.5px solid rgba(15,15,14,0.1)",
+              }}>
+                <div>
+                  {i === 0 && <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.35, marginBottom: 6, letterSpacing: "0.1em", textTransform: "uppercase" }}>Description</div>}
+                  <input value={item.description} onChange={e => updateLineItem(i, "description", e.target.value)} placeholder="Logo design" style={{ ...inputStyle, borderBottom: "none", padding: "6px 0" }} />
+                </div>
+                <div>
+                  {i === 0 && <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.35, marginBottom: 6, letterSpacing: "0.1em", textTransform: "uppercase" }}>Amount</div>}
+                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <span style={{ fontFamily: "var(--font-sans)", fontSize: 13, opacity: 0.35 }}>$</span>
+                    <input type="number" value={item.amount} onChange={e => updateLineItem(i, "amount", e.target.value)} placeholder="0" style={{ ...inputStyle, borderBottom: "none", padding: "6px 0", textAlign: "right" }} />
+                  </div>
+                </div>
+                <button onClick={() => removeLineItem(i)} disabled={lineItems.length <= 1} style={{
+                  fontFamily: "var(--font-mono)", fontSize: 11, background: "none", border: "none",
+                  cursor: lineItems.length <= 1 ? "default" : "pointer",
+                  color: "var(--ink)", opacity: lineItems.length <= 1 ? 0.15 : 0.35, padding: "6px 0", marginBottom: 2,
+                }}>✕</button>
+              </div>
+            ))}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "16px 0 0" }}>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.5 }}>Total</span>
+              <span style={{ fontFamily: "var(--font-sans)", fontSize: 22, letterSpacing: "-0.01em", opacity: 0.88 }}>${total.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label style={labelStyle}>Notes <span style={{ opacity: 0.5 }}>(optional — visible on PDF)</span></label>
+            <textarea value={form.notes} onChange={e => set("notes", e.target.value)} placeholder="Payment terms, additional context, etc." rows={3} style={{ ...inputStyle, resize: "none", lineHeight: 1.7 }} />
+          </div>
+
+          {/* Status */}
+          <div className="form-grid-2col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
             <div>
               <label style={labelStyle}>Status</label>
               <select
@@ -274,6 +356,12 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
                 <option value="paid">Paid</option>
                 <option value="overdue">Overdue</option>
               </select>
+            </div>
+            <div style={{ display: "flex", alignItems: "end", paddingBottom: 10 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+                <input type="checkbox" checked={form.unlocks_files} onChange={e => set("unlocks_files", e.target.checked)} />
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.08em", opacity: 0.6 }}>Payment unlocks brand library files</span>
+              </label>
             </div>
           </div>
 
@@ -290,20 +378,6 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
               Invoice email will be re-sent to the client when you save.
             </div>
           )}
-
-          {/* Unlocks files */}
-          <div>
-            <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
-              <input
-                type="checkbox"
-                checked={form.unlocks_files}
-                onChange={e => set("unlocks_files", e.target.checked)}
-              />
-              <span style={{ ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.08em", opacity: 0.6 }}>
-                Payment unlocks brand library files for this client
-              </span>
-            </label>
-          </div>
 
           {error && (
             <div style={{ ...mono, fontSize: 10, color: "var(--danger)", opacity: 0.8 }}>{error}</div>

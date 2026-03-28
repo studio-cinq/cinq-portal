@@ -144,7 +144,7 @@ function InvoiceCard({ inv, variant }: { inv: any; variant: "paid" | "due" | "lo
       padding: "24px 28px", marginBottom: 12,
       opacity: variant === "locked" ? 0.45 : 1,
     }}>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16 }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: Array.isArray(inv.line_items) && inv.line_items.length > 0 ? 8 : 16 }}>
         <div>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.5, marginBottom: 6 }}>
             {inv.invoice_number}
@@ -167,6 +167,18 @@ function InvoiceCard({ inv, variant }: { inv: any; variant: "paid" | "due" | "lo
           <StatusBadge variant={variant} dueDate={inv.due_date} />
         </div>
       </div>
+
+      {/* Line items breakdown */}
+      {Array.isArray(inv.line_items) && inv.line_items.length > 0 && (
+        <div style={{ marginBottom: 12, padding: "10px 0", borderTop: "0.5px solid rgba(15,15,14,0.07)" }}>
+          {inv.line_items.map((item: any, i: number) => (
+            <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: 0.55 }}>
+              <span>{item.description}</span>
+              <span>${(item.amount / 100).toLocaleString()}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {variant === "due" && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12, paddingTop: 14, borderTop: "0.5px solid rgba(15,15,14,0.07)" }}>

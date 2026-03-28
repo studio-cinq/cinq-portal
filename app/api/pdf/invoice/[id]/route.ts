@@ -136,13 +136,15 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
     y += 80
 
-    // ── Amount section ──
+    // ── Line items / Amount section ──
+    const lineItems = Array.isArray(invoice.line_items) ? invoice.line_items as any[] : []
+
     doc.setDrawColor(200, 196, 190)
     doc.setLineWidth(0.3)
     doc.line(marginL, y, W - marginR, y)
     y += 24
 
-    doc.setFontSize(7)
+    doc.setFontSize(8)
     setColor(doc, INK, 0.38)
     doc.text("DESCRIPTION", marginL, y)
     doc.text("AMOUNT", W - marginR, y, { align: "right" })
@@ -152,12 +154,23 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     doc.line(marginL, y, W - marginR, y)
     y += 20
 
-    doc.setFontSize(11)
-    setColor(doc, INK, 0.8)
-    doc.text(invoice.description, marginL, y)
-    doc.text(`$${amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}`, W - marginR, y, { align: "right" })
-    y += 28
+    if (lineItems.length > 0) {
+      for (const item of lineItems) {
+        doc.setFontSize(11)
+        setColor(doc, INK, 0.8)
+        doc.text(item.description, marginL, y)
+        doc.text(`$${(item.amount / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}`, W - marginR, y, { align: "right" })
+        y += 22
+      }
+    } else {
+      doc.setFontSize(11)
+      setColor(doc, INK, 0.8)
+      doc.text(invoice.description, marginL, y)
+      doc.text(`$${amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}`, W - marginR, y, { align: "right" })
+      y += 22
+    }
 
+    y += 6
     doc.setLineWidth(0.3)
     doc.line(marginL, y, W - marginR, y)
     y += 20
@@ -170,6 +183,22 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     setColor(doc, INK, 0.9)
     doc.text(`$${amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}`, W - marginR, y, { align: "right" })
     y += 12
+
+    // Notes
+    if (invoice.notes) {
+      y += 20
+      doc.setFontSize(8)
+      setColor(doc, INK, 0.38)
+      doc.text("NOTES", marginL, y)
+      y += 14
+      doc.setFontSize(9)
+      setColor(doc, INK, 0.6)
+      const noteLines = doc.splitTextToSize(invoice.notes, contentW)
+      for (const line of noteLines) {
+        doc.text(line, marginL, y)
+        y += 12
+      }
+    }
 
     // Paid stamp
     if (isPaid) {
