@@ -2,6 +2,7 @@ import { createServerComponentClient } from "@/lib/supabase-server"
 import PortalNav from "@/components/portal/Nav"
 import PayInvoiceButton from "@/components/portal/PayInvoiceButton"
 import DownloadPDFButton from "@/components/portal/DownloadPDFButton"
+import InvoiceViewTracker from "@/components/portal/InvoiceViewTracker"
 
 export default async function InvoicesPage() {
   const supabase = await createServerComponentClient()
@@ -28,6 +29,7 @@ export default async function InvoicesPage() {
   return (
     <>
       <PortalNav clientName={client?.name} />
+      <InvoiceViewTracker invoiceIds={(invoices ?? []).filter(i => ["sent", "overdue"].includes(i.status)).map(i => i.id)} />
 
       <main className="layout-grid" style={{
         display: "grid",

@@ -543,7 +543,12 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
               </div>
               {invoices.map(inv => (
                 <div key={inv.id} style={{ display: "grid", gridTemplateColumns: "80px 1fr 120px 100px 80px 50px", gap: 16, padding: "14px 0", borderBottom: "0.5px solid rgba(15,15,14,0.07)", alignItems: "center" }}>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.4 }}>#{inv.invoice_number}</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.4 }}>
+                    #{inv.invoice_number}
+                    {inv.viewed_at && (
+                      <span style={{ color: "var(--sage)", opacity: 0.8, marginLeft: 6 }}>·&nbsp;viewed</span>
+                    )}
+                  </div>
                   <div>
                     <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-full)" as any }}>{inv.description}</div>
                     {inv.due_date && <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.4, marginTop: 2 }}>Due {new Date(inv.due_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</div>}

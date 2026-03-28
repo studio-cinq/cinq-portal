@@ -57,7 +57,14 @@ export default async function AdminInvoicesPage() {
           }}>
             <div>
               <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-full)" as any }}>{inv.description}</div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: "var(--op-muted)" as any, marginTop: 2 }}>#{inv.invoice_number}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: "var(--op-muted)" as any, marginTop: 2 }}>
+                #{inv.invoice_number}
+                {inv.viewed_at && (
+                  <span style={{ marginLeft: 8, opacity: 0.6, color: "var(--sage)" }}>
+                    · viewed {new Date(inv.viewed_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  </span>
+                )}
+              </div>
             </div>
             <div className="admin-client-col-hide" style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: "var(--op-muted)" as any }}>{(inv.clients as any)?.name}</div>
             <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-full)" as any }}>${(inv.amount / 100).toLocaleString()}</div>
