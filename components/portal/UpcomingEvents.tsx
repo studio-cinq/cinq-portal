@@ -111,7 +111,7 @@ export default function UpcomingEvents({ events }: UpcomingEventsProps) {
                       </span>
                       <span style={{
                         fontFamily: "var(--font-mono)",
-                        fontSize: 7,
+                        fontSize: 8,
                         letterSpacing: "0.1em",
                         textTransform: "uppercase",
                         padding: "2px 7px",
@@ -133,7 +133,7 @@ export default function UpcomingEvents({ events }: UpcomingEventsProps) {
                       <div style={{
                         fontFamily: "var(--font-mono)",
                         fontSize: "var(--text-eyebrow)",
-                        opacity: 0.3,
+                        opacity: 0.4,
                         marginTop: 2,
                       }}>
                         {evt.project_title}
@@ -147,7 +147,7 @@ export default function UpcomingEvents({ events }: UpcomingEventsProps) {
             <div style={{
               fontFamily: "var(--font-sans)",
               fontSize: "var(--text-body)",
-              opacity: 0.3,
+              opacity: 0.4,
               paddingTop: 8,
             }}>
               No upcoming events.

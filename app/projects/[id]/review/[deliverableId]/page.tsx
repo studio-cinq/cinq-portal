@@ -57,20 +57,20 @@ export default async function ReviewPage({
       }}>
         <Link href={`/projects/${project.id}`} style={{
           fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase",
-          color: "#0F0F0E", opacity: 0.3, textDecoration: "none",
+          color: "#0F0F0E", opacity: 0.42, textDecoration: "none",
           display: "flex", alignItems: "center", gap: 6,
         }}>
           &larr; &nbsp;Back to project
         </Link>
         <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 11, color: "#0F0F0E", opacity: 0.75, fontWeight: 300 }}>
+          <div style={{ fontSize: 11, color: "var(--ink)", opacity: 0.75, fontWeight: 300 }}>
             {deliverable.name}
           </div>
-          <div style={{ fontSize: 8, letterSpacing: "0.14em", textTransform: "uppercase", color: "#0F0F0E", opacity: 0.3, marginTop: 2 }}>
+          <div style={{ fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--ink)", opacity: 0.42, marginTop: 2 }}>
             {project.title}
           </div>
         </div>
-        <div style={{ fontSize: 8, letterSpacing: "0.1em", textTransform: "uppercase", color: "#B07D3A", opacity: 0.85 }}>
+        <div style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "#B07D3A", opacity: 0.85 }}>
           Round {deliverable.revision_used + 1} of {deliverable.revision_max}
         </div>
       </div>
@@ -89,7 +89,7 @@ export default async function ReviewPage({
           <SlideViewer slides={slides} />
         ) : (
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 8, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(237,232,224,0.2)", marginBottom: 16 }}>
+            <div style={{ fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(237,232,224,0.2)", marginBottom: 16 }}>
               Presentation
             </div>
             <div style={{ fontSize: 13, color: "rgba(237,232,224,0.35)", fontWeight: 300, lineHeight: 1.6 }}>
@@ -109,7 +109,7 @@ export default async function ReviewPage({
         {/* Context */}
         <div style={{ padding: "24px 28px", borderRight: "0.5px solid rgba(15,15,14,0.08)" }}>
           <div style={barLabel}>About this round</div>
-          <div style={{ fontSize: 11, color: "#0F0F0E", opacity: 0.5, lineHeight: 1.6 }}>
+          <div style={{ fontSize: 11, color: "var(--ink)", opacity: 0.5, lineHeight: 1.6 }}>
             {deliverable.description ?? `Round ${deliverable.revision_used + 1} of ${deliverable.revision_max} for ${deliverable.name}.`}
           </div>
         </div>
@@ -129,6 +129,6 @@ export default async function ReviewPage({
 import SlideViewer from "@/components/portal/SlideViewer"
 
 const barLabel: React.CSSProperties = {
-  fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase",
-  color: "#0F0F0E", opacity: 0.28, marginBottom: 12,
+  fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase",
+  color: "#0F0F0E", opacity: 0.42, marginBottom: 12,
 }

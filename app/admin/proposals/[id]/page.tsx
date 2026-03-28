@@ -153,7 +153,7 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
               borderRight: (i + 1) % 4 !== 0 ? "0.5px solid rgba(15,15,14,0.1)" : "none",
               borderBottom: i < arr.length - (arr.length % 4 || 4) ? "0.5px solid rgba(15,15,14,0.1)" : "none",
             }}>
-              <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 7, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.4, marginBottom: 6 }}>
+              <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 8, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.4, marginBottom: 6 }}>
                 {cell.label}
               </div>
               <div style={{
@@ -232,7 +232,7 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
             padding: "24px 24px 28px",
             position: "sticky", top: 80,
           }}>
-            <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 7, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.4, marginBottom: 20 }}>
+            <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.4, marginBottom: 20 }}>
               Summary
             </div>
 
@@ -246,10 +246,10 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
                     {item.name}
                   </span>
                   {item.is_optional && (
-                    <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 7, opacity: 0.4, marginLeft: 6, letterSpacing: "0.08em" }}>optional</span>
+                    <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 8, opacity: 0.4, marginLeft: 6, letterSpacing: "0.08em" }}>optional</span>
                   )}
                   {item.is_recommended && (
-                    <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 7, color: "#6B8F71", marginLeft: 6, letterSpacing: "0.08em" }}>rec.</span>
+                    <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 8, color: "#6B8F71", marginLeft: 6, letterSpacing: "0.08em" }}>rec.</span>
                   )}
                 </div>
                 <span style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 12, opacity: item.is_optional ? 0.4 : 0.7 }}>
@@ -278,7 +278,7 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
             {/* Client note if accepted */}
             {proposal.client_note && (
               <div style={{ marginTop: 24, paddingTop: 20, borderTop: "0.5px solid rgba(15,15,14,0.1)" }}>
-                <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 7, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.4, marginBottom: 8 }}>
+                <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 8, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.4, marginBottom: 8 }}>
                   Client note
                 </div>
                 <div style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 13, opacity: 0.65, lineHeight: 1.7, fontStyle: "italic" }}>
@@ -290,7 +290,7 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
             {/* Stripe session if accepted */}
             {proposal.stripe_session_id && (
               <div style={{ marginTop: 16 }}>
-                <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 7, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.4, marginBottom: 6 }}>
+                <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 8, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.4, marginBottom: 6 }}>
                   Stripe session
                 </div>
                 <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, opacity: 0.4, wordBreak: "break-all" }}>
@@ -310,7 +310,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
       fontFamily: "'Matter SemiMono', monospace",
-      fontSize: 7, letterSpacing: "0.16em", textTransform: "uppercase",
+      fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase",
       opacity: 0.38, marginBottom: 14,
     }}>
       {children}
@@ -328,12 +328,12 @@ function LineItemRow({ item }: { item: any }) {
               {item.name}
             </span>
             {item.is_recommended && (
-              <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 7, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6B8F71", border: "0.5px solid rgba(107,143,113,0.4)", padding: "2px 7px" }}>
+              <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 8, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6B8F71", border: "0.5px solid rgba(107,143,113,0.4)", padding: "2px 7px" }}>
                 Recommended
               </span>
             )}
             {item.is_optional && (
-              <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 7, letterSpacing: "0.08em", textTransform: "uppercase", color: "#B07D3A", border: "0.5px solid rgba(176,125,58,0.35)", padding: "2px 7px" }}>
+              <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 8, letterSpacing: "0.08em", textTransform: "uppercase", color: "#B07D3A", border: "0.5px solid rgba(176,125,58,0.35)", padding: "2px 7px" }}>
                 Optional
               </span>
             )}

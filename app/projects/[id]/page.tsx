@@ -70,13 +70,13 @@ export default async function ProjectPage({ params }: { params: { id: string } }
           <Link href="/dashboard" style={{
             fontFamily: "var(--font-mono)",
             fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase",
-            color: "var(--ink)", opacity: 0.3, textDecoration: "none",
+            color: "var(--ink)", opacity: 0.42, textDecoration: "none",
             display: "flex", alignItems: "center", gap: 8, marginBottom: 28,
           }}>
             &larr; &nbsp;All projects
           </Link>
 
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.28, marginBottom: 8 }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.42, marginBottom: 8 }}>
             &bull; {project.scope}
           </div>
           <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-title)", letterSpacing: "-0.01em", opacity: "var(--op-full)" as any, marginBottom: 32 }}>
@@ -86,7 +86,7 @@ export default async function ProjectPage({ params }: { params: { id: string } }
           {/* Timeline */}
           {project.total_weeks && (
             <div style={{ marginBottom: 40 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.28, marginBottom: 12 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.42, marginBottom: 12 }}>
                 <span>Project timeline</span>
                 <span>Week {project.current_week} of {project.total_weeks}</span>
               </div>
@@ -94,7 +94,7 @@ export default async function ProjectPage({ params }: { params: { id: string } }
                 <div style={{ height: 2, width: `${progressPct}%`, background: "var(--ink)", opacity: 0.7, borderRadius: 2 }} />
                 <div style={{ position: "absolute", top: -4, left: `${progressPct}%`, width: 10, height: 10, borderRadius: "50%", background: "var(--ink)", opacity: 0.88, transform: "translateX(-50%)" }} />
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.28, letterSpacing: "0.04em" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.38, letterSpacing: "0.04em" }}>
                 <span>{project.start_date ? new Date(project.start_date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}</span>
                 <span>Today</span>
                 <span>{project.end_date ? new Date(project.end_date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}</span>
@@ -122,7 +122,7 @@ export default async function ProjectPage({ params }: { params: { id: string } }
                             border: i < del.revision_used ? "none" : "0.5px solid rgba(15,15,14,0.2)",
                           }} />
                         ))}
-                        <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", color: "var(--ink)", opacity: 0.25, marginLeft: 6, letterSpacing: "0.04em" }}>
+                        <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", color: "var(--ink)", opacity: 0.38, marginLeft: 6, letterSpacing: "0.04em" }}>
                           {del.revision_max - del.revision_used} round{del.revision_max - del.revision_used !== 1 ? "s" : ""} remaining
                         </span>
                       </div>
@@ -173,7 +173,7 @@ export default async function ProjectPage({ params }: { params: { id: string } }
           <div>
             {decisionLog?.map(entry => (
               <div key={entry.id} style={{ display: "flex", gap: 16, padding: "11px 0", borderBottom: "0.5px solid rgba(15,15,14,0.06)" }}>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", color: "var(--ink)", opacity: 0.25, minWidth: 52, paddingTop: 1, letterSpacing: "0.04em" }}>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", color: "var(--ink)", opacity: 0.38, minWidth: 52, paddingTop: 1, letterSpacing: "0.04em" }}>
                   {new Date(entry.logged_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                 </div>
                 <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", color: "var(--ink)", opacity: "var(--op-muted)" as any, lineHeight: 1.5 }}>
@@ -182,7 +182,7 @@ export default async function ProjectPage({ params }: { params: { id: string } }
               </div>
             ))}
             {(!decisionLog || decisionLog.length === 0) && (
-              <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: 0.28, padding: "16px 0", lineHeight: 1.7 }}>Decisions and direction notes will appear here as the project progresses.</div>
+              <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: 0.38, padding: "16px 0", lineHeight: 1.7 }}>Decisions and direction notes will appear here as the project progresses.</div>
             )}
           </div>
         </div>
@@ -240,12 +240,12 @@ const sectionStyle: React.CSSProperties = {
   fontFamily: "var(--font-mono)",
   fontSize: "var(--text-eyebrow)" as any,
   letterSpacing: "0.16em", textTransform: "uppercase",
-  color: "var(--ink)", opacity: 0.28, marginBottom: 14,
+  color: "var(--ink)", opacity: 0.42, marginBottom: 14,
 }
 
 const sidebarLabel: React.CSSProperties = {
   fontFamily: "var(--font-mono)",
   fontSize: "var(--text-eyebrow)" as any,
   letterSpacing: "0.16em", textTransform: "uppercase",
-  color: "var(--ink)", opacity: 0.28, marginBottom: 16,
+  color: "var(--ink)", opacity: 0.42, marginBottom: 16,
 }

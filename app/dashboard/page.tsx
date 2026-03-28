@@ -119,7 +119,7 @@ export default async function DashboardPage() {
             fontFamily: "var(--font-mono)",
             fontSize: "var(--text-eyebrow)",
             letterSpacing: "0.16em", textTransform: "uppercase",
-            opacity: 0.32, marginBottom: 10,
+            opacity: 0.4, marginBottom: 10,
           }}>
             &bull; {greeting}
           </div>
@@ -177,7 +177,7 @@ export default async function DashboardPage() {
                     <div style={{
                       fontFamily: "var(--font-mono)",
                       fontSize: "var(--text-eyebrow)",
-                      color: "var(--ink)", opacity: 0.3, marginTop: 3,
+                      color: "var(--ink)", opacity: 0.38, marginTop: 3,
                     }}>
                       {inv.due_date ? `Due ${new Date(inv.due_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : "Due now"}
                     </div>
@@ -257,7 +257,7 @@ export default async function DashboardPage() {
               <div style={{ fontFamily: "var(--font-sans)", fontSize: 18, color: "var(--ink)", opacity: 0.5, letterSpacing: "-0.01em", marginBottom: 8 }}>
                 Your workspace is being set up.
               </div>
-              <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", color: "var(--ink)", opacity: 0.3, lineHeight: 1.7 }}>
+              <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", color: "var(--ink)", opacity: 0.4, lineHeight: 1.7 }}>
                 Once your project kicks off, you&apos;ll see deliverables, timelines, and everything you need right here.
               </div>
             </div>

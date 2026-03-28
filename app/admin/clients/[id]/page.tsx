@@ -413,7 +413,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                         <button onClick={() => deleteLogEntry(entry.id)} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.3, background: "none", border: "none", cursor: "pointer", color: "var(--ink)", flexShrink: 0, paddingTop: 1 }}>×</button>
                       </div>
                     ))}
-                    {decisionLog.length === 0 && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.3, padding: "12px 0", lineHeight: 1.7 }}>No decisions logged yet — add notes here as you and the client align on direction.</div>}
+                    {decisionLog.length === 0 && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.4, padding: "12px 0", lineHeight: 1.7 }}>No decisions logged yet — add notes here as you and the client align on direction.</div>}
                   </div>
 
                   {/* Time tracking */}
@@ -437,12 +437,12 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                     </div>
                     {timeEntries.map(entry => (
                       <div key={entry.id} style={{ display: "flex", gap: 16, padding: "10px 0", borderBottom: "0.5px solid rgba(15,15,14,0.06)", alignItems: "baseline" }}>
-                        <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.3, minWidth: 52 }}>{new Date(entry.started_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
+                        <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.4, minWidth: 52 }}>{new Date(entry.started_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
                         <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-sm)", opacity: 0.7, minWidth: 48 }}>{formatMinutes(entry.duration_minutes ?? 0)}</div>
                         <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-muted)" as any, flex: 1 }}>{entry.note ?? "—"}</div>
                       </div>
                     ))}
-                    {timeEntries.length === 0 && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.3, padding: "8px 0" }}>No time tracked yet. Start the timer above when you begin working.</div>}
+                    {timeEntries.length === 0 && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.4, padding: "8px 0" }}>No time tracked yet. Start the timer above when you begin working.</div>}
                   </div>
                 </>
               )}
@@ -502,7 +502,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                   <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.4, marginBottom: 8, lineHeight: 1.7 }}>
                     No presentation slides yet.
                   </div>
-                  <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: 0.25, lineHeight: 1.7 }}>
+                  <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: 0.38, lineHeight: 1.7 }}>
                     Upload images to build out the presentation for this project.
                   </div>
                 </div>
@@ -512,7 +512,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                     <div key={slide.id} style={{ position: "relative", border: "0.5px solid rgba(15,15,14,0.12)", background: "rgba(255,255,255,0.3)", aspectRatio: "4/3", overflow: "hidden" }}>
                       <img src={slide.image_url} alt={slide.caption ?? `Slide ${i + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                       <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(15,15,14,0.5)", padding: "6px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <div style={{ fontFamily: "var(--font-mono)", fontSize: 7, color: "var(--cream)", opacity: 0.7 }}>{slide.caption ?? `Slide ${i + 1}`}</div>
+                        <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--cream)", opacity: 0.7 }}>{slide.caption ?? `Slide ${i + 1}`}</div>
                         <button
                           onClick={async () => {
                             await supabase.from("presentation_slides").delete().eq("id", slide.id)
@@ -564,7 +564,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                   </Link>
                 </div>
               ))}
-              {invoices.length === 0 && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.35, padding: "32px 0", lineHeight: 1.7 }}>No invoices for this client yet. <Link href={`/admin/invoices/new?client=${params.id}`} style={{ opacity: 0.6, textDecoration: "none", borderBottom: "0.5px solid rgba(15,15,14,0.2)" }}>Send one →</Link></div>}
+              {invoices.length === 0 && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.42, padding: "32px 0", lineHeight: 1.7 }}>No invoices for this client yet. <Link href={`/admin/invoices/new?client=${params.id}`} style={{ opacity: 0.6, textDecoration: "none", borderBottom: "0.5px solid rgba(15,15,14,0.2)" }}>Send one →</Link></div>}
             </div>
           )}
 
@@ -592,11 +592,11 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                       <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "8px 0", borderBottom: "0.5px solid rgba(15,15,14,0.07)" }}>
                         <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
                           <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: item.accepted ? "var(--op-full)" as any : 0.35 }}>{item.name}</span>
-                          {item.accepted && item.phase === "now"   && <span style={{ fontFamily: "var(--font-mono)", fontSize: 7, color: "var(--sage)" }}>accepted</span>}
-                          {item.accepted && item.phase === "later" && <span style={{ fontFamily: "var(--font-mono)", fontSize: 7, color: "var(--amber)" }}>phase 2</span>}
-                          {!item.accepted && <span style={{ fontFamily: "var(--font-mono)", fontSize: 7, opacity: 0.3 }}>declined</span>}
+                          {item.accepted && item.phase === "now"   && <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--sage)" }}>accepted</span>}
+                          {item.accepted && item.phase === "later" && <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--amber)" }}>phase 2</span>}
+                          {!item.accepted && <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, opacity: 0.4 }}>declined</span>}
                         </div>
-                        <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-body)", opacity: item.accepted ? "var(--op-body)" as any : 0.25 }}>${(item.price / 100).toLocaleString()}</span>
+                        <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-body)", opacity: item.accepted ? "var(--op-body)" as any : 0.38 }}>${(item.price / 100).toLocaleString()}</span>
                       </div>
                     ))}
                   </div>
@@ -645,7 +645,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                     ].map(l => (
                       <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
                         <div style={{ width: 5, height: 5, borderRadius: "50%", background: l.color, opacity: 0.7 }} />
-                        <span style={{ fontFamily: "var(--font-mono)", fontSize: 7, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.45 }}>{l.label}</span>
+                        <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.45 }}>{l.label}</span>
                       </div>
                     ))}
                   </div>
@@ -682,7 +682,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                                   </span>
                                 )}
                                 <span style={{
-                                  fontFamily: "var(--font-mono)", fontSize: 7, letterSpacing: "0.1em", textTransform: "uppercase",
+                                  fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: "0.1em", textTransform: "uppercase",
                                   padding: "2px 7px",
                                   border: `0.5px solid ${evt.type === "milestone" ? "rgba(107,143,113,0.3)" : evt.type === "invoice_due" ? "rgba(15,15,14,0.15)" : "rgba(176,125,58,0.3)"}`,
                                   color: evt.type === "milestone" ? "var(--sage)" : evt.type === "invoice_due" ? "var(--ink)" : "var(--amber)",
@@ -702,7 +702,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                         ))}
                       </div>
                     ) : (
-                      <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.35, paddingTop: 8, lineHeight: 1.7 }}>No events scheduled yet. Add meetings, milestones, or reviews below.</div>
+                      <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.42, paddingTop: 8, lineHeight: 1.7 }}>No events scheduled yet. Add meetings, milestones, or reviews below.</div>
                     )
                   })()}
                 </div>
@@ -829,7 +829,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                   <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-body)" as any, lineHeight: 1.55 }}>{msg.body}</div>
                 </div>
               ))}
-              {messages.length === 0 && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.3, paddingTop: 8, lineHeight: 1.7 }}>No messages yet. Send the first one to start the conversation.</div>}
+              {messages.length === 0 && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.4, paddingTop: 8, lineHeight: 1.7 }}>No messages yet. Send the first one to start the conversation.</div>}
             </div>
           </div>
         </div>

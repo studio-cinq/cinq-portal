@@ -162,11 +162,11 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
 
             <div style={{ flex: 1 }}>
               <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap", marginBottom: 6 }}>
-                <span style={{ ...serif, fontSize: isMobile ? 15 : 16, fontWeight: 400, opacity: checked[globalIndex] ? 0.88 : 0.3, letterSpacing: "-0.01em", transition: "opacity 0.2s" }}>
+                <span style={{ ...serif, fontSize: isMobile ? 15 : 16, fontWeight: 400, opacity: checked[globalIndex] ? 0.88 : 0.4, letterSpacing: "-0.01em", transition: "opacity 0.2s" }}>
                   {item.name}
                 </span>
                 {item.is_recommended && (
-                  <span style={{ ...mono, fontSize: 7, letterSpacing: "0.1em", textTransform: "uppercase", padding: "3px 8px", border: "0.5px solid rgba(107,143,113,0.5)", color: "var(--sage)" }}>
+                  <span style={{ ...mono, fontSize: 8, letterSpacing: "0.1em", textTransform: "uppercase", padding: "3px 8px", border: "0.5px solid rgba(107,143,113,0.5)", color: "var(--sage)" }}>
                     Recommended
                   </span>
                 )}
@@ -187,7 +187,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
           </div>
 
           <div style={{ textAlign: "right", flexShrink: 0 }}>
-            <div style={{ ...mono, fontSize: isMobile ? 13 : 14, opacity: checked[globalIndex] ? 0.82 : 0.25 }}>
+            <div style={{ ...mono, fontSize: isMobile ? 13 : 14, opacity: checked[globalIndex] ? 0.82 : 0.35 }}>
               ${(item.price / 100).toLocaleString()}
             </div>
             <div style={{ ...mono, fontSize: "var(--text-eyebrow)", opacity: 0.35, marginTop: 4, letterSpacing: "0.06em" }}>
@@ -243,13 +243,13 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
               {item.name}
               {phases[i] === "later" && <span style={{ ...mono, fontSize: "var(--text-eyebrow)", marginLeft: 6, opacity: 0.5 }}>later</span>}
             </span>
-            <span style={{ ...mono, fontSize: "var(--text-sm)", opacity: phases[i] === "later" ? 0.3 : 0.65 }}>
+            <span style={{ ...mono, fontSize: "var(--text-sm)", opacity: phases[i] === "later" ? 0.4 : 0.65 }}>
               ${(item.price / 100).toLocaleString()}
             </span>
           </div>
         ))}
         {items.every((_, i) => !checked[i]) && (
-          <div style={{ ...body, fontSize: "var(--text-body)", opacity: 0.3, paddingTop: 8 }}>No items selected.</div>
+          <div style={{ ...body, fontSize: "var(--text-body)", opacity: 0.4, paddingTop: 8 }}>No items selected.</div>
         )}
       </div>
 
@@ -293,7 +293,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
           >
             {submitting ? "Redirecting…" : "Confirm & pay deposit"}
           </button>
-          <div style={{ ...mono, fontSize: "var(--text-eyebrow)", opacity: 0.3, letterSpacing: "0.03em", lineHeight: 1.8 }}>
+          <div style={{ ...mono, fontSize: "var(--text-eyebrow)", opacity: 0.4, letterSpacing: "0.03em", lineHeight: 1.8 }}>
             {scheduleLabel.slice(1).map((l, i) => <span key={i}>{l}{i < scheduleLabel.length - 2 ? ". " : ""}</span>)}<br />
             Scheduled items confirmed at no cost today.
           </div>

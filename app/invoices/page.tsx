@@ -83,7 +83,7 @@ export default async function InvoicesPage() {
               <div style={{ fontFamily: "var(--font-sans)", fontSize: 18, color: "var(--ink)", opacity: 0.5, letterSpacing: "-0.01em", marginBottom: 8 }}>
                 No invoices yet.
               </div>
-              <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", color: "var(--ink)", opacity: 0.3, lineHeight: 1.7 }}>
+              <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", color: "var(--ink)", opacity: 0.4, lineHeight: 1.7 }}>
                 Invoices will appear here as your project progresses.
               </div>
             </div>
@@ -201,7 +201,7 @@ function StatusBadge({ variant, dueDate }: { variant: string; dueDate?: string }
   const c = configs[variant]
   return (
     <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 6 }}>
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: 7, letterSpacing: "0.1em", textTransform: "uppercase", padding: "3px 8px", border: `0.5px solid ${c.border}`, color: c.color }}>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: "0.1em", textTransform: "uppercase", padding: "3px 8px", border: `0.5px solid ${c.border}`, color: c.color }}>
         {c.label}
       </span>
     </div>

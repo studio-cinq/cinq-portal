@@ -142,5 +142,5 @@ export default function ReviewActions({ projectId, deliverableId, revisionsRemai
 
 const barLabel: React.CSSProperties = {
   fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase",
-  color: "var(--ink)", opacity: 0.28, marginBottom: 12,
+  color: "var(--ink)", opacity: 0.42, marginBottom: 12,
 }
