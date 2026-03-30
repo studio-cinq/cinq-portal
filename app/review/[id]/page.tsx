@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { supabase } from "@/lib/supabase"
 import type { ReviewSession, ReviewAnnotation } from "@/types/database"
 import ReviewToolbar from "@/components/portal/ReviewToolbar"
@@ -16,17 +16,48 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
   const [submitting, setSubmitting]   = useState(false)
   const [approving, setApproving]     = useState(false)
   const [iframeScroll, setIframeScroll] = useState<{ scrollY: number; pageHeight: number }>({ scrollY: 0, pageHeight: 0 })
+  const iframeRef = useRef<HTMLIFrameElement>(null)
+  const positionCallbacks = useRef<Record<string, (data: any) => void>>({})
 
-  // Listen for scroll position from iframe via postMessage
+  // Listen for messages from iframe (scroll updates + position query results)
   useEffect(() => {
     function handleMessage(e: MessageEvent) {
       if (e.data?.type === "cinq-scroll") {
         setIframeScroll({ scrollY: e.data.y ?? 0, pageHeight: e.data.h ?? 0 })
       }
+      if (e.data?.type === "cinq-position-result" && e.data.id) {
+        const cb = positionCallbacks.current[e.data.id]
+        if (cb) {
+          cb(e.data)
+          delete positionCallbacks.current[e.data.id]
+        }
+      }
     }
     window.addEventListener("message", handleMessage)
     return () => window.removeEventListener("message", handleMessage)
   }, [])
+
+  // Query the iframe for the absolute position at a viewport coordinate
+  function queryIframePosition(vpX: number, vpY: number): Promise<{ absY: number; pageHeight: number; scrollTop: number }> {
+    return new Promise((resolve) => {
+      const id = Math.random().toString(36).slice(2)
+      const timeout = setTimeout(() => {
+        delete positionCallbacks.current[id]
+        // Fallback: use the continuously-reported scroll position
+        resolve({ absY: vpY + iframeScroll.scrollY, pageHeight: iframeScroll.pageHeight, scrollTop: iframeScroll.scrollY })
+      }, 500)
+
+      positionCallbacks.current[id] = (data) => {
+        clearTimeout(timeout)
+        resolve({ absY: data.absY ?? vpY, pageHeight: data.pageHeight ?? 0, scrollTop: data.scrollTop ?? 0 })
+      }
+
+      iframeRef.current?.contentWindow?.postMessage(
+        { type: "cinq-query-position", id, vpX, vpY },
+        "*"
+      )
+    })
+  }
 
   // Load session + annotations
   useEffect(() => {
@@ -63,12 +94,19 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
     load()
   }, [params.id])
 
-  const handleClickOverlay = useCallback((x: number, y: number) => {
+  // Store raw pixel position alongside percentage for iframe position query
+  const pendingPixels = useRef<{ px: number; py: number }>({ px: 0, py: 0 })
+
+  const handleClickOverlay = useCallback((x: number, y: number, pxX?: number, pxY?: number) => {
+    pendingPixels.current = { px: pxX ?? 0, py: pxY ?? 0 }
     setPendingPin({ x, y })
   }, [])
 
   async function handleSavePin(comment: string) {
     if (!session || !pendingPin) return
+
+    // Query the iframe for the absolute position at the click point
+    const pos = await queryIframePosition(pendingPixels.current.px, pendingPixels.current.py)
 
     const res = await fetch("/api/review/save-annotation", {
       method: "POST",
@@ -80,8 +118,8 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
         yPercent: pendingPin.y,
         viewportW: window.innerWidth,
         viewportH: window.innerHeight,
-        scrollY: iframeScroll.scrollY,
-        pageHeight: iframeScroll.pageHeight,
+        scrollY: pos.scrollTop,
+        pageHeight: pos.pageHeight,
         comment,
       }),
     })
@@ -224,6 +262,7 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
       {/* Iframe takes the full screen */}
       <div style={{ position: "absolute", inset: 0 }}>
         <iframe
+          ref={iframeRef}
           src={session.site_url}
           style={{
             width: "100%",

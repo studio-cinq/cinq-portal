@@ -8,7 +8,7 @@ interface AnnotationOverlayProps {
   annotations: ReviewAnnotation[]
   mode: "browse" | "comment"
   pendingPin: { x: number; y: number } | null
-  onClickOverlay: (x: number, y: number) => void
+  onClickOverlay: (x: number, y: number, pxX?: number, pxY?: number) => void
   onSavePin: (comment: string) => void
   onCancelPin: () => void
   onDeletePin?: (id: string) => void
@@ -30,7 +30,10 @@ export default function AnnotationOverlay({
     const rect = e.currentTarget.getBoundingClientRect()
     const x = ((e.clientX - rect.left) / rect.width) * 100
     const y = ((e.clientY - rect.top) / rect.height) * 100
-    onClickOverlay(x, y)
+    // Pass raw pixel positions relative to the iframe for position querying
+    const pxX = e.clientX - rect.left
+    const pxY = e.clientY - rect.top
+    onClickOverlay(x, y, pxX, pxY)
   }
 
   return (
