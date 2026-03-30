@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 import PortalNav from "@/components/portal/Nav"
-import AnnotationOverlay from "@/components/portal/AnnotationOverlay"
 import Link from "next/link"
 import type { ReviewAnnotation } from "@/types/database"
 
@@ -199,9 +198,8 @@ export default function AdminReviewDetailPage({ params }: { params: { id: string
           ))}
         </div>
 
-        {/* Full-width iframe with pins overlay */}
+        {/* Full-width iframe — browse the site for reference */}
         <div style={{
-          position: "relative",
           border: "0.5px solid rgba(15,15,14,0.1)",
           background: "#fff",
           overflow: "hidden",
@@ -212,15 +210,6 @@ export default function AdminReviewDetailPage({ params }: { params: { id: string
             src={session.site_url}
             style={{ width: "100%", height: "100%", border: "none", display: "block" }}
             sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-          />
-          <AnnotationOverlay
-            annotations={annotations}
-            mode="comment"
-            pendingPin={null}
-            onClickOverlay={() => {}}
-            onSavePin={() => {}}
-            onCancelPin={() => {}}
-            readOnly
           />
         </div>
 
