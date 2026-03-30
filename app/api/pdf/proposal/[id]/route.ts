@@ -181,7 +181,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
         doc.setFontSize(11)
         setColor(doc, INK, 0.75)
         doc.text(`$${(item.price / 100).toLocaleString()}`, W - marginR, y, { align: "right" })
-        y += 6
+        y += 14
 
         // Timeline
         doc.setFontSize(7)
