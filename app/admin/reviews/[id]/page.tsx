@@ -1,0 +1,341 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { supabase } from "@/lib/supabase"
+import { useRouter } from "next/navigation"
+import PortalNav from "@/components/portal/Nav"
+import AnnotationOverlay from "@/components/portal/AnnotationOverlay"
+import Link from "next/link"
+import type { ReviewAnnotation } from "@/types/database"
+
+export default function AdminReviewDetailPage({ params }: { params: { id: string } }) {
+  const router = useRouter()
+  const [session, setSession]         = useState<any>(null)
+  const [annotations, setAnnotations] = useState<ReviewAnnotation[]>([])
+  const [allAnnotations, setAllAnnotations] = useState<ReviewAnnotation[]>([])
+  const [selectedRound, setSelectedRound] = useState<number>(1)
+  const [loading, setLoading]         = useState(true)
+  const [sending, setSending]         = useState(false)
+  const [sendNotes, setSendNotes]     = useState("")
+  const [copied, setCopied]           = useState(false)
+
+  useEffect(() => {
+    async function load() {
+      const { data: sess } = await supabase
+        .from("review_sessions")
+        .select("*, clients(name, contact_name, contact_email), projects(title)")
+        .eq("id", params.id)
+        .single()
+
+      if (sess) {
+        setSession(sess)
+        setSelectedRound(sess.current_round)
+
+        const { data: annots } = await supabase
+          .from("review_annotations")
+          .select("*")
+          .eq("session_id", sess.id)
+          .order("created_at")
+
+        setAllAnnotations(annots ?? [])
+      }
+      setLoading(false)
+    }
+    load()
+  }, [params.id])
+
+  // Filter annotations by selected round
+  useEffect(() => {
+    setAnnotations(allAnnotations.filter(a => a.round === selectedRound))
+  }, [allAnnotations, selectedRound])
+
+  async function handleResolveToggle(annotationId: string, resolved: boolean) {
+    await fetch("/api/admin/resolve-annotation", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ annotationId, resolved }),
+    })
+    setAllAnnotations(prev =>
+      prev.map(a => a.id === annotationId ? { ...a, resolved } : a)
+    )
+  }
+
+  async function handleSendBack() {
+    if (!session) return
+    setSending(true)
+    const res = await fetch("/api/admin/send-review-back", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId: session.id, notes: sendNotes || undefined }),
+    })
+    const data = await res.json()
+    if (data.ok) {
+      setSession((s: any) => ({
+        ...s,
+        current_round: data.newRound,
+        status: "in_review",
+        submitted_at: null,
+        viewed_at: null,
+      }))
+      setSelectedRound(data.newRound)
+      setSendNotes("")
+    }
+    setSending(false)
+  }
+
+  function copyLink() {
+    const url = `${window.location.origin}/review/${params.id}`
+    navigator.clipboard.writeText(url)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  if (loading) {
+    return (
+      <>
+        <PortalNav isAdmin />
+        <main style={{ padding: "clamp(32px, 5vw, 48px)" }}>
+          <p style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.4, letterSpacing: "0.12em", textTransform: "uppercase" }}>Loading…</p>
+        </main>
+      </>
+    )
+  }
+
+  if (!session) {
+    return (
+      <>
+        <PortalNav isAdmin />
+        <main style={{ padding: "clamp(32px, 5vw, 48px)" }}>
+          <p style={{ fontFamily: "var(--font-serif)", fontSize: "var(--text-body)", opacity: 0.65 }}>Review not found.</p>
+        </main>
+      </>
+    )
+  }
+
+  const statusLabel: Record<string, string> = {
+    in_review: "In review",
+    revising: "Revising",
+    approved: "Approved",
+  }
+  const statusColor: Record<string, string> = {
+    in_review: "var(--amber)",
+    revising: "var(--sage)",
+    approved: "rgba(15,15,14,0.45)",
+  }
+
+  const rounds = Array.from({ length: session.current_round }, (_, i) => i + 1)
+  const groupedByPage = annotations.reduce<Record<string, ReviewAnnotation[]>>((acc, a) => {
+    const key = a.page_url
+    if (!acc[key]) acc[key] = []
+    acc[key].push(a)
+    return acc
+  }, {})
+
+  const labelStyle: React.CSSProperties = {
+    fontFamily: "var(--font-mono)", fontSize: 8,
+    letterSpacing: "0.12em", textTransform: "uppercase",
+    color: "var(--ink)", opacity: 0.4,
+  }
+
+  return (
+    <>
+      <PortalNav isAdmin />
+      <main style={{ padding: "clamp(32px, 5vw, 48px)" }}>
+        {/* Back link */}
+        <Link href="/admin/reviews" style={{
+          fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
+          letterSpacing: "0.12em", textTransform: "uppercase",
+          color: "var(--ink)", opacity: 0.4, textDecoration: "none",
+          display: "block", marginBottom: 16,
+        }}>← Reviews</Link>
+
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 32, flexWrap: "wrap", gap: 16 }}>
+          <div>
+            <h1 style={{
+              fontFamily: "var(--font-serif)", fontSize: "var(--text-title)",
+              fontWeight: 400, color: "var(--ink)", opacity: 0.88, margin: "0 0 8px",
+            }}>{session.clients?.name ?? "Review"}</h1>
+            <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
+              <span style={labelStyle}>{session.projects?.title}</span>
+              <span style={{ width: 0.5, height: 14, background: "rgba(15,15,14,0.12)" }} />
+              <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <span style={{ width: 5, height: 5, borderRadius: "50%", background: statusColor[session.status] }} />
+                <span style={labelStyle}>{statusLabel[session.status]}</span>
+              </div>
+              <span style={{ width: 0.5, height: 14, background: "rgba(15,15,14,0.12)" }} />
+              <span style={{ ...labelStyle, opacity: 0.3 }}>{session.site_url}</span>
+            </div>
+          </div>
+          <button onClick={copyLink} style={{
+            fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
+            letterSpacing: "0.14em", textTransform: "uppercase",
+            background: "none", color: "var(--ink)",
+            padding: "10px 16px", cursor: "pointer",
+            border: "0.5px solid rgba(15,15,14,0.15)",
+            opacity: 0.55, transition: "opacity 0.2s",
+          }}>{copied ? "Copied!" : "Copy review link"}</button>
+        </div>
+
+        {/* Round tabs */}
+        <div style={{ display: "flex", gap: 0, marginBottom: 24 }}>
+          {rounds.map(r => (
+            <button
+              key={r}
+              onClick={() => setSelectedRound(r)}
+              style={{
+                fontFamily: "var(--font-mono)", fontSize: 8,
+                letterSpacing: "0.14em", textTransform: "uppercase",
+                padding: "8px 18px",
+                border: "0.5px solid rgba(15,15,14,0.12)",
+                borderRight: r < session.current_round ? "none" : undefined,
+                cursor: "pointer",
+                background: selectedRound === r ? "var(--ink)" : "transparent",
+                color: selectedRound === r ? "#EDE8E0" : "var(--ink)",
+                opacity: selectedRound === r ? 1 : 0.4,
+                transition: "all 0.15s",
+              }}
+            >Round {r}</button>
+          ))}
+        </div>
+
+        {/* Layout: iframe with overlay + annotation sidebar */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: 24, minHeight: 500 }}>
+          {/* Iframe + pins */}
+          <div style={{
+            position: "relative",
+            border: "0.5px solid rgba(15,15,14,0.1)",
+            background: "#fff",
+            overflow: "hidden",
+          }}>
+            <iframe
+              src={session.site_url}
+              style={{ width: "100%", height: "100%", minHeight: 500, border: "none", display: "block" }}
+              sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+            />
+            <AnnotationOverlay
+              annotations={annotations}
+              mode="comment"
+              pendingPin={null}
+              onClickOverlay={() => {}}
+              onSavePin={() => {}}
+              onCancelPin={() => {}}
+              readOnly
+            />
+          </div>
+
+          {/* Annotations sidebar */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+            <p style={{
+              ...labelStyle, margin: "0 0 12px",
+            }}>{annotations.length} annotation{annotations.length !== 1 ? "s" : ""} — Round {selectedRound}</p>
+
+            {annotations.length === 0 ? (
+              <p style={{
+                fontFamily: "var(--font-serif)", fontSize: "var(--text-sm)",
+                color: "var(--ink)", opacity: 0.45,
+              }}>No annotations for this round yet.</p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                {Object.entries(groupedByPage).map(([pageUrl, annots]) => (
+                  <div key={pageUrl}>
+                    <p style={{
+                      fontFamily: "var(--font-mono)", fontSize: 9,
+                      color: "var(--ink)", opacity: 0.3, margin: "12px 0 6px",
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                    }}>{pageUrl}</p>
+                    {annots.map((a, i) => {
+                      const globalIndex = annotations.findIndex(ann => ann.id === a.id)
+                      return (
+                        <div
+                          key={a.id}
+                          style={{
+                            display: "flex", gap: 10, alignItems: "flex-start",
+                            padding: "10px 0",
+                            borderBottom: "0.5px solid rgba(15,15,14,0.06)",
+                            opacity: a.resolved ? 0.4 : 1,
+                            transition: "opacity 0.2s",
+                          }}
+                        >
+                          {/* Pin number */}
+                          <div style={{
+                            width: 20, height: 20, borderRadius: "50%",
+                            background: a.resolved ? "rgba(15,15,14,0.3)" : "var(--ink)",
+                            color: "#EDE8E0",
+                            fontFamily: "var(--font-mono)", fontSize: 9,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            flexShrink: 0, marginTop: 2,
+                          }}>{globalIndex + 1}</div>
+
+                          {/* Content */}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{
+                              fontFamily: "var(--font-serif)", fontSize: "var(--text-sm)",
+                              color: "var(--ink)", opacity: 0.8, margin: 0, lineHeight: 1.5,
+                              textDecoration: a.resolved ? "line-through" : "none",
+                            }}>{a.comment}</p>
+                            <p style={{
+                              fontFamily: "var(--font-mono)", fontSize: 8,
+                              color: "var(--ink)", opacity: 0.3, margin: "4px 0 0",
+                            }}>
+                              {new Date(a.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                            </p>
+                          </div>
+
+                          {/* Resolve toggle */}
+                          <button
+                            onClick={() => handleResolveToggle(a.id, !a.resolved)}
+                            style={{
+                              fontFamily: "var(--font-mono)", fontSize: 8,
+                              letterSpacing: "0.1em", textTransform: "uppercase",
+                              background: "none", border: "none", cursor: "pointer",
+                              color: a.resolved ? "var(--sage)" : "var(--ink)",
+                              opacity: a.resolved ? 0.8 : 0.35,
+                              padding: "2px 0", whiteSpace: "nowrap",
+                            }}
+                          >{a.resolved ? "Done" : "Resolve"}</button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Send back section */}
+            {session.status === "revising" && (
+              <div style={{ marginTop: 24, paddingTop: 20, borderTop: "0.5px solid rgba(15,15,14,0.1)" }}>
+                <p style={{ ...labelStyle, margin: "0 0 8px" }}>Send back for review</p>
+                <textarea
+                  value={sendNotes}
+                  onChange={e => setSendNotes(e.target.value)}
+                  placeholder="Optional note to client about what changed…"
+                  rows={2}
+                  style={{
+                    width: "100%", padding: "10px 12px",
+                    fontFamily: "var(--font-serif)", fontSize: "var(--text-sm)",
+                    color: "var(--ink)", background: "rgba(255,255,255,0.35)",
+                    border: "0.5px solid rgba(15,15,14,0.1)", outline: "none",
+                    boxSizing: "border-box", resize: "vertical",
+                    marginBottom: 10,
+                  }}
+                />
+                <button
+                  onClick={handleSendBack}
+                  disabled={sending}
+                  style={{
+                    fontFamily: "var(--font-mono)", fontSize: 8,
+                    letterSpacing: "0.14em", textTransform: "uppercase",
+                    background: "var(--ink)", color: "#EDE8E0",
+                    padding: "10px 20px", border: "none", cursor: "pointer",
+                    opacity: sending ? 0.3 : 1, transition: "opacity 0.2s",
+                  }}
+                >{sending ? "Sending…" : "Send back to client"}</button>
+              </div>
+            )}
+          </div>
+        </div>
+      </main>
+    </>
+  )
+}

@@ -24,6 +24,8 @@ export type ProjectStatus =
 
 export type PhaseChoice = "now" | "later"
 
+export type ReviewSessionStatus = "in_review" | "revising" | "approved"
+
 // -- Core types --
 
 export interface Client {
@@ -149,6 +151,34 @@ export interface Message {
   read: boolean
 }
 
+export interface ReviewSession {
+  id: string
+  created_at: string
+  project_id: string
+  client_id: string
+  site_url: string
+  current_round: number
+  status: ReviewSessionStatus
+  viewed_at?: string
+  submitted_at?: string
+  approved_at?: string
+  notes?: string
+}
+
+export interface ReviewAnnotation {
+  id: string
+  created_at: string
+  session_id: string
+  round: number
+  page_url: string
+  x_percent: number
+  y_percent: number
+  viewport_w: number
+  viewport_h: number
+  comment: string
+  resolved: boolean
+}
+
 // -- Convenience join types --
 
 export interface ProjectWithClient extends Project {
@@ -178,6 +208,8 @@ export type Database = {
       color_swatches: { Row: ColorSwatch; Insert: Omit<ColorSwatch, "id">; Update: Partial<ColorSwatch> }
       typeface_entries: { Row: TypefaceEntry; Insert: Omit<TypefaceEntry, "id">; Update: Partial<TypefaceEntry> }
       messages: { Row: Message; Insert: Omit<Message, "id" | "created_at">; Update: Partial<Message> }
+      review_sessions: { Row: ReviewSession; Insert: Omit<ReviewSession, "id" | "created_at">; Update: Partial<ReviewSession> }
+      review_annotations: { Row: ReviewAnnotation; Insert: Omit<ReviewAnnotation, "id" | "created_at">; Update: Partial<ReviewAnnotation> }
     }
   }
 }

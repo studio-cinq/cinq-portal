@@ -259,6 +259,125 @@ export async function sendProposalReminderToAdmin(p: ProposalReminderPayload) {
 
 // ─── Message reply notification — to client ───────────────────────────────────
 
+// ─── Review invite — to client ───────────────────────────────────────────────
+
+interface ReviewInvitePayload {
+  sessionId: string
+  projectTitle: string
+  clientName: string
+  contactName: string
+  contactEmail: string
+  siteUrl: string
+  round: number
+  notes?: string
+}
+
+export async function sendReviewInviteEmail(p: ReviewInvitePayload) {
+  const reviewUrl = `${PORTAL_URL}/review/${p.sessionId}`
+
+  const isFirstRound = p.round === 1
+  const bodyText = isFirstRound
+    ? `<p>Hi ${p.contactName} — your website is ready for review. Click through the site, leave your notes on anything you'd like changed, and submit when you're done.</p>`
+    : `<p>Hi ${p.contactName} — round ${p.round} of your website review is ready. The changes from your previous feedback have been made. Take a look and let us know if anything else needs adjusting.</p>`
+
+  const notesBlock = p.notes
+    ? `<p style="color:#2C2820;font-style:italic;margin-top:8px">"${p.notes}"</p>`
+    : ""
+
+  const html = emailShell(`
+    <div class="body">
+      ${bodyText}
+      <div class="meta">
+        <p><strong>Project</strong> &nbsp;${p.projectTitle}</p>
+        <p><strong>Site</strong> &nbsp;${p.siteUrl}</p>
+        <p><strong>Round</strong> &nbsp;${p.round}</p>
+        ${notesBlock}
+      </div>
+      <a class="cta" href="${reviewUrl}" style="color:#FAF8F5;text-decoration:none;">Review website →</a>
+    </div>
+  `)
+
+  return resend.emails.send({
+    from: "Studio Cinq <portal@studiocinq.com>",
+    to: p.contactEmail,
+    subject: isFirstRound
+      ? `Website review ready — ${p.projectTitle}`
+      : `Round ${p.round} ready for review — ${p.projectTitle}`,
+    html,
+  })
+}
+
+// ─── Review submitted — to admin ─────────────────────────────────────────────
+
+interface ReviewSubmittedPayload {
+  sessionId: string
+  projectTitle: string
+  clientName: string
+  contactName: string
+  round: number
+  annotationCount: number
+}
+
+export async function sendReviewSubmittedEmail(p: ReviewSubmittedPayload) {
+  const reviewUrl = `${PORTAL_URL}/admin/reviews/${p.sessionId}`
+
+  const html = emailShell(`
+    <div class="body">
+      <p>${p.contactName} at <strong>${p.clientName}</strong> submitted their website review.</p>
+      <div class="meta">
+        <p><strong>Project</strong> &nbsp;${p.projectTitle}</p>
+        <p><strong>Client</strong> &nbsp;${p.clientName} (${p.contactName})</p>
+        <p><strong>Round</strong> &nbsp;${p.round}</p>
+        <p><strong>Notes</strong> &nbsp;${p.annotationCount} annotation${p.annotationCount === 1 ? "" : "s"}</p>
+      </div>
+      <a class="cta" href="${reviewUrl}" style="color:#FAF8F5;text-decoration:none;">View feedback →</a>
+    </div>
+  `)
+
+  return resend.emails.send({
+    from: "Studio Cinq Portal <portal@studiocinq.com>",
+    to: STUDIO_EMAIL,
+    subject: `Review feedback received — ${p.clientName} (Round ${p.round})`,
+    html,
+  })
+}
+
+// ─── Review approved — to admin ──────────────────────────────────────────────
+
+interface ReviewApprovedPayload {
+  sessionId: string
+  projectTitle: string
+  clientName: string
+  contactName: string
+  totalRounds: number
+}
+
+export async function sendReviewApprovedEmail(p: ReviewApprovedPayload) {
+  const reviewUrl = `${PORTAL_URL}/admin/reviews/${p.sessionId}`
+
+  const html = emailShell(`
+    <div class="body">
+      <p>${p.contactName} at <strong>${p.clientName}</strong> approved their website.</p>
+      <div class="meta">
+        <p><strong>Project</strong> &nbsp;${p.projectTitle}</p>
+        <p><strong>Client</strong> &nbsp;${p.clientName} (${p.contactName})</p>
+        <p><strong>Total rounds</strong> &nbsp;${p.totalRounds}</p>
+        <p><strong>Approved</strong> &nbsp;${formatDate(new Date())}</p>
+      </div>
+      <a class="cta" href="${reviewUrl}" style="color:#FAF8F5;text-decoration:none;">View in portal →</a>
+    </div>
+  `)
+
+  return resend.emails.send({
+    from: "Studio Cinq Portal <portal@studiocinq.com>",
+    to: STUDIO_EMAIL,
+    subject: `Website approved — ${p.clientName}`,
+    html,
+  })
+}
+
+// ─── Message reply notification — to client ───────────────────────────────────
+
 interface MessageReplyPayload {
   contactName: string;
   contactEmail: string;

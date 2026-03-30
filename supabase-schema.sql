@@ -262,6 +262,52 @@ create policy "Admin full access" on messages for all using (is_admin());
 create policy "Client reads own messages" on messages for select using (project_id in (select p.id from projects p join clients c on c.id = p.client_id where c.contact_email = client_email()));
 create policy "Client sends messages" on messages for insert with check (project_id in (select p.id from projects p join clients c on c.id = p.client_id where c.contact_email = client_email()) and from_client = true);
 
+-- ----------------------------------------
+-- REVIEW SESSIONS
+-- ----------------------------------------
+create table review_sessions (
+  id              uuid primary key default uuid_generate_v4(),
+  created_at      timestamptz default now(),
+  project_id      uuid references projects(id) on delete cascade,
+  client_id       uuid references clients(id) on delete cascade,
+  site_url        text not null,
+  current_round   integer not null default 1,
+  status          text not null default 'in_review' check (status in ('in_review', 'revising', 'approved')),
+  viewed_at       timestamptz,
+  submitted_at    timestamptz,
+  approved_at     timestamptz,
+  notes           text
+);
+
+-- ----------------------------------------
+-- REVIEW ANNOTATIONS
+-- ----------------------------------------
+create table review_annotations (
+  id              uuid primary key default uuid_generate_v4(),
+  created_at      timestamptz default now(),
+  session_id      uuid not null references review_sessions(id) on delete cascade,
+  round           integer not null default 1,
+  page_url        text not null,
+  x_percent       numeric(6,3) not null,
+  y_percent       numeric(6,3) not null,
+  viewport_w      integer not null,
+  viewport_h      integer not null,
+  comment         text not null,
+  resolved        boolean not null default false
+);
+
+create index idx_review_sessions_project on review_sessions(project_id);
+create index idx_review_annotations_session on review_annotations(session_id);
+create index idx_review_annotations_round on review_annotations(session_id, round);
+
+alter table review_sessions enable row level security;
+alter table review_annotations enable row level security;
+
+create policy "Public can read review sessions" on review_sessions for select using (true);
+create policy "Public can read review annotations" on review_annotations for select using (true);
+create policy "Public can insert annotations" on review_annotations for insert with check (true);
+create policy "Public can update review sessions" on review_sessions for update using (true);
+
 -- ============================================================
 -- STORAGE BUCKETS (run separately in Supabase dashboard)
 -- ============================================================

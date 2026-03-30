@@ -29,7 +29,7 @@ export async function middleware(req: NextRequest) {
 
 
 // Public routes
-if (pathname === "/login" || pathname.startsWith("/auth/callback") || pathname.startsWith("/proposals/") || pathname.startsWith("/invoice/") || pathname.startsWith("/update-password") || pathname.startsWith("/update-password") || pathname.startsWith("/api/")) {
+if (pathname === "/login" || pathname.startsWith("/auth/callback") || pathname.startsWith("/proposals/") || pathname.startsWith("/invoice/") || pathname.startsWith("/review/") || pathname.startsWith("/update-password") || pathname.startsWith("/api/")) {
   if (session && pathname === "/login") {
     const isAdmin = session.user.email === process.env.ADMIN_EMAIL
     return NextResponse.redirect(new URL(isAdmin ? "/admin/studio" : "/dashboard", req.url))
