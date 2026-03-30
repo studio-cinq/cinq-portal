@@ -110,17 +110,26 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
     return `${p}%`
   })
 
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
+
   async function handleConfirm() {
     if (phase1Total === 0) return
     setSubmitting(true)
-    await supabase.from("proposals").update({ status: "accepted", client_note: note || null }).eq("id", params.id)
-    const res = await fetch("/api/proposal-checkout", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ proposalId: params.id, amount: deposit, depositPct, clientName: proposal?.clients?.name ?? "", title: proposal?.title ?? "Proposal deposit" }),
-    })
-    const { url } = await res.json()
-    if (url) window.location.href = url
-    else setSubmitting(false)
+    setCheckoutError(null)
+    try {
+      await supabase.from("proposals").update({ status: "accepted", client_note: note || null }).eq("id", params.id)
+      const res = await fetch("/api/proposal-checkout", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ proposalId: params.id, amount: deposit, depositPct, clientName: proposal?.clients?.name ?? "", title: proposal?.title ?? "Proposal deposit" }),
+      })
+      if (!res.ok) throw new Error("Payment service unavailable")
+      const { url } = await res.json()
+      if (url) window.location.href = url
+      else throw new Error("No payment URL returned")
+    } catch (err) {
+      setCheckoutError("Something went wrong starting the payment. Please try again or reach out to Kacie.")
+      setSubmitting(false)
+    }
   }
 
   if (loading) return (
@@ -293,6 +302,11 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
           >
             {submitting ? "Redirecting…" : "Confirm & pay deposit"}
           </button>
+          {checkoutError && (
+            <div style={{ ...body, fontSize: "var(--text-sm)", color: "var(--danger)", opacity: 0.8, lineHeight: 1.6, marginBottom: 12 }}>
+              {checkoutError}
+            </div>
+          )}
           <div style={{ ...mono, fontSize: "var(--text-eyebrow)", opacity: 0.4, letterSpacing: "0.03em", lineHeight: 1.8 }}>
             {scheduleLabel.slice(1).map((l, i) => <span key={i}>{l}{i < scheduleLabel.length - 2 ? ". " : ""}</span>)}<br />
             Scheduled items confirmed at no cost today.

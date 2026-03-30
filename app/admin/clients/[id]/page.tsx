@@ -674,11 +674,12 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                     const allCalEvents = [
                       ...events.map((e: any) => ({
                         id: e.id, title: e.title, event_date: e.event_date, event_time: e.event_time,
+                        duration_minutes: e.duration_minutes ?? null,
                         type: e.type, project_title: e.projects?.title ?? null, notes: e.notes, is_auto: false,
                       })),
                       ...invoices.filter(i => i.due_date && ["sent", "overdue"].includes(i.status)).map((i: any) => ({
                         id: `inv-${i.id}`, title: `Invoice #${i.invoice_number} — $${(i.amount / 100).toLocaleString()}`,
-                        event_date: i.due_date, event_time: null, type: "invoice_due",
+                        event_date: i.due_date, event_time: null, duration_minutes: null, type: "invoice_due",
                         project_title: null, notes: null, is_auto: true,
                       })),
                     ].sort((a, b) => a.event_date.localeCompare(b.event_date))

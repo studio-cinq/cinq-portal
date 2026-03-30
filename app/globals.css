@@ -141,10 +141,19 @@ body {
 .status-complete { color: rgba(15,15,14,0.45); }
 .status-upcoming { color: rgba(15,15,14,0.35); }
 
+/* -- Default layout gaps -- */
+.project-row-right { gap: 32px; }
+
 /* -- Scrollbar -- */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(15,15,14,0.15); border-radius: 2px; }
+
+/* -- Horizontal scroll indicator for tabs -- */
+.client-tabs { scrollbar-width: thin; scrollbar-color: rgba(15,15,14,0.15) transparent; }
+.client-tabs::-webkit-scrollbar { height: 3px; }
+.client-tabs::-webkit-scrollbar-track { background: transparent; }
+.client-tabs::-webkit-scrollbar-thumb { background: rgba(15,15,14,0.15); border-radius: 2px; }
 
 /* -- Responsive -- */
 @media (max-width: 768px) {

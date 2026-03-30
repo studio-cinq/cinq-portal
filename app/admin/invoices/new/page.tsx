@@ -227,11 +227,12 @@ function NewInvoicePageInner() {
                 <button
                   onClick={() => removeLineItem(i)}
                   disabled={lineItems.length <= 1}
+                  aria-label="Remove line item"
                   style={{
                     fontFamily: "var(--font-mono)", fontSize: 11,
                     background: "none", border: "none", cursor: lineItems.length <= 1 ? "default" : "pointer",
                     color: "var(--ink)", opacity: lineItems.length <= 1 ? 0.15 : 0.35,
-                    padding: "6px 0", marginBottom: 2,
+                    padding: "10px 6px", margin: "-4px",
                   }}
                 >
                   ✕

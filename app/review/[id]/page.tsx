@@ -21,8 +21,20 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
   const [draft, setDraft] = useState("")
   const [panelOpen, setPanelOpen] = useState(true)
   const [showInfo, setShowInfo] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    function check() {
+      const mobile = window.innerWidth < 768
+      setIsMobile(mobile)
+      if (mobile) setPanelOpen(false)
+    }
+    check()
+    window.addEventListener("resize", check)
+    return () => window.removeEventListener("resize", check)
+  }, [])
 
   useEffect(() => {
     async function load() {
@@ -178,19 +190,22 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
       {/* Top bar */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "0 20px", height: 48, flexShrink: 0,
+        padding: isMobile ? "0 12px" : "0 20px", height: 48, flexShrink: 0,
         background: "rgba(250,248,245,0.98)", borderBottom: "0.5px solid rgba(15,15,14,0.1)",
-        backdropFilter: "blur(8px)",
+        backdropFilter: "blur(8px)", gap: 8,
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0, flex: 1 }}>
           <CinqLogo width={16} />
-          <span style={{ width: 0.5, height: 16, background: "rgba(15,15,14,0.12)" }} />
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.4 }}>
-            {project?.title ?? "Website Review"} · Round {session.current_round}
+          {!isMobile && <span style={{ width: 0.5, height: 16, background: "rgba(15,15,14,0.12)", flexShrink: 0 }} />}
+          <span style={{
+            fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.4,
+            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+          }}>
+            {isMobile ? `Round ${session.current_round}` : `${project?.title ?? "Website Review"} · Round ${session.current_round}`}
           </span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {session.notes && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          {session.notes && !isMobile && (
             <button onClick={() => setShowInfo(!showInfo)} style={{
               fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase",
               opacity: 0.4, background: "none", border: "none", cursor: "pointer", color: "var(--ink)", padding: "4px 8px",
@@ -199,12 +214,12 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
               <span style={{ display: "inline-block", width: 5, height: 5, borderRadius: "50%", background: "var(--amber)", marginLeft: 6, verticalAlign: "middle" }} />
             </button>
           )}
-          <button onClick={() => setPanelOpen(!panelOpen)} style={{
+          <button onClick={() => setPanelOpen(!panelOpen)} aria-label={panelOpen ? "Hide comments" : "Show comments"} style={{
             fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase",
             opacity: 0.4, background: "none", border: "0.5px solid rgba(15,15,14,0.15)", padding: "4px 12px",
-            cursor: "pointer", color: "var(--ink)",
+            cursor: "pointer", color: "var(--ink)", whiteSpace: "nowrap",
           }}>
-            {panelOpen ? "Hide comments" : `Comments (${comments.length})`}
+            {panelOpen && !isMobile ? "Hide comments" : `Comments (${comments.length})`}
           </button>
         </div>
       </div>
@@ -222,7 +237,7 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
       )}
 
       {/* Main content: iframe + sidebar */}
-      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+      <div style={{ flex: 1, display: "flex", overflow: "hidden", position: "relative" }}>
 
         {/* Live site iframe */}
         <div style={{ flex: 1, position: "relative" }}>
@@ -237,9 +252,31 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
         {/* Comment sidebar */}
         {panelOpen && (
           <div style={{
-            width: 340, flexShrink: 0, display: "flex", flexDirection: "column",
-            background: "rgba(250,248,245,0.98)", borderLeft: "0.5px solid rgba(15,15,14,0.1)",
+            ...(isMobile
+              ? { position: "absolute" as const, top: 0, left: 0, right: 0, bottom: 0, zIndex: 20 }
+              : { width: 340, flexShrink: 0 }),
+            display: "flex", flexDirection: "column",
+            background: "rgba(250,248,245,0.98)", borderLeft: isMobile ? "none" : "0.5px solid rgba(15,15,14,0.1)",
           }}>
+
+            {/* Mobile panel header */}
+            {isMobile && (
+              <div style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "12px 16px", borderBottom: "0.5px solid rgba(15,15,14,0.1)", flexShrink: 0,
+              }}>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.5 }}>
+                  Comments ({comments.length})
+                </span>
+                <button onClick={() => setPanelOpen(false)} aria-label="Close comments" style={{
+                  fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase",
+                  background: "none", border: "0.5px solid rgba(15,15,14,0.15)", padding: "4px 12px",
+                  cursor: "pointer", color: "var(--ink)", opacity: 0.4,
+                }}>
+                  Back to site
+                </button>
+              </div>
+            )}
 
             {/* Comment list */}
             <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 8px" }}>
@@ -274,9 +311,10 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
                         <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.3 }}>
                           {new Date(c.created_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
                         </span>
-                        <button onClick={() => deleteComment(c.id)} style={{
+                        <button onClick={() => deleteComment(c.id)} aria-label="Delete comment" style={{
                           fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.08em", textTransform: "uppercase",
-                          color: "var(--ink)", opacity: 0.25, background: "none", border: "none", cursor: "pointer", padding: 0,
+                          color: "var(--ink)", opacity: 0.25, background: "none", border: "none", cursor: "pointer",
+                          padding: "8px 10px", margin: "-8px -10px",
                         }}>✕</button>
                       </div>
                     </div>

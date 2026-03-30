@@ -51,7 +51,7 @@ export default function PortalNav({ clientName, isAdmin }: NavProps) {
         zIndex: 100,
         boxSizing: "border-box",
       }}>
-        <Link href={isAdmin ? "/admin/studio" : "/dashboard"} style={{ display: "flex" }}>
+        <Link href={isAdmin ? "/admin/studio" : "/dashboard"} aria-label="Go to home" style={{ display: "flex" }}>
           <CinqLogo width={20} />
         </Link>
 
@@ -112,6 +112,7 @@ export default function PortalNav({ clientName, isAdmin }: NavProps) {
           )}
           <button
             onClick={handleSignOut}
+            aria-label="Sign out"
             style={{
               fontFamily: "var(--font-mono)",
               fontSize: "var(--text-eyebrow)",
@@ -133,6 +134,8 @@ export default function PortalNav({ clientName, isAdmin }: NavProps) {
         <button
           className="nav-hamburger"
           onClick={() => setOpen(o => !o)}
+          aria-label={open ? "Close menu" : "Open menu"}
+          aria-expanded={open}
           style={{
             display: "none",
             background: "none",

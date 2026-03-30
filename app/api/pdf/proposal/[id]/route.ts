@@ -51,6 +51,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
     const newPage = () => {
       doc.addPage()
+      drawBackground()
       y = 56
     }
 
@@ -289,7 +290,6 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     const pageCount = doc.getNumberOfPages()
     for (let p = 1; p <= pageCount; p++) {
       doc.setPage(p)
-      if (p > 1) drawBackground()
       doc.setFontSize(7)
       setColor(doc, INK, 0.25)
       doc.text("Studio Cinq", marginL, H - 28)

@@ -69,8 +69,8 @@ function LoginPageInner() {
 
         {mode === "login" && (
           <form onSubmit={handleLogin} style={{ width: "100%" }}>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" required style={inputStyle} />
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" required style={inputStyle} />
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" required aria-label="Email address" style={inputStyle} />
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" required aria-label="Password" style={inputStyle} />
             <button type="submit" disabled={loading} style={btnStyle}>
               {loading ? "Signing in…" : "Enter portal"}
             </button>
@@ -90,7 +90,7 @@ function LoginPageInner() {
             }}>
               Enter your email and we'll send a link to reset your password.
             </div>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" required style={inputStyle} />
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" required aria-label="Email address" style={inputStyle} />
             <button type="submit" disabled={loading} style={btnStyle}>
               {loading ? "Sending…" : "Send reset link"}
             </button>
@@ -118,22 +118,24 @@ function LoginPageInner() {
 
         <div style={{ width: "100%", height: "0.5px", background: "rgba(15,15,14,0.12)" }} />
 
-        {error && (
-          <div style={{
-            marginTop: 16,
-            fontFamily: "var(--font-sans)",
-            fontSize: "var(--text-sm)",
-            color: "var(--ink)", opacity: 0.5,
-            textAlign: "center", lineHeight: 1.6,
-          }}>
-            {error}
-          </div>
-        )}
+        <div role="alert" aria-live="polite">
+          {error && (
+            <div style={{
+              marginTop: 16,
+              fontFamily: "var(--font-sans)",
+              fontSize: "var(--text-sm)",
+              color: "var(--ink)", opacity: 0.5,
+              textAlign: "center", lineHeight: 1.6,
+            }}>
+              {error}
+            </div>
+          )}
+        </div>
 
       </div>
 
       <div style={{
-        position: "fixed", bottom: 28,
+        marginTop: "auto", paddingTop: 48, paddingBottom: 28,
         fontFamily: "var(--font-mono)",
         fontSize: "var(--text-eyebrow)",
         letterSpacing: "0.1em", textTransform: "uppercase",

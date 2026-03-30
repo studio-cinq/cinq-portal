@@ -70,7 +70,7 @@ export default function Calendar({ events, onDateClick, compact }: CalendarProps
   for (let i = 0; i < firstDay; i++) cells.push(null)
   for (let d = 1; d <= daysInMonth; d++) cells.push(d)
 
-  const cellSize = compact ? 28 : 34
+  const cellSize = compact ? 36 : 40
 
   return (
     <div>
@@ -79,7 +79,7 @@ export default function Calendar({ events, onDateClick, compact }: CalendarProps
         display: "flex", alignItems: "center", justifyContent: "space-between",
         marginBottom: compact ? 10 : 14,
       }}>
-        <button onClick={prev} style={navBtn}>←</button>
+        <button onClick={prev} aria-label="Previous month" style={navBtn}>←</button>
         <span style={{
           fontFamily: "var(--font-mono)",
           fontSize: "var(--text-eyebrow)",
@@ -89,7 +89,7 @@ export default function Calendar({ events, onDateClick, compact }: CalendarProps
         }}>
           {monthLabel}
         </span>
-        <button onClick={next} style={navBtn}>→</button>
+        <button onClick={next} aria-label="Next month" style={navBtn}>→</button>
       </div>
 
       {/* Day labels */}
@@ -135,11 +135,11 @@ export default function Calendar({ events, onDateClick, compact }: CalendarProps
             >
               <span style={{
                 fontFamily: "var(--font-sans)",
-                fontSize: compact ? 10 : 11,
+                fontSize: compact ? 11 : 12,
                 opacity: isToday ? 0.95 : hasEvents ? 0.7 : 0.3,
                 fontWeight: isToday ? 500 : 400,
-                width: compact ? 20 : 24,
-                height: compact ? 20 : 24,
+                width: compact ? 26 : 28,
+                height: compact ? 26 : 28,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -175,11 +175,12 @@ export default function Calendar({ events, onDateClick, compact }: CalendarProps
 
 const navBtn: React.CSSProperties = {
   fontFamily: "var(--font-mono)",
-  fontSize: 11,
+  fontSize: 12,
   background: "none",
   border: "none",
   cursor: "pointer",
   color: "var(--ink)",
   opacity: 0.4,
-  padding: "4px 8px",
+  padding: "10px 14px",
+  margin: "-6px",
 }

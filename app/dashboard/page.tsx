@@ -233,7 +233,7 @@ export default async function DashboardPage() {
                     {project.title}
                   </span>
                 </div>
-                <div className="project-row-right" style={{ display: "flex", alignItems: "center", gap: 32, flexShrink: 0 }}>
+                <div className="project-row-right" style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
                   <span className="project-scope" style={{
                     fontFamily: "var(--font-mono)",
                     fontSize: "var(--text-eyebrow)",
