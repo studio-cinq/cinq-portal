@@ -37,29 +37,6 @@ export default function ReviewToolbar({
 
   return (
     <>
-      {/* Notes banner — only shows once, at the top, if notes exist */}
-      {notes && (
-        <div style={{
-          position: "fixed", top: 0, left: 0, right: 0, zIndex: 60,
-          background: "rgba(250,248,245,0.96)",
-          borderBottom: "0.5px solid rgba(15,15,14,0.1)",
-          backdropFilter: "blur(8px)",
-          padding: "10px 20px",
-          display: "flex", alignItems: "center", gap: 12,
-        }}>
-          <span style={{
-            fontFamily: "var(--font-mono)", fontSize: 8,
-            letterSpacing: "0.1em", textTransform: "uppercase",
-            color: "var(--ink)", opacity: 0.35, whiteSpace: "nowrap",
-          }}>Note from Kacie</span>
-          <span style={{ width: 0.5, height: 12, background: "rgba(15,15,14,0.12)" }} />
-          <p style={{
-            fontFamily: "var(--font-serif)", fontSize: "var(--text-sm)",
-            color: "var(--ink)", opacity: 0.6, margin: 0, lineHeight: 1.4,
-          }}>{notes}</p>
-        </div>
-      )}
-
       {/* Floating bottom bar */}
       <div style={{
         position: "fixed",
@@ -108,6 +85,24 @@ export default function ReviewToolbar({
               fontFamily: "var(--font-mono)", fontSize: 8,
               color: "var(--ink)", opacity: 0.3, margin: 0,
             }}>If you navigated to a different page, paste the URL above so we know which page your notes are on.</p>
+
+            {/* Notes from admin */}
+            {notes && (
+              <div style={{
+                borderTop: "0.5px solid rgba(15,15,14,0.08)",
+                paddingTop: 8, marginTop: 4,
+              }}>
+                <span style={{
+                  fontFamily: "var(--font-mono)", fontSize: 8,
+                  letterSpacing: "0.1em", textTransform: "uppercase",
+                  color: "var(--ink)", opacity: 0.35,
+                }}>Note from Kacie</span>
+                <p style={{
+                  fontFamily: "var(--font-serif)", fontSize: "var(--text-sm)",
+                  color: "var(--ink)", opacity: 0.6, margin: "4px 0 0", lineHeight: 1.5,
+                }}>{notes}</p>
+              </div>
+            )}
           </div>
         )}
 
@@ -133,7 +128,13 @@ export default function ReviewToolbar({
               background: "none", border: "none", cursor: "pointer",
               padding: "6px 12px", whiteSpace: "nowrap",
             }}
-          >{projectTitle} · R{round}</button>
+          >
+            {projectTitle} · R{round}
+            {notes && <span style={{
+              display: "inline-block", width: 5, height: 5, borderRadius: "50%",
+              background: "var(--amber)", marginLeft: 6, verticalAlign: "middle",
+            }} />}
+          </button>
 
           <span style={{ width: 0.5, height: 16, background: "rgba(15,15,14,0.1)" }} />
 
