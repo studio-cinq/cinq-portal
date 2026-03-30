@@ -206,26 +206,9 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
 
   // Active review state
   return (
-    <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: "var(--cream)" }}>
-      <ReviewToolbar
-        projectTitle={session.projects?.title ?? "Website Review"}
-        clientName={session.clients?.name ?? ""}
-        siteUrl={session.site_url}
-        currentPageUrl={currentPageUrl}
-        onPageUrlChange={setCurrentPageUrl}
-        mode={mode}
-        onModeChange={setMode}
-        round={session.current_round}
-        pinCount={annotations.length}
-        onSubmit={handleSubmit}
-        onApprove={handleApprove}
-        submitting={submitting}
-        approving={approving}
-        notes={session.notes ?? undefined}
-      />
-
-      {/* Iframe + overlay container */}
-      <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
+    <div style={{ height: "100vh", position: "relative", background: "var(--cream)" }}>
+      {/* Iframe takes the full screen */}
+      <div style={{ position: "absolute", inset: 0 }}>
         <iframe
           src={session.site_url}
           style={{
@@ -246,6 +229,24 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
           onDeletePin={handleDeletePin}
         />
       </div>
+
+      {/* Floating toolbar at the bottom */}
+      <ReviewToolbar
+        projectTitle={session.projects?.title ?? "Website Review"}
+        clientName={session.clients?.name ?? ""}
+        siteUrl={session.site_url}
+        currentPageUrl={currentPageUrl}
+        onPageUrlChange={setCurrentPageUrl}
+        mode={mode}
+        onModeChange={setMode}
+        round={session.current_round}
+        pinCount={annotations.length}
+        onSubmit={handleSubmit}
+        onApprove={handleApprove}
+        submitting={submitting}
+        approving={approving}
+        notes={session.notes ?? undefined}
+      />
     </div>
   )
 }

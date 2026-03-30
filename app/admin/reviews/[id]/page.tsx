@@ -199,141 +199,140 @@ export default function AdminReviewDetailPage({ params }: { params: { id: string
           ))}
         </div>
 
-        {/* Layout: iframe with overlay + annotation sidebar */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: 24, minHeight: 500 }}>
-          {/* Iframe + pins */}
-          <div style={{
-            position: "relative",
-            border: "0.5px solid rgba(15,15,14,0.1)",
-            background: "#fff",
-            overflow: "hidden",
-          }}>
-            <iframe
-              src={session.site_url}
-              style={{ width: "100%", height: "100%", minHeight: 500, border: "none", display: "block" }}
-              sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-            />
-            <AnnotationOverlay
-              annotations={annotations}
-              mode="comment"
-              pendingPin={null}
-              onClickOverlay={() => {}}
-              onSavePin={() => {}}
-              onCancelPin={() => {}}
-              readOnly
-            />
-          </div>
+        {/* Full-width iframe with pins overlay */}
+        <div style={{
+          position: "relative",
+          border: "0.5px solid rgba(15,15,14,0.1)",
+          background: "#fff",
+          overflow: "hidden",
+          marginBottom: 32,
+          height: "70vh",
+        }}>
+          <iframe
+            src={session.site_url}
+            style={{ width: "100%", height: "100%", border: "none", display: "block" }}
+            sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+          />
+          <AnnotationOverlay
+            annotations={annotations}
+            mode="comment"
+            pendingPin={null}
+            onClickOverlay={() => {}}
+            onSavePin={() => {}}
+            onCancelPin={() => {}}
+            readOnly
+          />
+        </div>
 
-          {/* Annotations sidebar */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+        {/* Annotations list below */}
+        <div style={{ maxWidth: 640 }}>
+          <p style={{
+            ...labelStyle, margin: "0 0 16px",
+          }}>{annotations.length} annotation{annotations.length !== 1 ? "s" : ""} — Round {selectedRound}</p>
+
+          {annotations.length === 0 ? (
             <p style={{
-              ...labelStyle, margin: "0 0 12px",
-            }}>{annotations.length} annotation{annotations.length !== 1 ? "s" : ""} — Round {selectedRound}</p>
+              fontFamily: "var(--font-serif)", fontSize: "var(--text-sm)",
+              color: "var(--ink)", opacity: 0.45,
+            }}>No annotations for this round yet.</p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+              {Object.entries(groupedByPage).map(([pageUrl, annots]) => (
+                <div key={pageUrl}>
+                  <p style={{
+                    fontFamily: "var(--font-mono)", fontSize: 9,
+                    color: "var(--ink)", opacity: 0.3, margin: "16px 0 8px",
+                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                  }}>{pageUrl}</p>
+                  {annots.map((a) => {
+                    const globalIndex = annotations.findIndex(ann => ann.id === a.id)
+                    return (
+                      <div
+                        key={a.id}
+                        style={{
+                          display: "flex", gap: 12, alignItems: "flex-start",
+                          padding: "12px 0",
+                          borderBottom: "0.5px solid rgba(15,15,14,0.06)",
+                          opacity: a.resolved ? 0.4 : 1,
+                          transition: "opacity 0.2s",
+                        }}
+                      >
+                        {/* Pin number */}
+                        <div style={{
+                          width: 22, height: 22, borderRadius: "50%",
+                          background: a.resolved ? "rgba(15,15,14,0.3)" : "var(--ink)",
+                          color: "#EDE8E0",
+                          fontFamily: "var(--font-mono)", fontSize: 9,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          flexShrink: 0, marginTop: 2,
+                        }}>{globalIndex + 1}</div>
 
-            {annotations.length === 0 ? (
-              <p style={{
-                fontFamily: "var(--font-serif)", fontSize: "var(--text-sm)",
-                color: "var(--ink)", opacity: 0.45,
-              }}>No annotations for this round yet.</p>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-                {Object.entries(groupedByPage).map(([pageUrl, annots]) => (
-                  <div key={pageUrl}>
-                    <p style={{
-                      fontFamily: "var(--font-mono)", fontSize: 9,
-                      color: "var(--ink)", opacity: 0.3, margin: "12px 0 6px",
-                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                    }}>{pageUrl}</p>
-                    {annots.map((a, i) => {
-                      const globalIndex = annotations.findIndex(ann => ann.id === a.id)
-                      return (
-                        <div
-                          key={a.id}
-                          style={{
-                            display: "flex", gap: 10, alignItems: "flex-start",
-                            padding: "10px 0",
-                            borderBottom: "0.5px solid rgba(15,15,14,0.06)",
-                            opacity: a.resolved ? 0.4 : 1,
-                            transition: "opacity 0.2s",
-                          }}
-                        >
-                          {/* Pin number */}
-                          <div style={{
-                            width: 20, height: 20, borderRadius: "50%",
-                            background: a.resolved ? "rgba(15,15,14,0.3)" : "var(--ink)",
-                            color: "#EDE8E0",
-                            fontFamily: "var(--font-mono)", fontSize: 9,
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            flexShrink: 0, marginTop: 2,
-                          }}>{globalIndex + 1}</div>
-
-                          {/* Content */}
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <p style={{
-                              fontFamily: "var(--font-serif)", fontSize: "var(--text-sm)",
-                              color: "var(--ink)", opacity: 0.8, margin: 0, lineHeight: 1.5,
-                              textDecoration: a.resolved ? "line-through" : "none",
-                            }}>{a.comment}</p>
-                            <p style={{
-                              fontFamily: "var(--font-mono)", fontSize: 8,
-                              color: "var(--ink)", opacity: 0.3, margin: "4px 0 0",
-                            }}>
-                              {new Date(a.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
-                            </p>
-                          </div>
-
-                          {/* Resolve toggle */}
-                          <button
-                            onClick={() => handleResolveToggle(a.id, !a.resolved)}
-                            style={{
-                              fontFamily: "var(--font-mono)", fontSize: 8,
-                              letterSpacing: "0.1em", textTransform: "uppercase",
-                              background: "none", border: "none", cursor: "pointer",
-                              color: a.resolved ? "var(--sage)" : "var(--ink)",
-                              opacity: a.resolved ? 0.8 : 0.35,
-                              padding: "2px 0", whiteSpace: "nowrap",
-                            }}
-                          >{a.resolved ? "Done" : "Resolve"}</button>
+                        {/* Content */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{
+                            fontFamily: "var(--font-serif)", fontSize: "var(--text-body)",
+                            color: "var(--ink)", opacity: 0.8, margin: 0, lineHeight: 1.6,
+                            textDecoration: a.resolved ? "line-through" : "none",
+                          }}>{a.comment}</p>
+                          <p style={{
+                            fontFamily: "var(--font-mono)", fontSize: 8,
+                            color: "var(--ink)", opacity: 0.3, margin: "4px 0 0",
+                          }}>
+                            {new Date(a.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                          </p>
                         </div>
-                      )
-                    })}
-                  </div>
-                ))}
-              </div>
-            )}
 
-            {/* Send back section */}
-            {session.status === "revising" && (
-              <div style={{ marginTop: 24, paddingTop: 20, borderTop: "0.5px solid rgba(15,15,14,0.1)" }}>
-                <p style={{ ...labelStyle, margin: "0 0 8px" }}>Send back for review</p>
-                <textarea
-                  value={sendNotes}
-                  onChange={e => setSendNotes(e.target.value)}
-                  placeholder="Optional note to client about what changed…"
-                  rows={2}
-                  style={{
-                    width: "100%", padding: "10px 12px",
-                    fontFamily: "var(--font-serif)", fontSize: "var(--text-sm)",
-                    color: "var(--ink)", background: "rgba(255,255,255,0.35)",
-                    border: "0.5px solid rgba(15,15,14,0.1)", outline: "none",
-                    boxSizing: "border-box", resize: "vertical",
-                    marginBottom: 10,
-                  }}
-                />
-                <button
-                  onClick={handleSendBack}
-                  disabled={sending}
-                  style={{
-                    fontFamily: "var(--font-mono)", fontSize: 8,
-                    letterSpacing: "0.14em", textTransform: "uppercase",
-                    background: "var(--ink)", color: "#EDE8E0",
-                    padding: "10px 20px", border: "none", cursor: "pointer",
-                    opacity: sending ? 0.3 : 1, transition: "opacity 0.2s",
-                  }}
-                >{sending ? "Sending…" : "Send back to client"}</button>
-              </div>
-            )}
-          </div>
+                        {/* Resolve toggle */}
+                        <button
+                          onClick={() => handleResolveToggle(a.id, !a.resolved)}
+                          style={{
+                            fontFamily: "var(--font-mono)", fontSize: 8,
+                            letterSpacing: "0.1em", textTransform: "uppercase",
+                            background: "none", border: "none", cursor: "pointer",
+                            color: a.resolved ? "var(--sage)" : "var(--ink)",
+                            opacity: a.resolved ? 0.8 : 0.35,
+                            padding: "2px 0", whiteSpace: "nowrap",
+                          }}
+                        >{a.resolved ? "Done" : "Resolve"}</button>
+                      </div>
+                    )
+                  })}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Send back section */}
+          {session.status === "revising" && (
+            <div style={{ marginTop: 32, paddingTop: 24, borderTop: "0.5px solid rgba(15,15,14,0.1)" }}>
+              <p style={{ ...labelStyle, margin: "0 0 10px" }}>Send back for review</p>
+              <textarea
+                value={sendNotes}
+                onChange={e => setSendNotes(e.target.value)}
+                placeholder="Optional note to client about what changed…"
+                rows={2}
+                style={{
+                  width: "100%", padding: "10px 12px",
+                  fontFamily: "var(--font-serif)", fontSize: "var(--text-sm)",
+                  color: "var(--ink)", background: "rgba(255,255,255,0.35)",
+                  border: "0.5px solid rgba(15,15,14,0.1)", outline: "none",
+                  boxSizing: "border-box", resize: "vertical",
+                  marginBottom: 12,
+                }}
+              />
+              <button
+                onClick={handleSendBack}
+                disabled={sending}
+                style={{
+                  fontFamily: "var(--font-mono)", fontSize: 8,
+                  letterSpacing: "0.14em", textTransform: "uppercase",
+                  background: "var(--ink)", color: "#EDE8E0",
+                  padding: "12px 24px", border: "none", cursor: "pointer",
+                  opacity: sending ? 0.3 : 1, transition: "opacity 0.2s",
+                }}
+              >{sending ? "Sending…" : "Send back to client"}</button>
+            </div>
+          )}
         </div>
       </main>
     </>

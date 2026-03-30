@@ -1,5 +1,7 @@
 "use client"
 
+import { useState } from "react"
+
 interface ReviewToolbarProps {
   projectTitle: string
   clientName: string
@@ -19,8 +21,6 @@ interface ReviewToolbarProps {
 
 export default function ReviewToolbar({
   projectTitle,
-  clientName,
-  siteUrl,
   currentPageUrl,
   onPageUrlChange,
   mode,
@@ -33,190 +33,165 @@ export default function ReviewToolbar({
   approving,
   notes,
 }: ReviewToolbarProps) {
-  return (
-    <div style={{
-      display: "flex",
-      flexDirection: "column",
-      background: "rgba(250,248,245,0.98)",
-      borderBottom: "0.5px solid rgba(15,15,14,0.1)",
-      backdropFilter: "blur(8px)",
-      position: "relative",
-      zIndex: 50,
-    }}>
-      {/* Main toolbar row */}
-      <div style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "0 20px",
-        height: 52,
-        gap: 16,
-      }}>
-        {/* Left: logo + project info */}
-        <div style={{ display: "flex", alignItems: "center", gap: 16, minWidth: 0 }}>
-          <span style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: "var(--text-eyebrow)",
-            letterSpacing: "0.14em",
-            textTransform: "uppercase",
-            color: "var(--ink)",
-            opacity: 0.35,
-            whiteSpace: "nowrap",
-          }}>Studio Cinq</span>
-          <span style={{ width: 0.5, height: 20, background: "rgba(15,15,14,0.12)" }} />
-          <span style={{
-            fontFamily: "var(--font-sans)",
-            fontSize: "var(--text-sm)",
-            color: "var(--ink)",
-            opacity: 0.65,
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          }}>{projectTitle}</span>
-          <span style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: 8,
-            letterSpacing: "0.1em",
-            textTransform: "uppercase",
-            color: "var(--ink)",
-            opacity: 0.35,
-            border: "0.5px solid rgba(15,15,14,0.15)",
-            padding: "3px 8px",
-            whiteSpace: "nowrap",
-          }}>Round {round}</span>
-        </div>
+  const [expanded, setExpanded] = useState(false)
 
-        {/* Center: mode toggle */}
+  return (
+    <>
+      {/* Notes banner — only shows once, at the top, if notes exist */}
+      {notes && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, zIndex: 60,
+          background: "rgba(250,248,245,0.96)",
+          borderBottom: "0.5px solid rgba(15,15,14,0.1)",
+          backdropFilter: "blur(8px)",
+          padding: "10px 20px",
+          display: "flex", alignItems: "center", gap: 12,
+        }}>
+          <span style={{
+            fontFamily: "var(--font-mono)", fontSize: 8,
+            letterSpacing: "0.1em", textTransform: "uppercase",
+            color: "var(--ink)", opacity: 0.35, whiteSpace: "nowrap",
+          }}>Note from Kacie</span>
+          <span style={{ width: 0.5, height: 12, background: "rgba(15,15,14,0.12)" }} />
+          <p style={{
+            fontFamily: "var(--font-serif)", fontSize: "var(--text-sm)",
+            color: "var(--ink)", opacity: 0.6, margin: 0, lineHeight: 1.4,
+          }}>{notes}</p>
+        </div>
+      )}
+
+      {/* Floating bottom bar */}
+      <div style={{
+        position: "fixed",
+        bottom: 20,
+        left: "50%",
+        transform: "translateX(-50%)",
+        zIndex: 60,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 8,
+      }}>
+        {/* Expanded panel — URL field */}
+        {expanded && (
+          <div style={{
+            background: "rgba(250,248,245,0.98)",
+            border: "0.5px solid rgba(15,15,14,0.12)",
+            backdropFilter: "blur(12px)",
+            boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
+            padding: "12px 16px",
+            width: 420,
+            display: "flex", flexDirection: "column", gap: 8,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{
+                fontFamily: "var(--font-mono)", fontSize: 8,
+                letterSpacing: "0.1em", textTransform: "uppercase",
+                color: "var(--ink)", opacity: 0.35, whiteSpace: "nowrap",
+              }}>Page URL</span>
+              <input
+                type="text"
+                value={currentPageUrl}
+                onChange={e => onPageUrlChange(e.target.value)}
+                style={{
+                  flex: 1, padding: "6px 10px",
+                  fontFamily: "var(--font-mono)", fontSize: 10,
+                  color: "var(--ink)", opacity: 0.6,
+                  background: "rgba(255,255,255,0.4)",
+                  border: "0.5px solid rgba(15,15,14,0.08)",
+                  outline: "none", boxSizing: "border-box",
+                }}
+                placeholder="Paste URL if you navigated"
+              />
+            </div>
+            <p style={{
+              fontFamily: "var(--font-mono)", fontSize: 8,
+              color: "var(--ink)", opacity: 0.3, margin: 0,
+            }}>If you navigated to a different page, paste the URL above so we know which page your notes are on.</p>
+          </div>
+        )}
+
+        {/* Main pill bar */}
         <div style={{
           display: "flex",
-          border: "0.5px solid rgba(15,15,14,0.15)",
-          overflow: "hidden",
+          alignItems: "center",
+          gap: 2,
+          background: "rgba(250,248,245,0.98)",
+          border: "0.5px solid rgba(15,15,14,0.12)",
+          backdropFilter: "blur(12px)",
+          boxShadow: "0 4px 24px rgba(0,0,0,0.1)",
+          padding: "6px 6px",
+          borderRadius: 40,
         }}>
-          {(["browse", "comment"] as const).map(m => (
-            <button
-              key={m}
-              onClick={() => onModeChange(m)}
-              style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: 8,
-                letterSpacing: "0.14em",
-                textTransform: "uppercase",
-                padding: "7px 16px",
-                border: "none",
-                cursor: "pointer",
-                background: mode === m ? "var(--ink)" : "transparent",
-                color: mode === m ? "#EDE8E0" : "var(--ink)",
-                opacity: mode === m ? 1 : 0.45,
-                transition: "all 0.15s",
-              }}
-            >{m === "browse" ? "Browse" : `Comment${pinCount > 0 ? ` (${pinCount})` : ""}`}</button>
-          ))}
-        </div>
+          {/* Project + round label */}
+          <button
+            onClick={() => setExpanded(!expanded)}
+            style={{
+              fontFamily: "var(--font-mono)", fontSize: 8,
+              letterSpacing: "0.1em", textTransform: "uppercase",
+              color: "var(--ink)", opacity: 0.4,
+              background: "none", border: "none", cursor: "pointer",
+              padding: "6px 12px", whiteSpace: "nowrap",
+            }}
+          >{projectTitle} · R{round}</button>
 
-        {/* Right: actions */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ width: 0.5, height: 16, background: "rgba(15,15,14,0.1)" }} />
+
+          {/* Mode toggle */}
+          <div style={{ display: "flex", overflow: "hidden", borderRadius: 20 }}>
+            {(["browse", "comment"] as const).map(m => (
+              <button
+                key={m}
+                onClick={() => onModeChange(m)}
+                style={{
+                  fontFamily: "var(--font-mono)", fontSize: 8,
+                  letterSpacing: "0.12em", textTransform: "uppercase",
+                  padding: "6px 14px",
+                  border: "none", cursor: "pointer",
+                  borderRadius: 20,
+                  background: mode === m ? "var(--ink)" : "transparent",
+                  color: mode === m ? "#EDE8E0" : "var(--ink)",
+                  opacity: mode === m ? 1 : 0.4,
+                  transition: "all 0.15s",
+                }}
+              >{m === "browse" ? "Browse" : `Comment${pinCount > 0 ? ` (${pinCount})` : ""}`}</button>
+            ))}
+          </div>
+
+          <span style={{ width: 0.5, height: 16, background: "rgba(15,15,14,0.1)" }} />
+
+          {/* Submit */}
           <button
             onClick={onSubmit}
             disabled={submitting || pinCount === 0}
             style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: 8,
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
-              background: "var(--ink)",
-              color: "#EDE8E0",
-              padding: "8px 16px",
-              border: "none",
-              cursor: "pointer",
-              opacity: submitting || pinCount === 0 ? 0.3 : 1,
-              transition: "opacity 0.2s",
-              whiteSpace: "nowrap",
+              fontFamily: "var(--font-mono)", fontSize: 8,
+              letterSpacing: "0.12em", textTransform: "uppercase",
+              background: "var(--ink)", color: "#EDE8E0",
+              padding: "6px 14px", border: "none", cursor: "pointer",
+              borderRadius: 20,
+              opacity: submitting || pinCount === 0 ? 0.25 : 1,
+              transition: "opacity 0.2s", whiteSpace: "nowrap",
             }}
-          >{submitting ? "Submitting…" : "Submit feedback"}</button>
+          >{submitting ? "Sending…" : "Submit"}</button>
 
+          {/* Approve */}
           <button
             onClick={onApprove}
             disabled={approving}
             style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: 8,
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
-              background: "none",
-              color: "var(--ink)",
-              padding: "8px 14px",
-              cursor: "pointer",
+              fontFamily: "var(--font-mono)", fontSize: 8,
+              letterSpacing: "0.12em", textTransform: "uppercase",
+              background: "none", color: "var(--ink)",
+              padding: "6px 12px", cursor: "pointer",
               border: "0.5px solid rgba(15,15,14,0.15)",
-              opacity: approving ? 0.3 : 0.55,
-              transition: "opacity 0.2s",
-              whiteSpace: "nowrap",
+              borderRadius: 20,
+              opacity: approving ? 0.25 : 0.5,
+              transition: "opacity 0.2s", whiteSpace: "nowrap",
             }}
-          >{approving ? "Approving…" : "Approve site"}</button>
+          >{approving ? "Approving…" : "Approve"}</button>
         </div>
       </div>
-
-      {/* URL bar row */}
-      <div style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        padding: "0 20px 10px",
-      }}>
-        <span style={{
-          fontFamily: "var(--font-mono)",
-          fontSize: 8,
-          letterSpacing: "0.1em",
-          textTransform: "uppercase",
-          color: "var(--ink)",
-          opacity: 0.35,
-          whiteSpace: "nowrap",
-        }}>Page</span>
-        <input
-          type="text"
-          value={currentPageUrl}
-          onChange={e => onPageUrlChange(e.target.value)}
-          style={{
-            flex: 1,
-            padding: "6px 10px",
-            fontFamily: "var(--font-mono)",
-            fontSize: 11,
-            color: "var(--ink)",
-            opacity: 0.6,
-            background: "rgba(255,255,255,0.3)",
-            border: "0.5px solid rgba(15,15,14,0.08)",
-            outline: "none",
-            boxSizing: "border-box",
-          }}
-          placeholder="Paste current page URL if you navigated"
-        />
-      </div>
-
-      {/* Notes from admin */}
-      {notes && (
-        <div style={{
-          padding: "0 20px 12px",
-          borderTop: "0.5px solid rgba(15,15,14,0.06)",
-          paddingTop: 10,
-        }}>
-          <p style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: 8,
-            letterSpacing: "0.1em",
-            textTransform: "uppercase",
-            color: "var(--ink)",
-            opacity: 0.35,
-            margin: "0 0 4px",
-          }}>Note from Kacie</p>
-          <p style={{
-            fontFamily: "var(--font-serif)",
-            fontSize: "var(--text-sm)",
-            color: "var(--ink)",
-            opacity: 0.65,
-            margin: 0,
-            lineHeight: 1.5,
-          }}>{notes}</p>
-        </div>
-      )}
-    </div>
+    </>
   )
 }
