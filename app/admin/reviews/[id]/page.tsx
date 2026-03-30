@@ -235,6 +235,10 @@ export default function AdminReviewDetailPage({ params }: { params: { id: string
                   }}>{pageUrl}</p>
                   {annots.map((a) => {
                     const globalIndex = annotations.findIndex(ann => ann.id === a.id)
+                    // Position labels
+                    const xLabel = a.x_percent < 33 ? "Left" : a.x_percent > 66 ? "Right" : "Center"
+                    const yLabel = a.y_percent < 33 ? "Top" : a.y_percent > 66 ? "Bottom" : "Middle"
+                    const posLabel = `${yLabel} ${xLabel.toLowerCase()}`
                     return (
                       <div
                         key={a.id}
@@ -246,15 +250,32 @@ export default function AdminReviewDetailPage({ params }: { params: { id: string
                           transition: "opacity 0.2s",
                         }}
                       >
-                        {/* Pin number */}
-                        <div style={{
-                          width: 22, height: 22, borderRadius: "50%",
-                          background: a.resolved ? "rgba(15,15,14,0.3)" : "var(--ink)",
-                          color: "#EDE8E0",
-                          fontFamily: "var(--font-mono)", fontSize: 9,
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          flexShrink: 0, marginTop: 2,
-                        }}>{globalIndex + 1}</div>
+                        {/* Pin number + position mini-map */}
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flexShrink: 0 }}>
+                          <div style={{
+                            width: 22, height: 22, borderRadius: "50%",
+                            background: a.resolved ? "rgba(15,15,14,0.3)" : "var(--ink)",
+                            color: "#EDE8E0",
+                            fontFamily: "var(--font-mono)", fontSize: 9,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                          }}>{globalIndex + 1}</div>
+                          {/* Mini position indicator */}
+                          <div style={{
+                            width: 28, height: 18,
+                            border: "0.5px solid rgba(15,15,14,0.15)",
+                            background: "rgba(255,255,255,0.4)",
+                            position: "relative",
+                          }}>
+                            <div style={{
+                              position: "absolute",
+                              left: `${a.x_percent}%`,
+                              top: `${a.y_percent}%`,
+                              transform: "translate(-50%, -50%)",
+                              width: 4, height: 4, borderRadius: "50%",
+                              background: a.resolved ? "rgba(15,15,14,0.3)" : "var(--ink)",
+                            }} />
+                          </div>
+                        </div>
 
                         {/* Content */}
                         <div style={{ flex: 1, minWidth: 0 }}>
@@ -267,7 +288,7 @@ export default function AdminReviewDetailPage({ params }: { params: { id: string
                             fontFamily: "var(--font-mono)", fontSize: 8,
                             color: "var(--ink)", opacity: 0.3, margin: "4px 0 0",
                           }}>
-                            {new Date(a.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                            {posLabel} · {a.viewport_w}×{a.viewport_h} · {new Date(a.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
                           </p>
                         </div>
 
