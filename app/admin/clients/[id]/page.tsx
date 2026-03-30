@@ -186,12 +186,13 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
 
   async function uploadBrandAssets(files: FileList, category: string) {
     if (!selectedProject) return
+    let uploaded = 0
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
       const ext = file.name.split(".").pop() ?? "bin"
       const path = `${selectedProject.id}/${Date.now()}-${i}.${ext}`
       const { error: uploadErr } = await supabase.storage.from("brand-assets").upload(path, file)
-      if (uploadErr) { console.error("[upload]", uploadErr); continue }
+      if (uploadErr) { console.error("[upload]", uploadErr); showToast("Upload failed — check storage permissions", "error"); continue }
       const { data: urlData } = supabase.storage.from("brand-assets").getPublicUrl(path)
       const { data: asset } = await supabase.from("brand_assets").insert({
         project_id: selectedProject.id,
@@ -202,9 +203,9 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
         category,
         sort_order: brandAssets.length + i,
       }).select().single()
-      if (asset) setBrandAssets(prev => [...prev, asset])
+      if (asset) { setBrandAssets(prev => [...prev, asset]); uploaded++ }
     }
-    showToast(`${files.length} asset${files.length > 1 ? "s" : ""} uploaded`)
+    if (uploaded > 0) showToast(`${uploaded} asset${uploaded > 1 ? "s" : ""} uploaded`)
   }
 
   async function deleteBrandAsset(id: string) {
