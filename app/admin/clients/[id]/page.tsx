@@ -133,6 +133,16 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
     showToast(`Status → ${statusLabels[status] ?? status}`)
   }
 
+  async function deleteDeliverable(deliverableId: string, name: string) {
+    if (!confirm(`Delete "${name}"? This cannot be undone.`)) return
+    await supabase.from("deliverables").delete().eq("id", deliverableId)
+    setProjects(ps => ps.map(p => ({
+      ...p,
+      deliverables: p.deliverables?.filter((d: any) => d.id !== deliverableId)
+    })))
+    showToast("Deliverable deleted")
+  }
+
   async function addLogEntry() {
     if (!logInput.trim() || !selectedProject) return
     const { data } = await supabase.from("decision_log")
@@ -392,6 +402,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                             <select value={del.status} onChange={e => updateDeliverableStatus(del.id, e.target.value)} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.08em", textTransform: "uppercase", background: "transparent", border: "0.5px solid rgba(15,15,14,0.15)", padding: "5px 8px", color: statusColors[del.status] ?? "var(--ink)", outline: "none", cursor: "pointer" }}>
                               {Object.entries(statusLabels).map(([val, label]) => <option key={val} value={val}>{label}</option>)}
                             </select>
+                            <button onClick={() => deleteDeliverable(del.id, del.name)} style={{ fontFamily: "var(--font-mono)", fontSize: 10, background: "none", border: "none", cursor: "pointer", color: "var(--ink)", opacity: 0.25, padding: "4px" }}>✕</button>
                           </div>
                         </div>
                       </div>
@@ -689,11 +700,11 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                                 <span style={{
                                   fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: "0.1em", textTransform: "uppercase",
                                   padding: "2px 7px",
-                                  border: `0.5px solid ${evt.type === "milestone" ? "rgba(107,143,113,0.3)" : evt.type === "invoice_due" ? "rgba(15,15,14,0.15)" : "rgba(176,125,58,0.3)"}`,
-                                  color: evt.type === "milestone" ? "var(--sage)" : evt.type === "invoice_due" ? "var(--ink)" : "var(--amber)",
-                                  opacity: evt.type === "invoice_due" ? 0.5 : 1,
+                                  border: `0.5px solid ${evt.type === "milestone" ? "rgba(107,143,113,0.3)" : evt.type === "invoice_due" || evt.type === "work" ? "rgba(15,15,14,0.15)" : "rgba(176,125,58,0.3)"}`,
+                                  color: evt.type === "milestone" ? "var(--sage)" : evt.type === "invoice_due" || evt.type === "work" ? "var(--ink)" : "var(--amber)",
+                                  opacity: evt.type === "invoice_due" ? 0.5 : evt.type === "work" ? 0.55 : 1,
                                 }}>
-                                  {evt.type === "meeting" ? "Meeting" : evt.type === "presentation" ? "Presentation" : evt.type === "milestone" ? "Milestone" : "Invoice"}
+                                  {evt.type === "meeting" ? "Meeting" : evt.type === "presentation" ? "Presentation" : evt.type === "milestone" ? "Milestone" : evt.type === "work" ? "Work" : "Invoice"}
                                 </span>
                               </div>
                               <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-body)" as any }}>{evt.title}</div>
@@ -739,6 +750,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                         <option value="meeting">Meeting / call</option>
                         <option value="presentation">Presentation review</option>
                         <option value="milestone">Milestone deadline</option>
+                        <option value="work">Work time</option>
                       </select>
                     </div>
                     <div>

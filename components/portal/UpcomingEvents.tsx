@@ -20,6 +20,7 @@ const TYPE_COLORS: Record<string, string> = {
   meeting:      "var(--amber)",
   presentation: "var(--amber)",
   milestone:    "var(--sage)",
+  work:         "var(--ink)",
   invoice_due:  "var(--ink)",
 }
 
@@ -27,6 +28,7 @@ const TYPE_LABELS: Record<string, string> = {
   meeting:      "Meeting",
   presentation: "Presentation",
   milestone:    "Milestone",
+  work:         "Work time",
   invoice_due:  "Invoice due",
 }
 

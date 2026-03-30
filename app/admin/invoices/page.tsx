@@ -43,15 +43,15 @@ export default async function AdminInvoicesPage() {
           <SummaryCard label="Drafts"      value={String(totalDraft)} />
         </div>
 
-        <div className="admin-table-header" style={{ display: "grid", gridTemplateColumns: "1fr 140px 120px 100px 80px 80px 50px 50px 60px", gap: 16, paddingBottom: 10, borderBottom: "0.5px solid rgba(15,15,14,0.12)" }}>
-          {["Invoice", "Client", "Amount", "Due", "Status", "", "", "", ""].map((h, i) => (
+        <div className="admin-table-header" style={{ display: "grid", gridTemplateColumns: "1fr 140px 120px 100px 80px 80px 50px 50px 50px 60px", gap: 16, paddingBottom: 10, borderBottom: "0.5px solid rgba(15,15,14,0.12)" }}>
+          {["Invoice", "Client", "Amount", "Due", "Status", "", "", "", "", ""].map((h, i) => (
             <div key={`${h}-${i}`} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.45 }}>{h}</div>
           ))}
         </div>
 
         {invoices?.map(inv => (
           <div className="admin-invoice-row" key={inv.id} style={{
-            display: "grid", gridTemplateColumns: "1fr 140px 120px 100px 80px 80px 50px 50px 60px",
+            display: "grid", gridTemplateColumns: "1fr 140px 120px 100px 80px 80px 50px 50px 50px 60px",
             gap: 16, alignItems: "center", padding: "16px 0",
             borderBottom: "0.5px solid rgba(15,15,14,0.08)",
           }}>
@@ -78,6 +78,9 @@ export default async function AdminInvoicesPage() {
               )}
             </div>
             <DownloadPDFButton type="invoice" id={inv.id} label="PDF" />
+            <Link href={`/invoice/${inv.id}`} target="_blank" style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.35, textDecoration: "none" }}>
+              View
+            </Link>
             <Link href={`/admin/invoices/${inv.id}/edit`} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.35, textDecoration: "none" }}>
               Edit
             </Link>

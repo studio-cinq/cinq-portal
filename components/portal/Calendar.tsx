@@ -21,6 +21,7 @@ const TYPE_COLORS: Record<string, string> = {
   meeting:      "var(--amber)",
   presentation: "var(--amber)",
   milestone:    "var(--sage)",
+  work:         "var(--ink)",
   invoice_due:  "var(--ink)",
 }
 

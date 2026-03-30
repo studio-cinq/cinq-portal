@@ -10,6 +10,7 @@ const TYPE_COLORS: Record<string, string> = {
   meeting:      "var(--amber)",
   presentation: "var(--amber)",
   milestone:    "var(--sage)",
+  work:         "var(--ink)",
   invoice_due:  "var(--ink)",
 }
 
@@ -225,6 +226,7 @@ export default function AdminCalendarPage() {
               <option value="meeting">Meetings</option>
               <option value="presentation">Presentations</option>
               <option value="milestone">Milestones</option>
+              <option value="work">Work time</option>
               <option value="invoice_due">Invoice dues</option>
             </select>
             <button onClick={() => setShowAdd(s => !s)} style={{
@@ -270,6 +272,7 @@ export default function AdminCalendarPage() {
                   <option value="meeting">Meeting</option>
                   <option value="presentation">Presentation</option>
                   <option value="milestone">Milestone</option>
+                  <option value="work">Work time</option>
                 </select>
               </div>
               <div>
@@ -416,7 +419,7 @@ function EventChip({ evt, compact, onDelete }: { evt: any; compact?: boolean; on
   const [hovered, setHovered] = useState(false)
   const bgColors: Record<string, string> = {
     meeting: "rgba(176,125,58,0.12)", presentation: "rgba(176,125,58,0.10)",
-    milestone: "rgba(107,143,113,0.12)", invoice_due: "rgba(15,15,14,0.06)",
+    milestone: "rgba(107,143,113,0.12)", work: "rgba(15,15,14,0.08)", invoice_due: "rgba(15,15,14,0.06)",
   }
 
   return (
