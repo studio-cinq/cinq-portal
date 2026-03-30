@@ -4,7 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase-server"
 export async function POST(req: Request) {
   try {
     const { clientId, projectId, siteUrl, screenshotUrl, notes } = await req.json()
-    if (!clientId || !siteUrl || !screenshotUrl) {
+    if (!clientId || !siteUrl) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
@@ -13,7 +13,7 @@ export async function POST(req: Request) {
         client_id: clientId,
         project_id: projectId || null,
         site_url: siteUrl,
-        screenshot_url: screenshotUrl,
+        screenshot_url: screenshotUrl || null,
         notes: notes?.trim() || null,
         status: "in_review",
         current_round: 1,

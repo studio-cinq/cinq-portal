@@ -3,8 +3,8 @@ import { supabaseAdmin } from "@/lib/supabase-server"
 
 export async function POST(req: Request) {
   try {
-    const { sessionId, xPercent, yPercent, comment } = await req.json()
-    if (!sessionId || xPercent == null || yPercent == null || !comment?.trim()) {
+    const { sessionId, xPercent, yPercent, comment, pageUrl } = await req.json()
+    if (!sessionId || !comment?.trim()) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 })
     }
 
@@ -15,9 +15,9 @@ export async function POST(req: Request) {
       .insert({
         session_id: sessionId,
         round: session?.current_round ?? 1,
-        page_url: "",
-        x_percent: xPercent,
-        y_percent: yPercent,
+        page_url: pageUrl ?? "",
+        x_percent: xPercent ?? 0,
+        y_percent: yPercent ?? 0,
         viewport_w: 0,
         viewport_h: 0,
         comment: comment.trim(),

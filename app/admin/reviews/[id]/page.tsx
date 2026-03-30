@@ -25,13 +25,10 @@ export default function AdminReviewDetailPage() {
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const [hoveredPin, setHoveredPin] = useState<string | null>(null)
 
   // Next round state
   const [showNextRound, setShowNextRound] = useState(false)
-  const [uploading, setUploading] = useState(false)
   const [nextNotes, setNextNotes] = useState("")
-  const [nextScreenshot, setNextScreenshot] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
 
   useEffect(() => {
@@ -86,26 +83,14 @@ export default function AdminReviewDetailPage() {
     router.refresh()
   }
 
-  async function handleUploadScreenshot(file: File) {
-    setUploading(true)
-    const ext = file.name.split(".").pop() ?? "png"
-    const path = `${params.id}/round-${(session?.current_round ?? 1) + 1}.${ext}`
-
-    await supabase.storage.from("review-screenshots").upload(path, file, { upsert: true })
-    const { data: urlData } = supabase.storage.from("review-screenshots").getPublicUrl(path)
-    setNextScreenshot(urlData.publicUrl)
-    setUploading(false)
-  }
-
   async function handleSendNextRound() {
-    if (!nextScreenshot) return
     setSending(true)
     await fetch("/api/review/next-round", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         sessionId: params.id,
-        screenshotUrl: nextScreenshot,
+        screenshotUrl: session.screenshot_url ?? "",
         notes: nextNotes,
       }),
     })
@@ -119,7 +104,6 @@ export default function AdminReviewDetailPage() {
       setSession(data)
       setAnnotations([])
       setShowNextRound(false)
-      setNextScreenshot(null)
     }
     setSending(false)
   }
@@ -207,54 +191,13 @@ export default function AdminReviewDetailPage() {
           ))}
         </div>
 
-        {/* Screenshot with pins */}
-        <div style={{ border: "0.5px solid rgba(15,15,14,0.1)", marginBottom: 32 }}>
-          <div style={{ position: "relative" }}>
-            <img
-              src={session.screenshot_url}
-              alt="Website screenshot"
-              style={{ width: "100%", display: "block" }}
-              draggable={false}
-            />
-            {annotations.map((ann, i) => (
-              <div
-                key={ann.id}
-                style={{
-                  position: "absolute",
-                  left: `${ann.x_percent}%`, top: `${ann.y_percent}%`,
-                  transform: "translate(-50%, -50%)", zIndex: 10,
-                }}
-                onMouseEnter={() => setHoveredPin(ann.id)}
-                onMouseLeave={() => setHoveredPin(null)}
-              >
-                <div style={{
-                  width: 26, height: 26, borderRadius: "50%",
-                  background: ann.resolved ? "rgba(107,143,113,0.7)" : "var(--ink)",
-                  color: "#EDE8E0", fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 500,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  border: "2.5px solid rgba(255,255,255,0.9)",
-                  boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-                  transition: "transform 0.15s",
-                  transform: hoveredPin === ann.id ? "scale(1.15)" : "scale(1)",
-                }}>
-                  {ann.resolved ? "✓" : i + 1}
-                </div>
-
-                {hoveredPin === ann.id && (
-                  <div style={{
-                    position: "absolute", top: 32, left: "50%", transform: "translateX(-50%)",
-                    background: "rgba(250,248,245,0.98)", border: "0.5px solid rgba(15,15,14,0.12)",
-                    padding: "10px 14px", minWidth: 180, maxWidth: 260, whiteSpace: "normal",
-                    boxShadow: "0 4px 16px rgba(0,0,0,0.08)", zIndex: 20,
-                  }}>
-                    <p style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: 0.85, margin: 0, lineHeight: 1.5 }}>
-                      {ann.comment}
-                    </p>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+        {/* Site preview */}
+        <div style={{ border: "0.5px solid rgba(15,15,14,0.1)", marginBottom: 32, background: "#fff" }}>
+          <iframe
+            src={session.site_url}
+            style={{ width: "100%", height: "70vh", border: "none", display: "block" }}
+            sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+          />
         </div>
 
         {/* Annotations list */}
@@ -320,37 +263,6 @@ export default function AdminReviewDetailPage() {
                   Round {(session.current_round ?? 1) + 1}
                 </div>
 
-                {/* Screenshot upload */}
-                <div style={{ marginBottom: 24 }}>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.45, marginBottom: 8 }}>
-                    New screenshot *
-                  </div>
-                  <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: 0.4, marginBottom: 10, lineHeight: 1.6 }}>
-                    In Chrome: right-click → Inspect → Cmd+Shift+P → "Capture full size screenshot"
-                  </div>
-                  {nextScreenshot ? (
-                    <div style={{ border: "0.5px solid rgba(15,15,14,0.1)", padding: 8, marginBottom: 8 }}>
-                      <img src={nextScreenshot} alt="Preview" style={{ width: "100%", maxHeight: 200, objectFit: "cover", objectPosition: "top", display: "block" }} />
-                      <button onClick={() => setNextScreenshot(null)} style={{
-                        fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", marginTop: 8,
-                        background: "none", border: "none", cursor: "pointer", color: "var(--danger)", opacity: 0.6,
-                      }}>Remove</button>
-                    </div>
-                  ) : (
-                    <label style={{
-                      display: "inline-block", fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase",
-                      border: "0.5px solid rgba(15,15,14,0.2)", padding: "10px 20px",
-                      cursor: uploading ? "default" : "pointer", opacity: uploading ? 0.4 : 0.5, color: "var(--ink)",
-                    }}>
-                      {uploading ? "Uploading…" : "Upload screenshot"}
-                      <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => {
-                        const file = e.target.files?.[0]
-                        if (file) handleUploadScreenshot(file)
-                      }} />
-                    </label>
-                  )}
-                </div>
-
                 {/* Notes */}
                 <div style={{ marginBottom: 24 }}>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.45, marginBottom: 8 }}>
@@ -371,15 +283,15 @@ export default function AdminReviewDetailPage() {
                 </div>
 
                 <div style={{ display: "flex", gap: 12 }}>
-                  <button onClick={handleSendNextRound} disabled={!nextScreenshot || sending} style={{
+                  <button onClick={handleSendNextRound} disabled={sending} style={{
                     fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.14em", textTransform: "uppercase",
                     background: "var(--ink)", color: "var(--cream)", border: "none", padding: "14px 28px",
-                    cursor: !nextScreenshot || sending ? "default" : "pointer",
-                    opacity: !nextScreenshot || sending ? 0.4 : 1,
+                    cursor: sending ? "default" : "pointer",
+                    opacity: sending ? 0.4 : 1,
                   }}>
                     {sending ? "Sending…" : "Send to client"}
                   </button>
-                  <button onClick={() => { setShowNextRound(false); setNextScreenshot(null) }} style={{
+                  <button onClick={() => setShowNextRound(false)} style={{
                     fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.14em", textTransform: "uppercase",
                     background: "none", color: "var(--ink)", border: "none", padding: "14px 0", cursor: "pointer", opacity: 0.35,
                   }}>

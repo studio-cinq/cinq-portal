@@ -12,7 +12,6 @@ export default function NewReviewPage() {
   const [clients, setClients] = useState<any[]>([])
   const [projects, setProjects] = useState<any[]>([])
   const [saving, setSaving] = useState(false)
-  const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const [form, setForm] = useState({
@@ -21,7 +20,6 @@ export default function NewReviewPage() {
     site_url: "",
     notes: "",
   })
-  const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null)
 
   useEffect(() => {
     supabase.from("clients").select("id, name").order("name").then(({ data }) => {
@@ -41,22 +39,10 @@ export default function NewReviewPage() {
     setForm(f => ({ ...f, [field]: value }))
   }
 
-  async function handleUpload(file: File) {
-    setUploading(true)
-    const ext = file.name.split(".").pop() ?? "png"
-    const path = `new-${Date.now()}.${ext}`
-
-    await supabase.storage.from("review-screenshots").upload(path, file, { upsert: true })
-    const { data: urlData } = supabase.storage.from("review-screenshots").getPublicUrl(path)
-    setScreenshotUrl(urlData.publicUrl)
-    setUploading(false)
-  }
-
   async function handleSave() {
     setError(null)
     if (!form.client_id) return setError("Please select a client.")
     if (!form.site_url.trim()) return setError("Site URL is required.")
-    if (!screenshotUrl) return setError("Please upload a screenshot.")
 
     setSaving(true)
 
@@ -67,7 +53,7 @@ export default function NewReviewPage() {
         clientId: form.client_id,
         projectId: form.project_id || null,
         siteUrl: form.site_url.trim(),
-        screenshotUrl,
+        screenshotUrl: "",
         notes: form.notes.trim() || null,
       }),
     })
@@ -128,39 +114,9 @@ export default function NewReviewPage() {
               value={form.site_url}
               onChange={e => set("site_url", e.target.value)}
             />
-          </div>
-
-          {/* Screenshot upload */}
-          <div>
-            <label style={labelStyle}>Full-page screenshot *</label>
-            <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: 0.4, marginBottom: 12, lineHeight: 1.6 }}>
-              In Chrome: right-click → Inspect → Cmd+Shift+P → type "Capture full size screenshot"
+            <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: 0.35, marginTop: 8, lineHeight: 1.6 }}>
+              The client will browse this site live in an iframe and leave comments in a sidebar panel.
             </div>
-
-            {screenshotUrl ? (
-              <div style={{ border: "0.5px solid rgba(15,15,14,0.1)", padding: 8, marginBottom: 8 }}>
-                <img src={screenshotUrl} alt="Screenshot preview" style={{ width: "100%", maxHeight: 240, objectFit: "cover", objectPosition: "top", display: "block" }} />
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.35 }}>Screenshot uploaded</span>
-                  <button onClick={() => setScreenshotUrl(null)} style={{
-                    fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
-                    background: "none", border: "none", cursor: "pointer", color: "var(--danger)", opacity: 0.6, padding: 0,
-                  }}>Remove</button>
-                </div>
-              </div>
-            ) : (
-              <label style={{
-                display: "inline-block", fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase",
-                border: "0.5px solid rgba(15,15,14,0.2)", padding: "12px 24px",
-                cursor: uploading ? "default" : "pointer", opacity: uploading ? 0.4 : 0.5, color: "var(--ink)",
-              }}>
-                {uploading ? "Uploading…" : "Upload screenshot"}
-                <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => {
-                  const file = e.target.files?.[0]
-                  if (file) handleUpload(file)
-                }} />
-              </label>
-            )}
           </div>
 
           {/* Notes */}
