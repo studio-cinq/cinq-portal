@@ -8,7 +8,7 @@ import Calendar from "@/components/portal/Calendar"
 import { useToast } from "@/components/portal/Toast"
 import Link from "next/link"
 
-const TABS = ["Project", "Presentation", "Invoices", "Proposal", "Calendar"]
+const TABS = ["Project", "Presentation", "Invoices", "Proposal", "Calendar", "Brand Library"]
 
 const statusColors: Record<string, string> = {
   not_started:       "rgba(15,15,14,0.3)",
@@ -48,6 +48,11 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
   const [inviting, setInviting]               = useState(false)
   const [inviteStatus, setInviteStatus]       = useState<"idle" | "sent">("idle")
   const [events, setEvents]                   = useState<any[]>([])
+  const [brandAssets, setBrandAssets]           = useState<any[]>([])
+  const [colorSwatches, setColorSwatches]       = useState<any[]>([])
+  const [typefaceEntries, setTypefaceEntries]   = useState<any[]>([])
+  const [colorForm, setColorForm]               = useState({ name: "", hex: "#" })
+  const [typefaceForm, setTypefaceForm]         = useState({ name: "", weight: "", role: "" })
   const [savingEvent, setSavingEvent]         = useState(false)
   const [eventForm, setEventForm]             = useState({
     title: "", event_date: "", event_time: "", duration_minutes: "",
@@ -62,6 +67,9 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
       loadDecisionLog(selectedProject.id)
       loadSlides(selectedProject.id)
       loadTimeEntries(selectedProject.id)
+      loadBrandAssets(selectedProject.id)
+      loadColorSwatches(selectedProject.id)
+      loadTypefaceEntries(selectedProject.id)
       setReplyProjectId(selectedProject.id)
     }
   }, [selectedProject?.id])
@@ -124,6 +132,24 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
     setTimeEntries(data ?? [])
   }
 
+  async function loadBrandAssets(projectId: string) {
+    const { data } = await supabase.from("brand_assets").select("*")
+      .eq("project_id", projectId).order("sort_order")
+    setBrandAssets(data ?? [])
+  }
+
+  async function loadColorSwatches(projectId: string) {
+    const { data } = await supabase.from("color_swatches").select("*")
+      .eq("project_id", projectId).order("sort_order")
+    setColorSwatches(data ?? [])
+  }
+
+  async function loadTypefaceEntries(projectId: string) {
+    const { data } = await supabase.from("typeface_entries").select("*")
+      .eq("project_id", projectId).order("sort_order")
+    setTypefaceEntries(data ?? [])
+  }
+
   async function updateDeliverableStatus(deliverableId: string, status: string) {
     await supabase.from("deliverables").update({ status }).eq("id", deliverableId)
     setProjects(ps => ps.map(p => ({
@@ -156,6 +182,74 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
     await supabase.from("decision_log").delete().eq("id", id)
     setDecisionLog(prev => prev.filter(e => e.id !== id))
     showToast("Entry removed", "info")
+  }
+
+  async function uploadBrandAssets(files: FileList, category: string) {
+    if (!selectedProject) return
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
+      const ext = file.name.split(".").pop() ?? "bin"
+      const path = `${selectedProject.id}/${Date.now()}-${i}.${ext}`
+      const { error: uploadErr } = await supabase.storage.from("brand-assets").upload(path, file)
+      if (uploadErr) { console.error("[upload]", uploadErr); continue }
+      const { data: urlData } = supabase.storage.from("brand-assets").getPublicUrl(path)
+      const { data: asset } = await supabase.from("brand_assets").insert({
+        project_id: selectedProject.id,
+        name: file.name.replace(/\.[^.]+$/, ""),
+        file_url: urlData.publicUrl,
+        file_type: ext.toUpperCase(),
+        file_size_bytes: file.size,
+        category,
+        sort_order: brandAssets.length + i,
+      }).select().single()
+      if (asset) setBrandAssets(prev => [...prev, asset])
+    }
+    showToast(`${files.length} asset${files.length > 1 ? "s" : ""} uploaded`)
+  }
+
+  async function deleteBrandAsset(id: string) {
+    await supabase.from("brand_assets").delete().eq("id", id)
+    setBrandAssets(prev => prev.filter(a => a.id !== id))
+    showToast("Asset removed", "info")
+  }
+
+  async function addColorSwatch() {
+    if (!colorForm.name.trim() || !colorForm.hex.trim() || !selectedProject) return
+    const { data } = await supabase.from("color_swatches").insert({
+      project_id: selectedProject.id,
+      name: colorForm.name.trim(),
+      hex: colorForm.hex.trim(),
+      sort_order: colorSwatches.length,
+    }).select().single()
+    if (data) setColorSwatches(prev => [...prev, data])
+    setColorForm({ name: "", hex: "#" })
+    showToast("Color added")
+  }
+
+  async function deleteColorSwatch(id: string) {
+    await supabase.from("color_swatches").delete().eq("id", id)
+    setColorSwatches(prev => prev.filter(c => c.id !== id))
+    showToast("Color removed", "info")
+  }
+
+  async function addTypefaceEntry() {
+    if (!typefaceForm.name.trim() || !selectedProject) return
+    const { data } = await supabase.from("typeface_entries").insert({
+      project_id: selectedProject.id,
+      name: typefaceForm.name.trim(),
+      weight: typefaceForm.weight.trim() || null,
+      role: typefaceForm.role.trim() || null,
+      sort_order: typefaceEntries.length,
+    }).select().single()
+    if (data) setTypefaceEntries(prev => [...prev, data])
+    setTypefaceForm({ name: "", weight: "", role: "" })
+    showToast("Typeface added")
+  }
+
+  async function deleteTypefaceEntry(id: string) {
+    await supabase.from("typeface_entries").delete().eq("id", id)
+    setTypefaceEntries(prev => prev.filter(t => t.id !== id))
+    showToast("Typeface removed", "info")
   }
 
   async function sendReply() {
@@ -785,6 +879,192 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
               </div>
             </div>
           )}
+
+          {/* ── Tab 5: Brand Library ── */}
+          {activeTab === 5 && (
+            <div>
+              {/* ── Brand Assets ── */}
+              <div style={{ marginBottom: 40 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
+                  <SectionHeader label={selectedProject ? `${selectedProject.title} — assets` : "Brand assets"} />
+                  {selectedProject && (
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      {(["logo", "guidelines", "source", "other"] as const).map(cat => (
+                        <label key={cat} style={{
+                          fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
+                          letterSpacing: "0.12em", textTransform: "uppercase",
+                          opacity: 0.6, cursor: "pointer",
+                          border: "0.5px solid rgba(15,15,14,0.2)", padding: "7px 12px",
+                        }}>
+                          + {cat}
+                          <input type="file" multiple style={{ display: "none" }}
+                            onChange={(e) => { if (e.target.files) uploadBrandAssets(e.target.files, cat); e.target.value = "" }}
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {brandAssets.length === 0 ? (
+                  <div style={{
+                    border: "1px dashed rgba(15,15,14,0.12)", padding: "48px 24px",
+                    textAlign: "center", background: "rgba(255,255,255,0.2)",
+                  }}>
+                    <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.4, marginBottom: 8, lineHeight: 1.7 }}>
+                      No brand assets yet.
+                    </div>
+                    <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: 0.38, lineHeight: 1.7 }}>
+                      Upload logo files, guidelines, and source files using the buttons above.
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    {(["logo", "guidelines", "source", "other"] as const).map(cat => {
+                      const catAssets = brandAssets.filter(a => a.category === cat)
+                      if (catAssets.length === 0) return null
+                      return (
+                        <div key={cat} style={{ marginBottom: 20 }}>
+                          <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.35, marginBottom: 8 }}>
+                            {cat}
+                          </div>
+                          {catAssets.map(asset => (
+                            <div key={asset.id} style={{
+                              display: "flex", alignItems: "center", justifyContent: "space-between",
+                              padding: "10px 0", borderBottom: "0.5px solid rgba(15,15,14,0.07)",
+                            }}>
+                              <div style={{ minWidth: 0 }}>
+                                <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                  {asset.name}
+                                </div>
+                                <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.35, marginTop: 2 }}>
+                                  {asset.file_type} · {formatFileSize(asset.file_size_bytes)}
+                                </div>
+                              </div>
+                              <div style={{ display: "flex", gap: 10, alignItems: "center", flexShrink: 0 }}>
+                                <a href={asset.file_url} target="_blank" rel="noopener noreferrer" style={{
+                                  fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
+                                  opacity: 0.5, textDecoration: "none", color: "var(--ink)", padding: "4px",
+                                }}>↓</a>
+                                <button onClick={() => deleteBrandAsset(asset.id)} style={{
+                                  fontFamily: "var(--font-mono)", fontSize: 9, opacity: 0.35,
+                                  background: "none", border: "none", cursor: "pointer", color: "var(--ink)", padding: "4px",
+                                }}>✕</button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* ── Color Palette ── */}
+              <div style={{ marginBottom: 40 }}>
+                <SectionHeader label="Color palette" />
+                <div style={{ display: "flex", gap: 8, marginBottom: 16, alignItems: "end" }}>
+                  <div style={{
+                    width: 36, height: 36, flexShrink: 0,
+                    background: colorForm.hex.length >= 4 ? colorForm.hex : "#ccc",
+                    border: "0.5px solid rgba(15,15,14,0.12)",
+                  }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={formLabel}>Name</div>
+                    <input value={colorForm.name} onChange={e => setColorForm(f => ({ ...f, name: e.target.value }))} placeholder="Sage" style={formInput} />
+                  </div>
+                  <div style={{ width: 110 }}>
+                    <div style={formLabel}>Hex</div>
+                    <input value={colorForm.hex} onChange={e => setColorForm(f => ({ ...f, hex: e.target.value }))} placeholder="#7A7F6A" style={{ ...formInput, fontFamily: "var(--font-mono)", fontSize: "var(--text-sm)" }} />
+                  </div>
+                  <button onClick={addColorSwatch} disabled={!colorForm.name.trim() || !colorForm.hex.trim()} style={{
+                    fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
+                    letterSpacing: "0.12em", textTransform: "uppercase",
+                    background: "transparent", border: "0.5px solid rgba(15,15,14,0.2)",
+                    padding: "9px 14px", color: "var(--ink)", cursor: "pointer",
+                    opacity: !colorForm.name.trim() || !colorForm.hex.trim() ? 0.3 : 0.6,
+                    flexShrink: 0,
+                  }}>Add</button>
+                </div>
+
+                {colorSwatches.length > 0 && (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(90px, 1fr))", gap: 10 }}>
+                    {colorSwatches.map(c => (
+                      <div key={c.id} style={{ position: "relative" }}>
+                        <div style={{
+                          height: 52, background: c.hex,
+                          border: "0.5px solid rgba(15,15,14,0.08)",
+                        }} />
+                        <div style={{ padding: "6px 0" }}>
+                          <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: 0.7 }}>{c.name}</div>
+                          <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.35 }}>{c.hex}</div>
+                        </div>
+                        <button onClick={() => deleteColorSwatch(c.id)} style={{
+                          position: "absolute", top: 4, right: 4,
+                          fontFamily: "var(--font-mono)", fontSize: 9, opacity: 0.4,
+                          background: "rgba(255,255,255,0.7)", border: "none", cursor: "pointer",
+                          color: "var(--ink)", padding: "2px 4px", lineHeight: 1,
+                        }}>✕</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* ── Typography ── */}
+              <div style={{ marginBottom: 40 }}>
+                <SectionHeader label="Typography" />
+                <div className="form-grid-3col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr auto", gap: 8, marginBottom: 16, alignItems: "end" }}>
+                  <div>
+                    <div style={formLabel}>Font name</div>
+                    <input value={typefaceForm.name} onChange={e => setTypefaceForm(f => ({ ...f, name: e.target.value }))} placeholder="PP Writer" style={formInput} />
+                  </div>
+                  <div>
+                    <div style={formLabel}>Weight</div>
+                    <input value={typefaceForm.weight} onChange={e => setTypefaceForm(f => ({ ...f, weight: e.target.value }))} placeholder="Book" style={formInput} />
+                  </div>
+                  <div>
+                    <div style={formLabel}>Role</div>
+                    <input value={typefaceForm.role} onChange={e => setTypefaceForm(f => ({ ...f, role: e.target.value }))} placeholder="Headlines" style={formInput} />
+                  </div>
+                  <button onClick={addTypefaceEntry} disabled={!typefaceForm.name.trim()} style={{
+                    fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
+                    letterSpacing: "0.12em", textTransform: "uppercase",
+                    background: "transparent", border: "0.5px solid rgba(15,15,14,0.2)",
+                    padding: "9px 14px", color: "var(--ink)", cursor: "pointer",
+                    opacity: !typefaceForm.name.trim() ? 0.3 : 0.6, flexShrink: 0,
+                  }}>Add</button>
+                </div>
+
+                {typefaceEntries.map(tf => (
+                  <div key={tf.id} style={{
+                    display: "flex", justifyContent: "space-between", alignItems: "center",
+                    padding: "10px 0", borderBottom: "0.5px solid rgba(15,15,14,0.07)",
+                  }}>
+                    <div>
+                      <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.8 }}>
+                        {tf.name}{tf.weight ? ` — ${tf.weight}` : ""}
+                      </div>
+                      {tf.role && (
+                        <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.35, marginTop: 2 }}>
+                          {tf.role}
+                        </div>
+                      )}
+                    </div>
+                    <button onClick={() => deleteTypefaceEntry(tf.id)} style={{
+                      fontFamily: "var(--font-mono)", fontSize: 9, opacity: 0.35,
+                      background: "none", border: "none", cursor: "pointer", color: "var(--ink)", padding: "4px",
+                    }}>✕</button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Preview link */}
+              <Link href={`/admin/library/${params.id}`} target="_blank" style={actionBtn}>
+                Preview client view ↗
+              </Link>
+            </div>
+          )}
         </div>
         <div className="admin-studio-right" style={{ padding: "32px 28px", borderLeft: "0.5px solid rgba(15,15,14,0.08)" }}>
           <div style={{ marginBottom: 28 }}>
@@ -865,6 +1145,11 @@ const formatDuration = (seconds: number) => {
   if (m > 0) return `${m}m ${s}s`
   return `${s}s`
 }
+
+const formatFileSize = (bytes: number) =>
+  bytes > 1024 * 1024
+    ? `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+    : `${Math.round(bytes / 1024)} KB`
 
 const formatMinutes = (minutes: number) => {
   const h = Math.floor(minutes / 60)
