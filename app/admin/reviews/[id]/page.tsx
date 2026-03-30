@@ -1,466 +1,395 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
-import { useRouter } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 import PortalNav from "@/components/portal/Nav"
 import Link from "next/link"
-import type { ReviewAnnotation } from "@/types/database"
 
-export default function AdminReviewDetailPage({ params }: { params: { id: string } }) {
+interface Annotation {
+  id: string
+  x_percent: number
+  y_percent: number
+  comment: string
+  resolved: boolean
+  created_at: string
+  round: number
+}
+
+export default function AdminReviewDetailPage() {
   const router = useRouter()
-  const [session, setSession]         = useState<any>(null)
-  const [annotations, setAnnotations] = useState<ReviewAnnotation[]>([])
-  const [allAnnotations, setAllAnnotations] = useState<ReviewAnnotation[]>([])
-  const [selectedRound, setSelectedRound] = useState<number>(1)
-  const [loading, setLoading]         = useState(true)
-  const [sending, setSending]         = useState(false)
-  const [sendNotes, setSendNotes]     = useState("")
-  const [copied, setCopied]           = useState(false)
-  const [deleting, setDeleting]       = useState(false)
-  const [adminScroll, setAdminScroll] = useState<{ scrollY: number; pageHeight: number }>({ scrollY: 0, pageHeight: 0 })
-  const [iframeRect, setIframeRect]   = useState<{ width: number; height: number }>({ width: 0, height: 0 })
+  const params = useParams<{ id: string }>()
 
-  // Listen for scroll position from admin iframe
-  useEffect(() => {
-    function handleMessage(e: MessageEvent) {
-      if (e.data?.type === "cinq-scroll") {
-        setAdminScroll({ scrollY: e.data.y ?? 0, pageHeight: e.data.h ?? 0 })
-      }
-    }
-    window.addEventListener("message", handleMessage)
-    return () => window.removeEventListener("message", handleMessage)
-  }, [])
+  const [session, setSession] = useState<any>(null)
+  const [annotations, setAnnotations] = useState<Annotation[]>([])
+  const [loading, setLoading] = useState(true)
+  const [copied, setCopied] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [hoveredPin, setHoveredPin] = useState<string | null>(null)
 
-  // Track iframe container size
-  const iframeContainerRef = useCallback((node: HTMLDivElement | null) => {
-    if (node) {
-      const rect = node.getBoundingClientRect()
-      setIframeRect({ width: rect.width, height: rect.height })
-      const observer = new ResizeObserver(entries => {
-        for (const entry of entries) {
-          setIframeRect({ width: entry.contentRect.width, height: entry.contentRect.height })
-        }
-      })
-      observer.observe(node)
-      return () => observer.disconnect()
-    }
-  }, [])
+  // Next round state
+  const [showNextRound, setShowNextRound] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [nextNotes, setNextNotes] = useState("")
+  const [nextScreenshot, setNextScreenshot] = useState<string | null>(null)
+  const [sending, setSending] = useState(false)
 
   useEffect(() => {
     async function load() {
-      const { data: sess } = await supabase
+      const { data } = await supabase
         .from("review_sessions")
         .select("*, clients(name, contact_name, contact_email), projects(title)")
         .eq("id", params.id)
         .single()
 
-      if (sess) {
-        setSession(sess)
-        setSelectedRound(sess.current_round)
-
-        const { data: annots } = await supabase
+      if (data) {
+        setSession(data)
+        setNextNotes((data as any).notes ?? "")
+        const { data: pins } = await supabase
           .from("review_annotations")
           .select("*")
-          .eq("session_id", sess.id)
+          .eq("session_id", data.id)
+          .eq("round", (data as any).current_round)
           .order("created_at")
-
-        setAllAnnotations(annots ?? [])
+        setAnnotations(pins ?? [])
       }
       setLoading(false)
     }
     load()
   }, [params.id])
 
-  // Filter annotations by selected round
-  useEffect(() => {
-    setAnnotations(allAnnotations.filter(a => a.round === selectedRound))
-  }, [allAnnotations, selectedRound])
-
-  async function handleResolveToggle(annotationId: string, resolved: boolean) {
-    await fetch("/api/admin/resolve-annotation", {
+  async function toggleResolve(id: string, current: boolean) {
+    await fetch("/api/review/resolve-annotation", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ annotationId, resolved }),
+      body: JSON.stringify({ annotationId: id, resolved: !current }),
     })
-    setAllAnnotations(prev =>
-      prev.map(a => a.id === annotationId ? { ...a, resolved } : a)
-    )
+    setAnnotations(prev => prev.map(a => a.id === id ? { ...a, resolved: !current } : a))
   }
 
-  async function handleSendBack() {
-    if (!session) return
-    setSending(true)
-    const res = await fetch("/api/admin/send-review-back", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sessionId: session.id, notes: sendNotes || undefined }),
-    })
-    const data = await res.json()
-    if (data.ok) {
-      setSession((s: any) => ({
-        ...s,
-        current_round: data.newRound,
-        status: "in_review",
-        submitted_at: null,
-        viewed_at: null,
-      }))
-      setSelectedRound(data.newRound)
-      setSendNotes("")
-    }
-    setSending(false)
-  }
-
-  function copyLink() {
+  async function handleCopyLink() {
     const url = `${window.location.origin}/review/${params.id}`
-    navigator.clipboard.writeText(url)
+    await navigator.clipboard.writeText(url)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
 
   async function handleDelete() {
-    if (!confirm("Delete this review and all its annotations? This cannot be undone.")) return
+    if (!confirm("Delete this review session and all annotations? This cannot be undone.")) return
     setDeleting(true)
-    await fetch("/api/admin/delete-review", {
+    await fetch("/api/review/delete-session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ sessionId: params.id }),
     })
     router.push("/admin/reviews")
+    router.refresh()
   }
 
-  if (loading) {
-    return (
-      <>
-        <PortalNav isAdmin />
-        <main style={{ padding: "clamp(32px, 5vw, 48px)" }}>
-          <p style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.4, letterSpacing: "0.12em", textTransform: "uppercase" }}>Loading…</p>
-        </main>
-      </>
-    )
+  async function handleUploadScreenshot(file: File) {
+    setUploading(true)
+    const ext = file.name.split(".").pop() ?? "png"
+    const path = `${params.id}/round-${(session?.current_round ?? 1) + 1}.${ext}`
+
+    await supabase.storage.from("review-screenshots").upload(path, file, { upsert: true })
+    const { data: urlData } = supabase.storage.from("review-screenshots").getPublicUrl(path)
+    setNextScreenshot(urlData.publicUrl)
+    setUploading(false)
   }
 
-  if (!session) {
-    return (
-      <>
-        <PortalNav isAdmin />
-        <main style={{ padding: "clamp(32px, 5vw, 48px)" }}>
-          <p style={{ fontFamily: "var(--font-serif)", fontSize: "var(--text-body)", opacity: 0.65 }}>Review not found.</p>
-        </main>
-      </>
-    )
+  async function handleSendNextRound() {
+    if (!nextScreenshot) return
+    setSending(true)
+    await fetch("/api/review/next-round", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sessionId: params.id,
+        screenshotUrl: nextScreenshot,
+        notes: nextNotes,
+      }),
+    })
+
+    // Reload
+    const { data } = await supabase
+      .from("review_sessions")
+      .select("*, clients(name, contact_name, contact_email), projects(title)")
+      .eq("id", params.id).single()
+    if (data) {
+      setSession(data)
+      setAnnotations([])
+      setShowNextRound(false)
+      setNextScreenshot(null)
+    }
+    setSending(false)
   }
 
-  const statusLabel: Record<string, string> = {
-    in_review: "In review",
-    revising: "Revising",
-    approved: "Approved",
-  }
-  const statusColor: Record<string, string> = {
-    in_review: "var(--amber)",
-    revising: "var(--sage)",
-    approved: "rgba(15,15,14,0.45)",
-  }
+  if (loading) return (
+    <>
+      <PortalNav isAdmin />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.35 }}>Loading…</div>
+      </div>
+    </>
+  )
 
-  const rounds = Array.from({ length: session.current_round }, (_, i) => i + 1)
-  const groupedByPage = annotations.reduce<Record<string, ReviewAnnotation[]>>((acc, a) => {
-    const key = a.page_url
-    if (!acc[key]) acc[key] = []
-    acc[key].push(a)
-    return acc
-  }, {})
+  if (!session) return (
+    <>
+      <PortalNav isAdmin />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
+        <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-lg)", opacity: 0.5 }}>Review not found.</div>
+      </div>
+    </>
+  )
 
-  const labelStyle: React.CSSProperties = {
-    fontFamily: "var(--font-mono)", fontSize: 8,
-    letterSpacing: "0.12em", textTransform: "uppercase",
-    color: "var(--ink)", opacity: 0.4,
-  }
+  const client = session.clients as any
+  const project = session.projects as any
+  const resolved = annotations.filter(a => a.resolved).length
+  const total = annotations.length
 
   return (
     <>
       <PortalNav isAdmin />
-      <main style={{ padding: "clamp(32px, 5vw, 48px)" }}>
-        {/* Back link */}
-        <Link href="/admin/reviews" style={{
-          fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
-          letterSpacing: "0.12em", textTransform: "uppercase",
-          color: "var(--ink)", opacity: 0.4, textDecoration: "none",
-          display: "block", marginBottom: 16,
-        }}>← Reviews</Link>
+      <main style={{ maxWidth: 1060, margin: "0 auto", padding: "40px 48px 80px" }}>
+
+        <Link href="/admin/reviews" style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.4, textDecoration: "none", display: "inline-block", marginBottom: 28 }}>
+          ← Reviews
+        </Link>
 
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 32, flexWrap: "wrap", gap: 16 }}>
           <div>
-            <h1 style={{
-              fontFamily: "var(--font-serif)", fontSize: "var(--text-title)",
-              fontWeight: 400, color: "var(--ink)", opacity: 0.88, margin: "0 0 8px",
-            }}>{session.clients?.name ?? "Review"}</h1>
-            <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
-              <span style={labelStyle}>{session.projects?.title}</span>
-              <span style={{ width: 0.5, height: 14, background: "rgba(15,15,14,0.12)" }} />
-              <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                <span style={{ width: 5, height: 5, borderRadius: "50%", background: statusColor[session.status] }} />
-                <span style={labelStyle}>{statusLabel[session.status]}</span>
-              </div>
-              <span style={{ width: 0.5, height: 14, background: "rgba(15,15,14,0.12)" }} />
-              <span style={{ ...labelStyle, opacity: 0.3 }}>{session.site_url}</span>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.38, marginBottom: 10 }}>
+              {client?.name ?? "—"} · Round {session.current_round}
             </div>
+            <h1 style={{ fontFamily: "var(--font-sans)", fontWeight: 400, fontSize: 26, opacity: 0.88, letterSpacing: "-0.015em", margin: 0 }}>
+              {project?.title ?? session.site_url}
+            </h1>
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={copyLink} style={{
-              fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
-              letterSpacing: "0.14em", textTransform: "uppercase",
-              background: "none", color: "var(--ink)",
-              padding: "10px 16px", cursor: "pointer",
-              border: "0.5px solid rgba(15,15,14,0.15)",
-              opacity: 0.55, transition: "opacity 0.2s",
-            }}>{copied ? "Copied!" : "Copy review link"}</button>
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+            <span style={{
+              fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase",
+              padding: "6px 12px", border: "0.5px solid rgba(15,15,14,0.15)",
+              color: session.status === "approved" ? "var(--sage)" : session.status === "revising" ? "var(--ink)" : "var(--amber)",
+            }}>
+              {session.status === "in_review" ? "In review" : session.status === "revising" ? "Revising" : "Approved"}
+            </span>
+            <button onClick={handleCopyLink} style={{
+              fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase",
+              background: "none", border: "0.5px solid rgba(15,15,14,0.15)", padding: "6px 12px",
+              cursor: "pointer", color: "var(--ink)", opacity: 0.5,
+            }}>
+              {copied ? "Copied!" : "Copy link"}
+            </button>
             <button onClick={handleDelete} disabled={deleting} style={{
-              fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
-              letterSpacing: "0.14em", textTransform: "uppercase",
-              background: "none", color: "var(--danger, #c44)",
-              padding: "10px 16px", cursor: "pointer",
-              border: "0.5px solid rgba(200,60,60,0.2)",
-              opacity: deleting ? 0.3 : 0.55, transition: "opacity 0.2s",
-            }}>{deleting ? "Deleting…" : "Delete"}</button>
+              fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase",
+              background: "none", border: "0.5px solid rgba(15,15,14,0.15)", padding: "6px 12px",
+              cursor: "pointer", color: "var(--danger)", opacity: 0.6,
+            }}>
+              {deleting ? "Deleting…" : "Delete"}
+            </button>
           </div>
         </div>
 
-        {/* Round tabs */}
-        <div style={{ display: "flex", gap: 0, marginBottom: 24 }}>
-          {rounds.map(r => (
-            <button
-              key={r}
-              onClick={() => setSelectedRound(r)}
-              style={{
-                fontFamily: "var(--font-mono)", fontSize: 8,
-                letterSpacing: "0.14em", textTransform: "uppercase",
-                padding: "8px 18px",
-                border: "0.5px solid rgba(15,15,14,0.12)",
-                borderRight: r < session.current_round ? "none" : undefined,
-                cursor: "pointer",
-                background: selectedRound === r ? "var(--ink)" : "transparent",
-                color: selectedRound === r ? "#EDE8E0" : "var(--ink)",
-                opacity: selectedRound === r ? 1 : 0.4,
-                transition: "all 0.15s",
-              }}
-            >Round {r}</button>
+        {/* Meta row */}
+        <div style={{ display: "flex", gap: 32, marginBottom: 32, flexWrap: "wrap" }}>
+          {[
+            { label: "Client", value: client?.contact_name ?? client?.name ?? "—" },
+            { label: "Site", value: session.site_url },
+            { label: "Created", value: new Date(session.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) },
+            ...(session.viewed_at ? [{ label: "Viewed", value: new Date(session.viewed_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) }] : []),
+            ...(total > 0 ? [{ label: "Progress", value: `${resolved}/${total} resolved` }] : []),
+          ].map(item => (
+            <div key={item.label}>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.4, marginBottom: 4 }}>{item.label}</div>
+              <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.7, maxWidth: 300, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.value}</div>
+            </div>
           ))}
         </div>
 
-        {/* Full-width iframe with annotation pin overlay */}
-        <div
-          ref={iframeContainerRef}
-          style={{
-            border: "0.5px solid rgba(15,15,14,0.1)",
-            background: "#fff",
-            overflow: "hidden",
-            marginBottom: 32,
-            height: "70vh",
-            position: "relative",
-          }}
-        >
-          <iframe
-            src={session.site_url}
-            style={{ width: "100%", height: "100%", border: "none", display: "block" }}
-            sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-          />
-          {/* Pin overlay — shows pins at correct absolute positions based on iframe scroll */}
-          <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 2 }}>
-            {annotations.map((a, i) => {
-              // Only show pins that have scroll tracking data
-              if (a.scroll_y == null || a.viewport_h == null) {
-                // Fallback: show at viewport-relative position (old annotations)
-                return (
-                  <div key={a.id} style={{
-                    position: "absolute",
-                    left: `${a.x_percent}%`,
-                    top: `${a.y_percent}%`,
-                    transform: "translate(-50%, -50%)",
-                    pointerEvents: "all",
-                  }}>
-                    <div style={{
-                      width: 22, height: 22, borderRadius: "50%",
-                      background: a.resolved ? "rgba(15,15,14,0.35)" : "var(--ink)",
-                      color: "#EDE8E0", fontFamily: "var(--font-mono)", fontSize: 9,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      border: "2px solid rgba(255,255,255,0.9)",
-                      boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
-                    }}>{i + 1}</div>
-                  </div>
-                )
-              }
-
-              // Calculate absolute Y position on the page (in pixels from top)
-              const absY = a.scroll_y + (a.y_percent / 100 * a.viewport_h)
-              // Check if pin is within the admin's current visible area
-              const adminVH = iframeRect.height
-              if (adminVH === 0) return null
-              if (absY < adminScroll.scrollY || absY > adminScroll.scrollY + adminVH) return null
-
-              // Calculate position on the overlay
-              const topPx = absY - adminScroll.scrollY
-              const topPercent = (topPx / adminVH) * 100
-
-              return (
-                <div key={a.id} style={{
+        {/* Screenshot with pins */}
+        <div style={{ border: "0.5px solid rgba(15,15,14,0.1)", marginBottom: 32 }}>
+          <div style={{ position: "relative" }}>
+            <img
+              src={session.screenshot_url}
+              alt="Website screenshot"
+              style={{ width: "100%", display: "block" }}
+              draggable={false}
+            />
+            {annotations.map((ann, i) => (
+              <div
+                key={ann.id}
+                style={{
                   position: "absolute",
-                  left: `${a.x_percent}%`,
-                  top: `${topPercent}%`,
-                  transform: "translate(-50%, -50%)",
-                  pointerEvents: "all",
+                  left: `${ann.x_percent}%`, top: `${ann.y_percent}%`,
+                  transform: "translate(-50%, -50%)", zIndex: 10,
+                }}
+                onMouseEnter={() => setHoveredPin(ann.id)}
+                onMouseLeave={() => setHoveredPin(null)}
+              >
+                <div style={{
+                  width: 26, height: 26, borderRadius: "50%",
+                  background: ann.resolved ? "rgba(107,143,113,0.7)" : "var(--ink)",
+                  color: "#EDE8E0", fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 500,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  border: "2.5px solid rgba(255,255,255,0.9)",
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+                  transition: "transform 0.15s",
+                  transform: hoveredPin === ann.id ? "scale(1.15)" : "scale(1)",
                 }}>
-                  <div style={{
-                    width: 22, height: 22, borderRadius: "50%",
-                    background: a.resolved ? "rgba(15,15,14,0.35)" : "var(--ink)",
-                    color: "#EDE8E0", fontFamily: "var(--font-mono)", fontSize: 9,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    border: "2px solid rgba(255,255,255,0.9)",
-                    boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
-                    cursor: "pointer",
-                  }}>{i + 1}</div>
+                  {ann.resolved ? "✓" : i + 1}
                 </div>
-              )
-            })}
+
+                {hoveredPin === ann.id && (
+                  <div style={{
+                    position: "absolute", top: 32, left: "50%", transform: "translateX(-50%)",
+                    background: "rgba(250,248,245,0.98)", border: "0.5px solid rgba(15,15,14,0.12)",
+                    padding: "10px 14px", minWidth: 180, maxWidth: 260, whiteSpace: "normal",
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.08)", zIndex: 20,
+                  }}>
+                    <p style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: 0.85, margin: 0, lineHeight: 1.5 }}>
+                      {ann.comment}
+                    </p>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Annotations list below */}
-        <div style={{ maxWidth: 640 }}>
-          <p style={{
-            ...labelStyle, margin: "0 0 16px",
-          }}>{annotations.length} annotation{annotations.length !== 1 ? "s" : ""} — Round {selectedRound}</p>
-
-          {annotations.length === 0 ? (
-            <p style={{
-              fontFamily: "var(--font-serif)", fontSize: "var(--text-sm)",
-              color: "var(--ink)", opacity: 0.45,
-            }}>No annotations for this round yet.</p>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-              {Object.entries(groupedByPage).map(([pageUrl, annots]) => (
-                <div key={pageUrl}>
-                  <p style={{
-                    fontFamily: "var(--font-mono)", fontSize: 9,
-                    color: "var(--ink)", opacity: 0.3, margin: "16px 0 8px",
-                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                  }}>{pageUrl}</p>
-                  {annots.map((a) => {
-                    const globalIndex = annotations.findIndex(ann => ann.id === a.id)
-                    // Position labels
-                    const xLabel = a.x_percent < 33 ? "Left" : a.x_percent > 66 ? "Right" : "Center"
-                    // Use absolute position if scroll data is available
-                    const absY = a.scroll_y != null && a.viewport_h
-                      ? a.scroll_y + (a.y_percent / 100 * a.viewport_h)
-                      : null
-                    const posLabel = absY != null
-                      ? `${Math.round(absY)}px from top · ${xLabel.toLowerCase()}`
-                      : `${a.y_percent < 33 ? "Top" : a.y_percent > 66 ? "Bottom" : "Middle"} ${xLabel.toLowerCase()}`
-                    return (
-                      <div
-                        key={a.id}
-                        style={{
-                          display: "flex", gap: 12, alignItems: "flex-start",
-                          padding: "12px 0",
-                          borderBottom: "0.5px solid rgba(15,15,14,0.06)",
-                          opacity: a.resolved ? 0.4 : 1,
-                          transition: "opacity 0.2s",
-                        }}
-                      >
-                        {/* Pin number + position mini-map */}
-                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flexShrink: 0 }}>
-                          <div style={{
-                            width: 22, height: 22, borderRadius: "50%",
-                            background: a.resolved ? "rgba(15,15,14,0.3)" : "var(--ink)",
-                            color: "#EDE8E0",
-                            fontFamily: "var(--font-mono)", fontSize: 9,
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                          }}>{globalIndex + 1}</div>
-                          {/* Mini position indicator */}
-                          <div style={{
-                            width: 28, height: 18,
-                            border: "0.5px solid rgba(15,15,14,0.15)",
-                            background: "rgba(255,255,255,0.4)",
-                            position: "relative",
-                          }}>
-                            <div style={{
-                              position: "absolute",
-                              left: `${a.x_percent}%`,
-                              top: `${a.y_percent}%`,
-                              transform: "translate(-50%, -50%)",
-                              width: 4, height: 4, borderRadius: "50%",
-                              background: a.resolved ? "rgba(15,15,14,0.3)" : "var(--ink)",
-                            }} />
-                          </div>
-                        </div>
-
-                        {/* Content */}
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{
-                            fontFamily: "var(--font-serif)", fontSize: "var(--text-body)",
-                            color: "var(--ink)", opacity: 0.8, margin: 0, lineHeight: 1.6,
-                            textDecoration: a.resolved ? "line-through" : "none",
-                          }}>{a.comment}</p>
-                          <p style={{
-                            fontFamily: "var(--font-mono)", fontSize: 8,
-                            color: "var(--ink)", opacity: 0.3, margin: "4px 0 0",
-                          }}>
-                            {posLabel} · {a.viewport_w}×{a.viewport_h} · {new Date(a.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
-                          </p>
-                        </div>
-
-                        {/* Resolve toggle */}
-                        <button
-                          onClick={() => handleResolveToggle(a.id, !a.resolved)}
-                          style={{
-                            fontFamily: "var(--font-mono)", fontSize: 8,
-                            letterSpacing: "0.1em", textTransform: "uppercase",
-                            background: "none", border: "none", cursor: "pointer",
-                            color: a.resolved ? "var(--sage)" : "var(--ink)",
-                            opacity: a.resolved ? 0.8 : 0.35,
-                            padding: "2px 0", whiteSpace: "nowrap",
-                          }}
-                        >{a.resolved ? "Done" : "Resolve"}</button>
-                      </div>
-                    )
-                  })}
+        {/* Annotations list */}
+        {total > 0 && (
+          <div style={{ marginBottom: 40 }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.42, marginBottom: 16 }}>
+              Annotations · Round {session.current_round}
+            </div>
+            {annotations.map((ann, i) => (
+              <div key={ann.id} style={{
+                display: "flex", alignItems: "flex-start", gap: 16, padding: "16px 0",
+                borderBottom: "0.5px solid rgba(15,15,14,0.07)",
+                opacity: ann.resolved ? 0.45 : 1, transition: "opacity 0.2s",
+              }}>
+                {/* Pin number */}
+                <div style={{
+                  width: 24, height: 24, borderRadius: "50%", flexShrink: 0,
+                  background: ann.resolved ? "var(--sage)" : "var(--ink)",
+                  color: "#EDE8E0", fontFamily: "var(--font-mono)", fontSize: 10,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  marginTop: 2,
+                }}>
+                  {ann.resolved ? "✓" : i + 1}
                 </div>
-              ))}
-            </div>
-          )}
 
-          {/* Send back section */}
-          {session.status === "revising" && (
-            <div style={{ marginTop: 32, paddingTop: 24, borderTop: "0.5px solid rgba(15,15,14,0.1)" }}>
-              <p style={{ ...labelStyle, margin: "0 0 10px" }}>Send back for review</p>
-              <textarea
-                value={sendNotes}
-                onChange={e => setSendNotes(e.target.value)}
-                placeholder="Optional note to client about what changed…"
-                rows={2}
-                style={{
-                  width: "100%", padding: "10px 12px",
-                  fontFamily: "var(--font-serif)", fontSize: "var(--text-sm)",
-                  color: "var(--ink)", background: "rgba(255,255,255,0.35)",
-                  border: "0.5px solid rgba(15,15,14,0.1)", outline: "none",
-                  boxSizing: "border-box", resize: "vertical",
-                  marginBottom: 12,
-                }}
-              />
-              <button
-                onClick={handleSendBack}
-                disabled={sending}
-                style={{
-                  fontFamily: "var(--font-mono)", fontSize: 8,
-                  letterSpacing: "0.14em", textTransform: "uppercase",
-                  background: "var(--ink)", color: "#EDE8E0",
-                  padding: "12px 24px", border: "none", cursor: "pointer",
-                  opacity: sending ? 0.3 : 1, transition: "opacity 0.2s",
-                }}
-              >{sending ? "Sending…" : "Send back to client"}</button>
-            </div>
-          )}
-        </div>
+                {/* Comment */}
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.82, margin: 0, lineHeight: 1.6, textDecoration: ann.resolved ? "line-through" : "none" }}>
+                    {ann.comment}
+                  </p>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.35, marginTop: 4 }}>
+                    {new Date(ann.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                  </div>
+                </div>
+
+                {/* Resolve toggle */}
+                <button onClick={() => toggleResolve(ann.id, ann.resolved)} style={{
+                  fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase",
+                  background: "none", border: "0.5px solid rgba(15,15,14,0.15)", padding: "5px 12px",
+                  cursor: "pointer", color: ann.resolved ? "var(--sage)" : "var(--ink)", opacity: ann.resolved ? 0.8 : 0.4,
+                  flexShrink: 0,
+                }}>
+                  {ann.resolved ? "Resolved" : "Resolve"}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Send next round */}
+        {session.status === "revising" && (
+          <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.1)", paddingTop: 32 }}>
+            {!showNextRound ? (
+              <button onClick={() => setShowNextRound(true)} style={{
+                fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.14em", textTransform: "uppercase",
+                background: "var(--ink)", color: "var(--cream)", border: "none", padding: "14px 28px", cursor: "pointer",
+              }}>
+                Send next round →
+              </button>
+            ) : (
+              <div style={{ maxWidth: 500 }}>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.42, marginBottom: 16 }}>
+                  Round {(session.current_round ?? 1) + 1}
+                </div>
+
+                {/* Screenshot upload */}
+                <div style={{ marginBottom: 24 }}>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.45, marginBottom: 8 }}>
+                    New screenshot *
+                  </div>
+                  <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: 0.4, marginBottom: 10, lineHeight: 1.6 }}>
+                    In Chrome: right-click → Inspect → Cmd+Shift+P → "Capture full size screenshot"
+                  </div>
+                  {nextScreenshot ? (
+                    <div style={{ border: "0.5px solid rgba(15,15,14,0.1)", padding: 8, marginBottom: 8 }}>
+                      <img src={nextScreenshot} alt="Preview" style={{ width: "100%", maxHeight: 200, objectFit: "cover", objectPosition: "top", display: "block" }} />
+                      <button onClick={() => setNextScreenshot(null)} style={{
+                        fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", marginTop: 8,
+                        background: "none", border: "none", cursor: "pointer", color: "var(--danger)", opacity: 0.6,
+                      }}>Remove</button>
+                    </div>
+                  ) : (
+                    <label style={{
+                      display: "inline-block", fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase",
+                      border: "0.5px solid rgba(15,15,14,0.2)", padding: "10px 20px",
+                      cursor: uploading ? "default" : "pointer", opacity: uploading ? 0.4 : 0.5, color: "var(--ink)",
+                    }}>
+                      {uploading ? "Uploading…" : "Upload screenshot"}
+                      <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => {
+                        const file = e.target.files?.[0]
+                        if (file) handleUploadScreenshot(file)
+                      }} />
+                    </label>
+                  )}
+                </div>
+
+                {/* Notes */}
+                <div style={{ marginBottom: 24 }}>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.45, marginBottom: 8 }}>
+                    Note for client <span style={{ opacity: 0.5 }}>(optional)</span>
+                  </div>
+                  <textarea
+                    value={nextNotes}
+                    onChange={e => setNextNotes(e.target.value)}
+                    placeholder="Here's what changed…"
+                    rows={3}
+                    style={{
+                      width: "100%", boxSizing: "border-box", padding: "10px 12px",
+                      fontFamily: "var(--font-sans)", fontSize: "var(--text-body)",
+                      color: "var(--ink)", background: "rgba(255,255,255,0.3)",
+                      border: "0.5px solid rgba(15,15,14,0.12)", outline: "none", resize: "none", lineHeight: 1.7,
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: "flex", gap: 12 }}>
+                  <button onClick={handleSendNextRound} disabled={!nextScreenshot || sending} style={{
+                    fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.14em", textTransform: "uppercase",
+                    background: "var(--ink)", color: "var(--cream)", border: "none", padding: "14px 28px",
+                    cursor: !nextScreenshot || sending ? "default" : "pointer",
+                    opacity: !nextScreenshot || sending ? 0.4 : 1,
+                  }}>
+                    {sending ? "Sending…" : "Send to client"}
+                  </button>
+                  <button onClick={() => { setShowNextRound(false); setNextScreenshot(null) }} style={{
+                    fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.14em", textTransform: "uppercase",
+                    background: "none", color: "var(--ink)", border: "none", padding: "14px 0", cursor: "pointer", opacity: 0.35,
+                  }}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </main>
     </>
   )

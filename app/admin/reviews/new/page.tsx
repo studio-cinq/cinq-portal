@@ -8,10 +8,12 @@ import Link from "next/link"
 
 export default function NewReviewPage() {
   const router = useRouter()
-  const [clients, setClients]   = useState<any[]>([])
+
+  const [clients, setClients] = useState<any[]>([])
   const [projects, setProjects] = useState<any[]>([])
-  const [saving, setSaving]     = useState(false)
-  const [error, setError]       = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const [form, setForm] = useState({
     client_id: "",
@@ -19,6 +21,7 @@ export default function NewReviewPage() {
     site_url: "",
     notes: "",
   })
+  const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null)
 
   useEffect(() => {
     supabase.from("clients").select("id, name").order("name").then(({ data }) => {
@@ -28,174 +31,192 @@ export default function NewReviewPage() {
 
   useEffect(() => {
     if (!form.client_id) { setProjects([]); return }
-    supabase
-      .from("projects")
-      .select("id, title")
+    supabase.from("projects").select("id, title")
       .eq("client_id", form.client_id)
       .order("created_at", { ascending: false })
       .then(({ data }) => setProjects(data ?? []))
   }, [form.client_id])
 
-  function set(field: string, value: string) {
+  function set(field: string, value: any) {
     setForm(f => ({ ...f, [field]: value }))
   }
 
-  async function handleCreate() {
+  async function handleUpload(file: File) {
+    setUploading(true)
+    const ext = file.name.split(".").pop() ?? "png"
+    const path = `new-${Date.now()}.${ext}`
+
+    await supabase.storage.from("review-screenshots").upload(path, file, { upsert: true })
+    const { data: urlData } = supabase.storage.from("review-screenshots").getPublicUrl(path)
+    setScreenshotUrl(urlData.publicUrl)
+    setUploading(false)
+  }
+
+  async function handleSave() {
     setError(null)
     if (!form.client_id) return setError("Please select a client.")
-    if (!form.project_id) return setError("Please select a project.")
-    if (!form.site_url.trim()) return setError("Please enter the website URL.")
-
-    // Ensure URL has protocol
-    let url = form.site_url.trim()
-    if (!url.startsWith("http://") && !url.startsWith("https://")) {
-      url = "https://" + url
-    }
+    if (!form.site_url.trim()) return setError("Site URL is required.")
+    if (!screenshotUrl) return setError("Please upload a screenshot.")
 
     setSaving(true)
-    try {
-      const res = await fetch("/api/admin/create-review", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          projectId: form.project_id,
-          clientId: form.client_id,
-          siteUrl: url,
-          notes: form.notes || undefined,
-        }),
-      })
-      const data = await res.json()
-      if (data.ok) {
-        router.push(`/admin/reviews/${data.id}`)
-      } else {
-        setError(data.error || "Something went wrong.")
-        setSaving(false)
-      }
-    } catch {
-      setError("Something went wrong.")
-      setSaving(false)
-    }
-  }
 
-  const labelStyle: React.CSSProperties = {
-    fontFamily: "var(--font-mono)",
-    fontSize: "var(--text-eyebrow)",
-    letterSpacing: "0.12em",
-    textTransform: "uppercase",
-    color: "var(--ink)",
-    opacity: 0.4,
-    display: "block",
-    marginBottom: 8,
-  }
+    const res = await fetch("/api/review/create-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        clientId: form.client_id,
+        projectId: form.project_id || null,
+        siteUrl: form.site_url.trim(),
+        screenshotUrl,
+        notes: form.notes.trim() || null,
+      }),
+    })
 
-  const inputStyle: React.CSSProperties = {
-    width: "100%",
-    padding: "11px 14px",
-    fontFamily: "var(--font-sans)",
-    fontSize: "var(--text-body)",
-    color: "var(--ink)",
-    background: "rgba(255,255,255,0.35)",
-    border: "0.5px solid rgba(15,15,14,0.12)",
-    outline: "none",
-    boxSizing: "border-box",
+    const { session, error: apiError } = await res.json()
+    setSaving(false)
+
+    if (apiError) { setError(apiError); return }
+
+    router.push(`/admin/reviews/${session.id}`)
+    router.refresh()
   }
 
   return (
     <>
       <PortalNav isAdmin />
-      <main style={{ padding: "clamp(32px, 5vw, 48px)", maxWidth: 560 }}>
-        {/* Header */}
-        <Link href="/admin/reviews" style={{
-          fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
-          letterSpacing: "0.12em", textTransform: "uppercase",
-          color: "var(--ink)", opacity: 0.4, textDecoration: "none",
-          display: "block", marginBottom: 16,
-        }}>← Reviews</Link>
+      <main className="form-page-pad" style={{ maxWidth: 640, margin: "0 auto", padding: "48px 48px 80px" }}>
 
-        <h1 style={{
-          fontFamily: "var(--font-serif)", fontSize: "var(--text-title)",
-          fontWeight: 400, color: "var(--ink)", opacity: "var(--op-full)" as any,
-          margin: "0 0 32px",
-        }}>New Website Review</h1>
+        <Link href="/admin/reviews" style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.4, textDecoration: "none", display: "inline-block", marginBottom: 28 }}>
+          ← Reviews
+        </Link>
 
-        {/* Form */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-          {/* Client */}
-          <div>
-            <label style={labelStyle}>Client</label>
-            <select
-              value={form.client_id}
-              onChange={e => { set("client_id", e.target.value); set("project_id", "") }}
-              style={inputStyle}
-            >
-              <option value="">Select a client…</option>
-              {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+        <div style={{ marginBottom: 48 }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.38, marginBottom: 14 }}>
+            Reviews / New
           </div>
+          <h1 style={{ fontFamily: "var(--font-sans)", fontWeight: 400, fontSize: 26, opacity: 0.88, letterSpacing: "-0.015em", margin: 0 }}>
+            New website review
+          </h1>
+        </div>
 
-          {/* Project */}
-          <div>
-            <label style={labelStyle}>Project</label>
-            <select
-              value={form.project_id}
-              onChange={e => set("project_id", e.target.value)}
-              style={inputStyle}
-              disabled={!form.client_id}
-            >
-              <option value="">Select a project…</option>
-              {projects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
-            </select>
+        <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+
+          {/* Client + Project */}
+          <div className="form-grid-2col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
+            <div>
+              <label style={labelStyle}>Client *</label>
+              <select value={form.client_id} onChange={e => { set("client_id", e.target.value); set("project_id", "") }} style={{ ...inputStyle, cursor: "pointer" }}>
+                <option value="">Select client…</option>
+                {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Project <span style={{ opacity: 0.5 }}>(optional)</span></label>
+              <select value={form.project_id} onChange={e => set("project_id", e.target.value)} disabled={!form.client_id} style={{ ...inputStyle, cursor: form.client_id ? "pointer" : "default", opacity: form.client_id ? 1 : 0.4 }}>
+                <option value="">No project</option>
+                {projects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
+              </select>
+            </div>
           </div>
 
           {/* Site URL */}
           <div>
-            <label style={labelStyle}>Website URL</label>
+            <label style={labelStyle}>Site URL *</label>
             <input
-              type="url"
+              style={inputStyle}
+              placeholder="https://clientsite.com"
               value={form.site_url}
               onChange={e => set("site_url", e.target.value)}
-              placeholder="https://clientsite.com"
-              style={inputStyle}
             />
+          </div>
+
+          {/* Screenshot upload */}
+          <div>
+            <label style={labelStyle}>Full-page screenshot *</label>
+            <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: 0.4, marginBottom: 12, lineHeight: 1.6 }}>
+              In Chrome: right-click → Inspect → Cmd+Shift+P → type "Capture full size screenshot"
+            </div>
+
+            {screenshotUrl ? (
+              <div style={{ border: "0.5px solid rgba(15,15,14,0.1)", padding: 8, marginBottom: 8 }}>
+                <img src={screenshotUrl} alt="Screenshot preview" style={{ width: "100%", maxHeight: 240, objectFit: "cover", objectPosition: "top", display: "block" }} />
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.35 }}>Screenshot uploaded</span>
+                  <button onClick={() => setScreenshotUrl(null)} style={{
+                    fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
+                    background: "none", border: "none", cursor: "pointer", color: "var(--danger)", opacity: 0.6, padding: 0,
+                  }}>Remove</button>
+                </div>
+              </div>
+            ) : (
+              <label style={{
+                display: "inline-block", fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase",
+                border: "0.5px solid rgba(15,15,14,0.2)", padding: "12px 24px",
+                cursor: uploading ? "default" : "pointer", opacity: uploading ? 0.4 : 0.5, color: "var(--ink)",
+              }}>
+                {uploading ? "Uploading…" : "Upload screenshot"}
+                <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => {
+                  const file = e.target.files?.[0]
+                  if (file) handleUpload(file)
+                }} />
+              </label>
+            )}
           </div>
 
           {/* Notes */}
           <div>
-            <label style={labelStyle}>Notes for client (optional)</label>
+            <label style={labelStyle}>Notes for client <span style={{ opacity: 0.5 }}>(optional)</span></label>
             <textarea
               value={form.notes}
               onChange={e => set("notes", e.target.value)}
-              placeholder="Any context or instructions for the client…"
+              placeholder="Any context or things to focus on during review…"
               rows={3}
-              style={{ ...inputStyle, resize: "vertical", fontFamily: "var(--font-serif)" }}
+              style={{ ...inputStyle, resize: "none", lineHeight: 1.7 }}
             />
           </div>
 
-          {/* Error */}
           {error && (
-            <p style={{
-              fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)",
-              color: "var(--danger)", margin: 0,
-            }}>{error}</p>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--danger)", opacity: 0.8 }}>{error}</div>
           )}
 
-          {/* Submit */}
-          <button
-            onClick={handleCreate}
-            disabled={saving}
-            style={{
-              fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
-              letterSpacing: "0.16em", textTransform: "uppercase",
-              background: "var(--ink)", color: "#EDE8E0",
-              padding: "14px 24px", border: "none", cursor: "pointer",
+          {/* Actions */}
+          <div style={{ display: "flex", alignItems: "center", gap: 20, paddingTop: 8 }}>
+            <button onClick={handleSave} disabled={saving} style={{
+              fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase",
+              background: "var(--ink)", color: "var(--cream)",
+              border: "none", padding: "14px 28px",
+              cursor: saving ? "default" : "pointer",
               opacity: saving ? 0.4 : 1, transition: "opacity 0.2s",
-              alignSelf: "flex-start",
-            }}
-          >
-            {saving ? "Creating…" : "Create & send invite"}
-          </button>
+            }}>
+              {saving ? "Creating…" : "Create review"}
+            </button>
+            <button onClick={() => router.push("/admin/reviews")} style={{
+              fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.14em", textTransform: "uppercase",
+              background: "transparent", color: "var(--ink)",
+              border: "none", padding: "14px 0",
+              cursor: "pointer", opacity: 0.35,
+            }}>
+              Cancel
+            </button>
+          </div>
         </div>
       </main>
     </>
   )
+}
+
+const labelStyle: React.CSSProperties = {
+  fontFamily: "var(--font-mono)",
+  fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase",
+  opacity: 0.45, display: "block", marginBottom: 6,
+}
+
+const inputStyle: React.CSSProperties = {
+  width: "100%", boxSizing: "border-box",
+  background: "transparent", border: "none",
+  borderBottom: "0.5px solid rgba(15,15,14,0.2)",
+  padding: "10px 0",
+  fontFamily: "var(--font-sans)",
+  fontSize: 15, color: "var(--ink)", outline: "none",
+  letterSpacing: "-0.01em",
 }
