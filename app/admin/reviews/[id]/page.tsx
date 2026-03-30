@@ -17,6 +17,7 @@ export default function AdminReviewDetailPage({ params }: { params: { id: string
   const [sending, setSending]         = useState(false)
   const [sendNotes, setSendNotes]     = useState("")
   const [copied, setCopied]           = useState(false)
+  const [deleting, setDeleting]       = useState(false)
   const [adminScroll, setAdminScroll] = useState<{ scrollY: number; pageHeight: number }>({ scrollY: 0, pageHeight: 0 })
   const [iframeRect, setIframeRect]   = useState<{ width: number; height: number }>({ width: 0, height: 0 })
 
@@ -117,6 +118,17 @@ export default function AdminReviewDetailPage({ params }: { params: { id: string
     setTimeout(() => setCopied(false), 2000)
   }
 
+  async function handleDelete() {
+    if (!confirm("Delete this review and all its annotations? This cannot be undone.")) return
+    setDeleting(true)
+    await fetch("/api/admin/delete-review", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId: params.id }),
+    })
+    router.push("/admin/reviews")
+  }
+
   if (loading) {
     return (
       <>
@@ -194,14 +206,24 @@ export default function AdminReviewDetailPage({ params }: { params: { id: string
               <span style={{ ...labelStyle, opacity: 0.3 }}>{session.site_url}</span>
             </div>
           </div>
-          <button onClick={copyLink} style={{
-            fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
-            letterSpacing: "0.14em", textTransform: "uppercase",
-            background: "none", color: "var(--ink)",
-            padding: "10px 16px", cursor: "pointer",
-            border: "0.5px solid rgba(15,15,14,0.15)",
-            opacity: 0.55, transition: "opacity 0.2s",
-          }}>{copied ? "Copied!" : "Copy review link"}</button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={copyLink} style={{
+              fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
+              letterSpacing: "0.14em", textTransform: "uppercase",
+              background: "none", color: "var(--ink)",
+              padding: "10px 16px", cursor: "pointer",
+              border: "0.5px solid rgba(15,15,14,0.15)",
+              opacity: 0.55, transition: "opacity 0.2s",
+            }}>{copied ? "Copied!" : "Copy review link"}</button>
+            <button onClick={handleDelete} disabled={deleting} style={{
+              fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
+              letterSpacing: "0.14em", textTransform: "uppercase",
+              background: "none", color: "var(--danger, #c44)",
+              padding: "10px 16px", cursor: "pointer",
+              border: "0.5px solid rgba(200,60,60,0.2)",
+              opacity: deleting ? 0.3 : 0.55, transition: "opacity 0.2s",
+            }}>{deleting ? "Deleting…" : "Delete"}</button>
+          </div>
         </div>
 
         {/* Round tabs */}
