@@ -7,98 +7,85 @@
  * Only activates when the site is loaded inside the Cinq review iframe.
  * Does nothing when loaded directly — zero impact on the live site.
  *
- * Supports native scroll, Framer, Webflow, and other platforms that use
- * custom scroll containers instead of native window scrolling.
+ * Works with native scroll, Framer, Webflow, Squarespace, and any platform
+ * that uses custom scroll containers.
  */
 (function () {
   // Only run inside an iframe
   if (window === window.top) return;
 
   var scrollEl = null;
-  var last = -1;
-
-  // Find the actual scrolling element — handles Framer, Webflow, etc.
-  function findScrollContainer() {
-    // 1. Check if native window/document scrolling is in use
-    if (document.scrollingElement && document.scrollingElement.scrollHeight > window.innerHeight + 10) {
-      return document.scrollingElement;
-    }
-
-    // 2. Look for common framework scroll wrappers
-    var candidates = document.querySelectorAll(
-      '[data-framer-component-type], [data-scroll-container], [data-barba-container], .w-webflow-badge ~ *, main, #main, #__next > div, #app > div'
-    );
-    for (var i = 0; i < candidates.length; i++) {
-      var el = candidates[i];
-      var style = window.getComputedStyle(el);
-      if ((style.overflowY === 'auto' || style.overflowY === 'scroll' || style.overflowY === 'overlay') &&
-          el.scrollHeight > el.clientHeight + 10) {
-        return el;
-      }
-    }
-
-    // 3. Brute force: walk top-level elements for any scrollable container
-    var all = document.querySelectorAll('body > *, body > * > *, body > * > * > *');
-    for (var j = 0; j < all.length; j++) {
-      var el2 = all[j];
-      var s = window.getComputedStyle(el2);
-      if ((s.overflowY === 'auto' || s.overflowY === 'scroll' || s.overflowY === 'overlay') &&
-          el2.scrollHeight > el2.clientHeight + 10) {
-        return el2;
-      }
-    }
-
-    // 4. Fallback to documentElement
-    return document.documentElement;
-  }
+  var lastY = -1;
 
   function send() {
-    if (!scrollEl) return;
-    var y = Math.round(scrollEl === document.documentElement || scrollEl === document.body
-      ? (window.scrollY || window.pageYOffset || 0)
-      : scrollEl.scrollTop);
-    var h = Math.round(scrollEl.scrollHeight);
-    if (y !== last) {
-      last = y;
+    var y = 0;
+    var h = 0;
+
+    if (scrollEl && scrollEl !== document && scrollEl !== document.documentElement && scrollEl !== document.body) {
+      // Custom scroll container (Framer, etc.)
+      y = Math.round(scrollEl.scrollTop);
+      h = Math.round(scrollEl.scrollHeight);
+    } else {
+      // Native window scrolling
+      y = Math.round(window.scrollY || window.pageYOffset || 0);
+      h = Math.round(Math.max(
+        document.body ? document.body.scrollHeight : 0,
+        document.documentElement.scrollHeight
+      ));
+    }
+
+    if (y !== lastY) {
+      lastY = y;
       window.parent.postMessage({ type: "cinq-scroll", y: y, h: h }, "*");
     }
   }
 
-  function init() {
-    scrollEl = findScrollContainer();
+  // Capture scroll events on ANY element — this catches custom scroll containers
+  // without needing to know the DOM structure in advance
+  document.addEventListener("scroll", function (e) {
+    var target = e.target;
 
-    // Send initial position
-    send();
-
-    // Listen on both window scroll and the container scroll
-    var ticking = false;
-    function onScroll() {
-      if (!ticking) {
-        ticking = true;
-        requestAnimationFrame(function () {
-          send();
-          ticking = false;
-        });
+    // If we catch a scroll on a real element (not document), use it
+    if (target && target !== document && target !== document.documentElement) {
+      // Only adopt it if it's taller than the viewport (it's the main scroller)
+      if (target.scrollHeight > window.innerHeight) {
+        scrollEl = target;
       }
     }
 
-    window.addEventListener("scroll", onScroll, { passive: true });
-    if (scrollEl && scrollEl !== document.documentElement && scrollEl !== document.body) {
-      scrollEl.addEventListener("scroll", onScroll, { passive: true });
-    }
+    send();
+  }, true); // true = capture phase, catches all scroll events
 
-    // Re-detect on resize (page height might change)
-    window.addEventListener("resize", function () {
-      scrollEl = findScrollContainer();
-      last = -1;
-      send();
-    });
+  // Also listen on window for native scroll
+  window.addEventListener("scroll", function () {
+    if (!scrollEl) scrollEl = document.documentElement;
+    send();
+  }, { passive: true });
+
+  // Send initial position after a short delay to let frameworks initialize
+  function init() {
+    // Try to find a scroll container proactively
+    var els = document.querySelectorAll("*");
+    for (var i = 0; i < els.length; i++) {
+      var el = els[i];
+      if (el.scrollHeight > window.innerHeight + 50 && el.clientHeight > 0) {
+        var style = window.getComputedStyle(el);
+        var ov = style.overflowY;
+        if (ov === "auto" || ov === "scroll" || ov === "overlay") {
+          scrollEl = el;
+          break;
+        }
+      }
+    }
+    send();
   }
 
-  // Wait for DOM to be ready
+  // Wait for page to be fully ready, then wait a bit more for framework hydration
   if (document.readyState === "complete") {
-    init();
+    setTimeout(init, 500);
   } else {
-    window.addEventListener("load", init);
+    window.addEventListener("load", function () {
+      setTimeout(init, 500);
+    });
   }
 })();
