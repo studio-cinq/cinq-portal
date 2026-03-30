@@ -3,7 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase-server"
 
 export async function POST(req: Request) {
   try {
-    const { sessionId, pageUrl, xPercent, yPercent, viewportW, viewportH, comment } = await req.json()
+    const { sessionId, pageUrl, xPercent, yPercent, viewportW, viewportH, scrollY, pageHeight, comment } = await req.json()
 
     if (!sessionId || !pageUrl || xPercent == null || yPercent == null || !comment) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
@@ -28,6 +28,8 @@ export async function POST(req: Request) {
         y_percent: yPercent,
         viewport_w: viewportW,
         viewport_h: viewportH,
+        scroll_y: scrollY ?? null,
+        page_height: pageHeight ?? null,
         comment,
       })
       .select()

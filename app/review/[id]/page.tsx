@@ -15,6 +15,18 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
   const [loading, setLoading]         = useState(true)
   const [submitting, setSubmitting]   = useState(false)
   const [approving, setApproving]     = useState(false)
+  const [iframeScroll, setIframeScroll] = useState<{ scrollY: number; pageHeight: number }>({ scrollY: 0, pageHeight: 0 })
+
+  // Listen for scroll position from iframe via postMessage
+  useEffect(() => {
+    function handleMessage(e: MessageEvent) {
+      if (e.data?.type === "cinq-scroll") {
+        setIframeScroll({ scrollY: e.data.y ?? 0, pageHeight: e.data.h ?? 0 })
+      }
+    }
+    window.addEventListener("message", handleMessage)
+    return () => window.removeEventListener("message", handleMessage)
+  }, [])
 
   // Load session + annotations
   useEffect(() => {
@@ -68,6 +80,8 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
         yPercent: pendingPin.y,
         viewportW: window.innerWidth,
         viewportH: window.innerHeight,
+        scrollY: iframeScroll.scrollY,
+        pageHeight: iframeScroll.pageHeight,
         comment,
       }),
     })

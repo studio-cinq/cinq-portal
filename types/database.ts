@@ -175,6 +175,8 @@ export interface ReviewAnnotation {
   y_percent: number
   viewport_w: number
   viewport_h: number
+  scroll_y?: number
+  page_height?: number
   comment: string
   resolved: boolean
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 import PortalNav from "@/components/portal/Nav"
@@ -17,6 +17,34 @@ export default function AdminReviewDetailPage({ params }: { params: { id: string
   const [sending, setSending]         = useState(false)
   const [sendNotes, setSendNotes]     = useState("")
   const [copied, setCopied]           = useState(false)
+  const [adminScroll, setAdminScroll] = useState<{ scrollY: number; pageHeight: number }>({ scrollY: 0, pageHeight: 0 })
+  const [iframeRect, setIframeRect]   = useState<{ width: number; height: number }>({ width: 0, height: 0 })
+
+  // Listen for scroll position from admin iframe
+  useEffect(() => {
+    function handleMessage(e: MessageEvent) {
+      if (e.data?.type === "cinq-scroll") {
+        setAdminScroll({ scrollY: e.data.y ?? 0, pageHeight: e.data.h ?? 0 })
+      }
+    }
+    window.addEventListener("message", handleMessage)
+    return () => window.removeEventListener("message", handleMessage)
+  }, [])
+
+  // Track iframe container size
+  const iframeContainerRef = useCallback((node: HTMLDivElement | null) => {
+    if (node) {
+      const rect = node.getBoundingClientRect()
+      setIframeRect({ width: rect.width, height: rect.height })
+      const observer = new ResizeObserver(entries => {
+        for (const entry of entries) {
+          setIframeRect({ width: entry.contentRect.width, height: entry.contentRect.height })
+        }
+      })
+      observer.observe(node)
+      return () => observer.disconnect()
+    }
+  }, [])
 
   useEffect(() => {
     async function load() {
@@ -198,19 +226,81 @@ export default function AdminReviewDetailPage({ params }: { params: { id: string
           ))}
         </div>
 
-        {/* Full-width iframe — browse the site for reference */}
-        <div style={{
-          border: "0.5px solid rgba(15,15,14,0.1)",
-          background: "#fff",
-          overflow: "hidden",
-          marginBottom: 32,
-          height: "70vh",
-        }}>
+        {/* Full-width iframe with annotation pin overlay */}
+        <div
+          ref={iframeContainerRef}
+          style={{
+            border: "0.5px solid rgba(15,15,14,0.1)",
+            background: "#fff",
+            overflow: "hidden",
+            marginBottom: 32,
+            height: "70vh",
+            position: "relative",
+          }}
+        >
           <iframe
             src={session.site_url}
             style={{ width: "100%", height: "100%", border: "none", display: "block" }}
             sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
           />
+          {/* Pin overlay — shows pins at correct absolute positions based on iframe scroll */}
+          <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 2 }}>
+            {annotations.map((a, i) => {
+              // Only show pins that have scroll tracking data
+              if (a.scroll_y == null || a.viewport_h == null) {
+                // Fallback: show at viewport-relative position (old annotations)
+                return (
+                  <div key={a.id} style={{
+                    position: "absolute",
+                    left: `${a.x_percent}%`,
+                    top: `${a.y_percent}%`,
+                    transform: "translate(-50%, -50%)",
+                    pointerEvents: "all",
+                  }}>
+                    <div style={{
+                      width: 22, height: 22, borderRadius: "50%",
+                      background: a.resolved ? "rgba(15,15,14,0.35)" : "var(--ink)",
+                      color: "#EDE8E0", fontFamily: "var(--font-mono)", fontSize: 9,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      border: "2px solid rgba(255,255,255,0.9)",
+                      boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
+                    }}>{i + 1}</div>
+                  </div>
+                )
+              }
+
+              // Calculate absolute Y position on the page (in pixels from top)
+              const absY = a.scroll_y + (a.y_percent / 100 * a.viewport_h)
+              // Check if pin is within the admin's current visible area
+              const adminVH = iframeRect.height
+              if (adminVH === 0) return null
+              if (absY < adminScroll.scrollY || absY > adminScroll.scrollY + adminVH) return null
+
+              // Calculate position on the overlay
+              const topPx = absY - adminScroll.scrollY
+              const topPercent = (topPx / adminVH) * 100
+
+              return (
+                <div key={a.id} style={{
+                  position: "absolute",
+                  left: `${a.x_percent}%`,
+                  top: `${topPercent}%`,
+                  transform: "translate(-50%, -50%)",
+                  pointerEvents: "all",
+                }}>
+                  <div style={{
+                    width: 22, height: 22, borderRadius: "50%",
+                    background: a.resolved ? "rgba(15,15,14,0.35)" : "var(--ink)",
+                    color: "#EDE8E0", fontFamily: "var(--font-mono)", fontSize: 9,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    border: "2px solid rgba(255,255,255,0.9)",
+                    boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
+                    cursor: "pointer",
+                  }}>{i + 1}</div>
+                </div>
+              )
+            })}
+          </div>
         </div>
 
         {/* Annotations list below */}
@@ -237,8 +327,13 @@ export default function AdminReviewDetailPage({ params }: { params: { id: string
                     const globalIndex = annotations.findIndex(ann => ann.id === a.id)
                     // Position labels
                     const xLabel = a.x_percent < 33 ? "Left" : a.x_percent > 66 ? "Right" : "Center"
-                    const yLabel = a.y_percent < 33 ? "Top" : a.y_percent > 66 ? "Bottom" : "Middle"
-                    const posLabel = `${yLabel} ${xLabel.toLowerCase()}`
+                    // Use absolute position if scroll data is available
+                    const absY = a.scroll_y != null && a.viewport_h
+                      ? a.scroll_y + (a.y_percent / 100 * a.viewport_h)
+                      : null
+                    const posLabel = absY != null
+                      ? `${Math.round(absY)}px from top · ${xLabel.toLowerCase()}`
+                      : `${a.y_percent < 33 ? "Top" : a.y_percent > 66 ? "Bottom" : "Middle"} ${xLabel.toLowerCase()}`
                     return (
                       <div
                         key={a.id}
