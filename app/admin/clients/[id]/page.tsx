@@ -694,7 +694,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                                 </span>
                                 {evt.event_time && (
                                   <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.3 }}>
-                                    {(() => { const [h, m] = evt.event_time.split(":"); const hr = parseInt(h); return `${hr === 0 ? 12 : hr > 12 ? hr - 12 : hr}:${m} ${hr >= 12 ? "PM" : "AM"}`; })()}
+                                    {(() => { const [h, m] = evt.event_time.split(":"); const hr = parseInt(h); return `${hr === 0 ? 12 : hr > 12 ? hr - 12 : hr}:${m} ${hr >= 12 ? "PM" : "AM"}`; })()}{evt.duration_minutes ? ` · ${evt.duration_minutes}m` : ""}
                                   </span>
                                 )}
                                 <span style={{

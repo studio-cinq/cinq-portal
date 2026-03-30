@@ -71,12 +71,13 @@ export default function AdminCalendarPage() {
   const allEvents = useMemo(() => [
     ...events.map((e: any) => ({
       id: e.id, title: e.title, event_date: e.event_date, event_time: e.event_time,
+      duration_minutes: e.duration_minutes ?? null,
       type: e.type, client_name: e.clients?.name ?? "—", client_id: e.client_id,
       project_title: e.projects?.title ?? null, notes: e.notes, is_auto: false,
     })),
     ...invoices.map((inv: any) => ({
       id: `inv-${inv.id}`, title: `Invoice #${inv.invoice_number} — $${(inv.amount / 100).toLocaleString()}`,
-      event_date: inv.due_date, event_time: null, type: "invoice_due",
+      event_date: inv.due_date, event_time: null, duration_minutes: null, type: "invoice_due",
       client_name: (inv.clients as any)?.name ?? "—", client_id: inv.client_id,
       project_title: (inv.projects as any)?.title ?? null, notes: null, is_auto: true,
     })),
@@ -264,6 +265,10 @@ export default function AdminCalendarPage() {
                 <div style={labelSm}>Time</div>
                 <input type="time" value={form.event_time} onChange={e => setForm(f => ({ ...f, event_time: e.target.value }))} style={inputSm} />
               </div>
+              <div>
+                <div style={labelSm}>Duration (min)</div>
+                <input type="number" value={form.duration_minutes} onChange={e => setForm(f => ({ ...f, duration_minutes: e.target.value }))} placeholder="60" style={inputSm} />
+              </div>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "140px 1fr 1fr 100px", gap: 12, alignItems: "end" }} className="form-grid-2col">
               <div>
@@ -435,7 +440,7 @@ function EventChip({ evt, compact, onDelete }: { evt: any; compact?: boolean; on
     >
       {evt.event_time && !compact && (
         <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, opacity: 0.45, marginBottom: 1 }}>
-          {fmtTime(evt.event_time)}
+          {fmtTime(evt.event_time)}{evt.duration_minutes ? ` · ${evt.duration_minutes}m` : ""}
         </div>
       )}
       <div style={{
