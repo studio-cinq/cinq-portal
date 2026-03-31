@@ -144,6 +144,25 @@ body {
 /* -- Default layout gaps -- */
 .project-row-right { gap: 32px; }
 
+/* -- Subtle row hover -- */
+.admin-client-row,
+.admin-invoice-row,
+.admin-proposal-row,
+.admin-studio-client-row,
+.project-row {
+  transition: background 0.15s ease;
+  margin: 0 -12px;
+  padding-left: 12px !important;
+  padding-right: 12px !important;
+}
+.admin-client-row:hover,
+.admin-invoice-row:hover,
+.admin-proposal-row:hover,
+.admin-studio-client-row:hover,
+.project-row:hover {
+  background: rgba(15, 15, 14, 0.025);
+}
+
 /* -- Scrollbar -- */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
