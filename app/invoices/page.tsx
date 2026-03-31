@@ -182,12 +182,32 @@ function InvoiceCard({ inv, variant }: { inv: any; variant: "paid" | "due" | "lo
         </div>
       )}
 
-      {variant === "due" && (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12, paddingTop: 14, borderTop: "0.5px solid rgba(15,15,14,0.07)" }}>
-          <DownloadPDFButton type="invoice" id={inv.id} label="↓ Invoice PDF" />
-          <PayInvoiceButton invoiceId={inv.id} amount={inv.amount} />
-        </div>
-      )}
+      {variant === "due" && (() => {
+        const methods: string[] = inv.payment_methods ?? ["stripe"]
+        const showStripe = methods.includes("stripe")
+        const showACH = methods.includes("ach")
+        return (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12, paddingTop: 14, borderTop: "0.5px solid rgba(15,15,14,0.07)" }}>
+            <DownloadPDFButton type="invoice" id={inv.id} label="↓ Invoice PDF" />
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              {showACH && (
+                <a href={`/invoice/${inv.id}`} style={{
+                  fontFamily: "var(--font-mono)", fontSize: 8,
+                  letterSpacing: "0.1em", textTransform: "uppercase",
+                  color: "var(--ink)", opacity: 0.5, textDecoration: "none",
+                  border: "0.5px solid rgba(15,15,14,0.18)", padding: "6px 12px",
+                  whiteSpace: "nowrap",
+                }}>
+                  Bank transfer
+                </a>
+              )}
+              {showStripe && (
+                <PayInvoiceButton invoiceId={inv.id} amount={inv.amount} label={showACH ? "Pay with card" : undefined} />
+              )}
+            </div>
+          </div>
+        )
+      })()}
 
       {variant === "paid" && (
         <div style={{ paddingTop: 12, borderTop: "0.5px solid rgba(15,15,14,0.07)" }}>

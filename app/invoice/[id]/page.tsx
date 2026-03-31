@@ -64,6 +64,17 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
   const amount = invoice.amount / 100
   const isPaid = invoice.status === "paid" || justPaid
   const lineItems = Array.isArray(invoice.line_items) ? invoice.line_items : []
+  const paymentMethods: string[] = invoice.payment_methods ?? ["stripe"]
+  const hasStripe = paymentMethods.includes("stripe")
+  const hasACH = paymentMethods.includes("ach")
+
+  const [achDetails, setAchDetails] = useState<{ bankName: string; routingNumber: string; accountNumber: string; accountName: string } | null>(null)
+
+  useEffect(() => {
+    if (hasACH && !isPaid) {
+      fetch("/api/ach-details").then(r => r.json()).then(setAchDetails).catch(() => {})
+    }
+  }, [hasACH, isPaid])
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-grad)" }}>
@@ -151,8 +162,29 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
           </div>
         )}
 
+        {/* ACH bank details */}
+        {hasACH && !isPaid && achDetails && achDetails.bankName && (
+          <div style={{ marginBottom: 36, padding: "16px 20px", background: "rgba(255,255,255,0.3)", border: "0.5px solid rgba(15,15,14,0.08)" }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.4, marginBottom: 12 }}>
+              Bank transfer details
+            </div>
+            {[
+              { label: "Bank",           value: achDetails.bankName },
+              { label: "Account name",   value: achDetails.accountName },
+              { label: "Routing number", value: achDetails.routingNumber },
+              { label: "Account number", value: achDetails.accountNumber },
+              { label: "Reference",      value: `Invoice #${invoice.invoice_number}` },
+            ].map(row => (
+              <div key={row.label} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "0.5px solid rgba(15,15,14,0.05)" }}>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.4 }}>{row.label}</span>
+                <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.75 }}>{row.value}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Actions */}
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
           {isPaid ? (
             <div style={{
               fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
@@ -163,16 +195,33 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
               {justPaid ? "Payment received — thank you!" : `Paid${invoice.paid_at ? ` · ${new Date(invoice.paid_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : ""}`}
             </div>
           ) : (
-            <button onClick={handlePay} disabled={submitting} style={{
-              fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
-              letterSpacing: "0.16em", textTransform: "uppercase",
-              background: "var(--ink)", color: "var(--cream)",
-              border: "none", padding: "16px 32px",
-              cursor: submitting ? "default" : "pointer",
-              opacity: submitting ? 0.4 : 1, transition: "opacity 0.2s",
-            }}>
-              {submitting ? "Redirecting…" : "Pay invoice"}
-            </button>
+            <>
+              {hasStripe && (
+                <button onClick={handlePay} disabled={submitting} style={{
+                  fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
+                  letterSpacing: "0.16em", textTransform: "uppercase",
+                  background: "var(--ink)", color: "var(--cream)",
+                  border: "none", padding: "16px 32px",
+                  cursor: submitting ? "default" : "pointer",
+                  opacity: submitting ? 0.4 : 1, transition: "opacity 0.2s",
+                }}>
+                  {submitting ? "Redirecting…" : hasACH ? "Pay with card" : "Pay invoice"}
+                </button>
+              )}
+              {hasACH && !hasStripe && (
+                <div style={{
+                  fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
+                  letterSpacing: "0.1em", opacity: 0.5, lineHeight: 1.6,
+                }}>
+                  Please complete payment via bank transfer using the details above.
+                </div>
+              )}
+              {hasACH && hasStripe && (
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.06em", opacity: 0.4 }}>
+                  or pay via bank transfer above
+                </span>
+              )}
+            </>
           )}
           <DownloadPDFButton type="invoice" id={params.id} label="↓ PDF" />
         </div>

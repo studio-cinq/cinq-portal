@@ -64,6 +64,11 @@ export default async function AdminInvoicesPage() {
                     · viewed {new Date(inv.viewed_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                   </span>
                 )}
+                {Array.isArray((inv as any).payment_methods) && (inv as any).payment_methods.includes("ach") && (
+                  <span style={{ marginLeft: 8, opacity: 0.5, fontSize: 8, letterSpacing: "0.08em", textTransform: "uppercase" as const, border: "0.5px solid rgba(15,15,14,0.15)", padding: "1px 6px" }}>
+                    ACH
+                  </span>
+                )}
               </div>
             </div>
             <div className="admin-client-col-hide" style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: "var(--op-muted)" as any }}>{(inv.clients as any)?.name}</div>

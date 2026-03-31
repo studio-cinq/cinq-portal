@@ -16,6 +16,9 @@ export async function POST(req: NextRequest) {
   if (!invoice) return NextResponse.json({ error: "Invoice not found" }, { status: 404 })
   if (invoice.status === "paid") return NextResponse.json({ error: "Already paid" }, { status: 400 })
 
+  const methods: string[] = invoice.payment_methods ?? ["stripe"]
+  if (!methods.includes("stripe")) return NextResponse.json({ error: "Card payments not enabled for this invoice" }, { status: 400 })
+
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
     mode: "payment",

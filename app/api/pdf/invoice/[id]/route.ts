@@ -200,6 +200,39 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       }
     }
 
+    // ACH bank transfer details
+    const paymentMethods: string[] = invoice.payment_methods ?? ["stripe"]
+    if (paymentMethods.includes("ach") && !isPaid) {
+      y += 24
+      doc.setDrawColor(200, 196, 190)
+      doc.setLineWidth(0.3)
+      doc.line(marginL, y, W - marginR, y)
+      y += 18
+
+      doc.setFontSize(6.5)
+      setColor(doc, INK, 0.38)
+      doc.text("BANK TRANSFER DETAILS", marginL, y)
+      y += 16
+
+      const achRows = [
+        { label: "BANK",           value: process.env.ACH_BANK_NAME ?? "" },
+        { label: "ACCOUNT NAME",   value: process.env.ACH_ACCOUNT_NAME ?? "" },
+        { label: "ROUTING NUMBER", value: process.env.ACH_ROUTING_NUMBER ?? "" },
+        { label: "ACCOUNT NUMBER", value: process.env.ACH_ACCOUNT_NUMBER ?? "" },
+        { label: "REFERENCE",      value: `Invoice #${invoice.invoice_number}` },
+      ]
+
+      for (const row of achRows) {
+        doc.setFontSize(7)
+        setColor(doc, INK, 0.38)
+        doc.text(row.label, marginL, y)
+        doc.setFontSize(10)
+        setColor(doc, INK, 0.75)
+        doc.text(row.value, marginL + 120, y)
+        y += 16
+      }
+    }
+
     // Paid stamp
     if (isPaid) {
       y += 12

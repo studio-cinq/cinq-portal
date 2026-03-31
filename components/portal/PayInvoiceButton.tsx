@@ -5,9 +5,11 @@ import { useState } from "react"
 export default function PayInvoiceButton({
   invoiceId,
   amount,
+  label,
 }: {
   invoiceId: string
   amount:    number
+  label?:    string
 }) {
   const [loading, setLoading] = useState(false)
 
@@ -35,7 +37,7 @@ export default function PayInvoiceButton({
         opacity: loading ? 0.4 : 1, whiteSpace: "nowrap",
       }}
     >
-      {loading ? "Redirecting…" : `Pay $${(amount / 100).toLocaleString()}`}
+      {loading ? "Redirecting…" : label ?? `Pay $${(amount / 100).toLocaleString()}`}
     </button>
   )
 }

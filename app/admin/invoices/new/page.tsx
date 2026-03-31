@@ -31,6 +31,7 @@ function NewInvoicePageInner() {
     status:         "sent",
     unlocks_files:  false,
     notes:          "",
+    payment_methods: ["stripe"] as string[],
   })
 
   const [lineItems, setLineItems] = useState<LineItem[]>([
@@ -83,6 +84,7 @@ function NewInvoicePageInner() {
 
     const validItems = lineItems.filter(item => item.description.trim() && parseFloat(item.amount) > 0)
     if (validItems.length === 0)     return setError("Add at least one line item.")
+    if (form.payment_methods.length === 0) return setError("Select at least one payment method.")
 
     setSaving(true)
 
@@ -103,6 +105,7 @@ function NewInvoicePageInner() {
       due_date:       form.due_date || null,
       status:         form.status,
       unlocks_files:  form.unlocks_files,
+      payment_methods: form.payment_methods,
     } as any)
 
     setSaving(false)
@@ -264,6 +267,34 @@ function NewInvoicePageInner() {
               rows={3}
               style={{ ...inputStyle, resize: "none", lineHeight: 1.7 }}
             />
+          </div>
+
+          {/* Payment methods */}
+          <div>
+            <label style={labelStyle}>Payment methods</label>
+            <div style={{ display: "flex", gap: 20, paddingTop: 4 }}>
+              {([
+                { value: "stripe", label: "Stripe (card checkout)" },
+                { value: "ach",    label: "ACH bank transfer" },
+              ] as const).map(opt => (
+                <label key={opt.value} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    checked={form.payment_methods.includes(opt.value)}
+                    onChange={e => {
+                      set("payment_methods",
+                        e.target.checked
+                          ? [...form.payment_methods, opt.value]
+                          : form.payment_methods.filter((m: string) => m !== opt.value)
+                      )
+                    }}
+                  />
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.08em", opacity: 0.6 }}>
+                    {opt.label}
+                  </span>
+                </label>
+              ))}
+            </div>
           </div>
 
           {/* Status + Unlocks */}

@@ -24,14 +24,15 @@ export async function POST(req: Request) {
     const portalUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://portal.studiocinq.com"
 
     await sendInvoiceEmail({
-      invoiceNumber: invoice.invoice_number,
-      description:   invoice.description,
-      amountCents:   invoice.amount,
-      dueDate:       invoice.due_date,
-      clientName:    client.name,
-      contactName:   client.contact_name,
-      contactEmail:  client.contact_email,
-      invoiceUrl:    `${portalUrl}/invoice/${invoice.id}`,
+      invoiceNumber:  invoice.invoice_number,
+      description:    invoice.description,
+      amountCents:    invoice.amount,
+      dueDate:        invoice.due_date,
+      clientName:     client.name,
+      contactName:    client.contact_name,
+      contactEmail:   client.contact_email,
+      invoiceUrl:     `${portalUrl}/invoice/${invoice.id}`,
+      paymentMethods: invoice.payment_methods ?? ["stripe"],
     })
 
     return NextResponse.json({ ok: true })

@@ -23,6 +23,9 @@ const invoice = invoiceRaw as any
 
   if (!invoice) return NextResponse.json({ error: "Invoice not found" }, { status: 404 })
 
+  const methods: string[] = invoice.payment_methods ?? ["stripe"]
+  if (!methods.includes("stripe")) return NextResponse.json({ error: "Card payments not enabled for this invoice" }, { status: 400 })
+
   // Create Stripe checkout session
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],

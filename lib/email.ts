@@ -150,6 +150,7 @@ interface InvoiceSentPayload {
   contactName: string
   contactEmail: string
   invoiceUrl: string
+  paymentMethods?: string[]
 }
 
 export async function sendInvoiceEmail(p: InvoiceSentPayload) {
@@ -162,6 +163,22 @@ export async function sendInvoiceEmail(p: InvoiceSentPayload) {
     ? new Date(p.dueDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
     : null
 
+  const methods = p.paymentMethods ?? ["stripe"]
+  const hasACH = methods.includes("ach")
+  const hasStripe = methods.includes("stripe")
+  const ctaLabel = hasStripe ? "View &amp; pay invoice →" : "View invoice details →"
+
+  const achBlock = hasACH ? `
+    <div style="margin-top:16px;padding-top:12px;border-top:1px solid #DDD6CC">
+      <p style="margin:0 0 8px;font-weight:600">Bank transfer option</p>
+      <p style="margin:0;font-size:13px;color:#555">Bank: ${process.env.ACH_BANK_NAME ?? ""}</p>
+      <p style="margin:0;font-size:13px;color:#555">Account name: ${process.env.ACH_ACCOUNT_NAME ?? ""}</p>
+      <p style="margin:0;font-size:13px;color:#555">Routing #: ${process.env.ACH_ROUTING_NUMBER ?? ""}</p>
+      <p style="margin:0;font-size:13px;color:#555">Account #: ${process.env.ACH_ACCOUNT_NUMBER ?? ""}</p>
+      <p style="margin:0;font-size:13px;color:#555">Reference: Invoice #${p.invoiceNumber}</p>
+    </div>
+  ` : ""
+
   const html = emailShell(`
     <div class="body">
       <p>Hi ${p.contactName} — you have a new invoice from Studio Cinq.</p>
@@ -170,8 +187,9 @@ export async function sendInvoiceEmail(p: InvoiceSentPayload) {
         <p><strong>Description</strong> &nbsp;${p.description}</p>
         <p><strong>Amount</strong> &nbsp;${amount}</p>
         ${dueLine ? `<p><strong>Due</strong> &nbsp;${dueLine}</p>` : ""}
+        ${achBlock}
       </div>
-      <a class="cta" href="${p.invoiceUrl}" style="color:#FAF8F5;text-decoration:none;">View &amp; pay invoice →</a>
+      <a class="cta" href="${p.invoiceUrl}" style="color:#FAF8F5;text-decoration:none;">${ctaLabel}</a>
     </div>
   `)
 
