@@ -183,7 +183,7 @@ export default function NewProposalPage() {
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <span style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.4 }}>Item {i + 1}</span>
                     {item.is_optional && <span style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "#c95a3b", border: "0.5px solid rgba(201,90,59,0.3)", padding: "2px 7px" }}>Optional</span>}
-                    {item.is_recommended && <span style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8fa7b5", border: "0.5px solid rgba(143,167,181,0.3)", padding: "2px 7px" }}>Recommended</span>}
+                    {item.is_recommended && <span style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "#b5a042", border: "0.5px solid rgba(232,200,91,0.4)", padding: "2px 7px" }}>Recommended</span>}
                   </div>
                   {items.length > 1 && (
                     <button onClick={() => removeItem(i)} style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.3, background: "none", border: "none", cursor: "pointer", color: "#0F0F0E", fontFamily: "var(--font-sans)" }}>

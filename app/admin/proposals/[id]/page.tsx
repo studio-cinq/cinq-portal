@@ -249,7 +249,7 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
                     <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, opacity: 0.4, marginLeft: 6, letterSpacing: "0.08em" }}>optional</span>
                   )}
                   {item.is_recommended && (
-                    <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, color: "#8fa7b5", marginLeft: 6, letterSpacing: "0.08em" }}>rec.</span>
+                    <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, color: "#b5a042", marginLeft: 6, letterSpacing: "0.08em" }}>rec.</span>
                   )}
                 </div>
                 <span style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 12, opacity: item.is_optional ? 0.4 : 0.7 }}>
@@ -328,7 +328,7 @@ function LineItemRow({ item }: { item: any }) {
               {item.name}
             </span>
             {item.is_recommended && (
-              <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase", color: "#8fa7b5", border: "0.5px solid rgba(143,167,181,0.4)", padding: "2px 7px" }}>
+              <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase", color: "#b5a042", border: "0.5px solid rgba(232,200,91,0.4)", padding: "2px 7px" }}>
                 Recommended
               </span>
             )}
