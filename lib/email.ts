@@ -94,7 +94,6 @@ export async function sendProposalEmail(p: ProposalSentPayload) {
       ${p.subtitle ? `<p style="color:#6B6258;font-style:italic">${p.subtitle}</p>` : ""}
       <div class="meta">
         <p><strong>Proposal</strong> &nbsp;${p.proposalTitle}</p>
-        <p><strong>Estimate</strong> &nbsp;${estimate}</p>
         ${expiresLine ? `<p><strong>Expires</strong> &nbsp;${expiresLine}</p>` : ""}
       </div>
       <a class="cta" href="${proposalUrl}" style="color:#FAF8F5;text-decoration:none;">View proposal →</a>
