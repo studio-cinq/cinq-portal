@@ -40,7 +40,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     const optionalTotal = optionalItems.reduce((s: number, i: any) => s + (i.price ?? 0), 0)
     const schedule = Array.isArray(proposal.payment_schedule) ? proposal.payment_schedule as number[] : [50, 50]
     const depositPct = schedule[0] ?? 50
-    const deposit = Math.round(baseTotal * (depositPct / 100))
+    const depositCents = Math.round(baseTotal * (depositPct / 100))
 
     const doc = new jsPDF({ unit: "pt", format: "letter" })
     const W = doc.internal.pageSize.getWidth()
@@ -218,7 +218,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
     if (optionalItems.length > 0) {
       y += 10
-      renderItems("OPTIONAL ADD-ONS", optionalItems, optionalTotal)
+      renderItems("ADDITIONAL ADD-ONS", optionalItems, optionalTotal)
     }
 
     // ── Closing ──
@@ -269,7 +269,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     doc.setFontSize(9)
     setColor(doc, INK, 0.5)
     doc.text(`${depositPct}% deposit due now`, marginL, y)
-    doc.text(`$${(deposit / 100).toLocaleString()}`, W - marginR, y, { align: "right" })
+    doc.text(`$${Math.round(depositCents / 100).toLocaleString()}`, W - marginR, y, { align: "right" })
     y += 14
 
     if (schedule.length === 2) {
@@ -284,7 +284,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     if (optionalTotal > 0) {
       doc.setFontSize(9)
       setColor(doc, INK, 0.4)
-      doc.text("With optional add-ons", marginL, y)
+      doc.text("With additional add-ons", marginL, y)
       doc.text(`$${((baseTotal + optionalTotal) / 100).toLocaleString()}`, W - marginR, y, { align: "right" })
     }
 

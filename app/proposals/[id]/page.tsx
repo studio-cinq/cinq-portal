@@ -336,7 +336,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 28 }}>
         <span style={{ ...mono, fontSize: "var(--text-eyebrow)", opacity: 0.38 }}>{scheduleLabel[0]}</span>
-        <span style={{ ...mono, fontSize: "var(--text-body)", opacity: 0.6 }}>${(deposit / 100).toLocaleString()}</span>
+        <span style={{ ...mono, fontSize: "var(--text-body)", opacity: 0.6 }}>${Math.round(deposit / 100).toLocaleString()}</span>
       </div>
 
       {canInteract && (
