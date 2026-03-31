@@ -515,7 +515,7 @@ export default function AdminCalendarPage() {
                       const startOffset = mins - HOUR_START * 60
                       const top = Math.max(0, (startOffset / 60) * ROW_H)
                       const duration = evt.duration_minutes ?? 30
-                      const height = Math.max(24, (duration / 60) * ROW_H)
+                      const height = Math.max(40, (duration / 60) * ROW_H)
 
                       return (
                         <div
@@ -524,7 +524,8 @@ export default function AdminCalendarPage() {
                           style={{
                             position: "absolute",
                             top, left: 3, right: 3,
-                            height: Math.min(height, HOUR_COUNT * ROW_H - top),
+                            minHeight: 40,
+                            height,
                             zIndex: 2,
                           }}
                         >
@@ -623,9 +624,8 @@ function EventChip({ evt, compact, timed, onEdit, onDelete }: {
         padding: compact ? "2px 5px" : timed ? "4px 6px" : "5px 8px 4px",
         position: "relative",
         cursor: evt.is_auto ? "default" : "pointer",
-        height: timed ? "100%" : "auto",
+        minHeight: timed ? "100%" : "auto",
         boxSizing: "border-box",
-        overflow: "hidden",
       }}
     >
       {evt.event_time && !compact && (
