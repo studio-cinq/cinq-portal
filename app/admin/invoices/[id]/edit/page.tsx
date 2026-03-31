@@ -48,6 +48,7 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
     unlocks_files:  false,
     notes:          "",
     payment_methods: ["stripe"] as string[],
+    cc_emails: "",
   })
 
   const [lineItems, setLineItems] = useState<{ description: string; amount: string }[]>([
@@ -80,6 +81,7 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
           unlocks_files:  inv.unlocks_files ?? false,
           notes:          inv.notes ?? "",
           payment_methods: inv.payment_methods ?? ["stripe"],
+          cc_emails: Array.isArray(inv.cc_emails) ? inv.cc_emails.join(", ") : "",
         })
 
         // Load line items from DB
@@ -165,6 +167,9 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
       status:         form.status,
       unlocks_files:  form.unlocks_files,
       payment_methods: form.payment_methods,
+      cc_emails: form.cc_emails.trim()
+        ? form.cc_emails.split(",").map((e: string) => e.trim()).filter(Boolean)
+        : [],
     }
 
     // If marking as paid, set paid_at
@@ -370,6 +375,20 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
                   </span>
                 </label>
               ))}
+            </div>
+          </div>
+
+          {/* CC recipients */}
+          <div>
+            <label style={labelStyle}>CC recipients <span style={{ opacity: 0.5 }}>(optional)</span></label>
+            <input
+              style={inputStyle}
+              placeholder="accounting@client.com, partner@client.com"
+              value={form.cc_emails}
+              onChange={e => set("cc_emails", e.target.value)}
+            />
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.3, marginTop: 6, letterSpacing: "0.04em" }}>
+              Comma-separated. Invoice email will also be sent to these addresses.
             </div>
           </div>
 

@@ -154,6 +154,7 @@ interface InvoiceSentPayload {
   contactEmail: string
   invoiceUrl: string
   paymentMethods?: string[]
+  ccEmails?: string[]
 }
 
 export async function sendInvoiceEmail(p: InvoiceSentPayload) {
@@ -196,9 +197,12 @@ export async function sendInvoiceEmail(p: InvoiceSentPayload) {
     </div>
   `)
 
+  const cc = (p.ccEmails ?? []).filter(Boolean)
+
   return resend.emails.send({
     from: "Studio Cinq <portal@studiocinq.com>",
     to: p.contactEmail,
+    ...(cc.length > 0 ? { cc } : {}),
     subject: `Invoice #${p.invoiceNumber} — ${amount} due from Studio Cinq`,
     html,
   })
