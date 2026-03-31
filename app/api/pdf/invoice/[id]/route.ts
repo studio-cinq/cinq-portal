@@ -114,8 +114,8 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     const details = [
       { label: "INVOICE NUMBER", value: `#${invoice.invoice_number}` },
       { label: "PROJECT", value: project?.title ?? "—" },
-      { label: "DATE ISSUED", value: new Date(invoice.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) },
-      { label: "DUE DATE", value: invoice.due_date ? new Date(invoice.due_date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : "Upon receipt" },
+      { label: "DATE ISSUED", value: new Date(invoice.created_at).toLocaleDateString("en-US", { timeZone: "America/New_York", month: "long", day: "numeric", year: "numeric" }) },
+      { label: "DUE DATE", value: invoice.due_date ? new Date(invoice.due_date).toLocaleDateString("en-US", { timeZone: "America/New_York", month: "long", day: "numeric", year: "numeric" }) : "Upon receipt" },
     ]
 
     const detailColW = contentW / 2
@@ -239,7 +239,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       doc.setFontSize(8)
       setColor(doc, SAGE, 0.85)
       const paidDate = invoice.paid_at
-        ? new Date(invoice.paid_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+        ? new Date(invoice.paid_at).toLocaleDateString("en-US", { timeZone: "America/New_York", month: "long", day: "numeric", year: "numeric" })
         : ""
       doc.text(`PAID${paidDate ? ` — ${paidDate}` : ""}`, W - marginR, y, { align: "right" })
     }

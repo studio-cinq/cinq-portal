@@ -113,8 +113,8 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
     const metaCols = [
       { label: "CLIENT", value: client?.name ?? "—" },
-      { label: "SENT", value: new Date(proposal.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) },
-      { label: "EXPIRES", value: proposal.expires_at ? new Date(proposal.expires_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—" },
+      { label: "SENT", value: new Date(proposal.created_at).toLocaleDateString("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", year: "numeric" }) },
+      { label: "EXPIRES", value: proposal.expires_at ? new Date(proposal.expires_at).toLocaleDateString("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", year: "numeric" }) : "—" },
       { label: "ESTIMATE", value: `$${(baseTotal / 100).toLocaleString()}` },
     ]
 

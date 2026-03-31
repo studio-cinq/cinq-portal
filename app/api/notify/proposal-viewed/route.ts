@@ -28,6 +28,7 @@ export async function POST(req: Request) {
     const portalUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://portal.studiocinq.com"
     const proposalUrl = `${portalUrl}/admin/proposals/${proposal.id}`
     const viewedAt = new Date().toLocaleDateString("en-US", {
+      timeZone: "America/New_York",
       weekday: "long", month: "long", day: "numeric",
       year: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short",
     })

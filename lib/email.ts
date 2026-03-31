@@ -7,8 +7,11 @@ const PORTAL_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://portal.studiocinq
 
 // ─── Shared helpers ────────────────────────────────────────────────────────────
 
+const TZ = "America/New_York"
+
 function formatDate(iso: string | Date) {
   return new Date(iso).toLocaleDateString("en-US", {
+    timeZone: TZ,
     weekday: "long",
     month: "long",
     day: "numeric",
@@ -160,7 +163,7 @@ export async function sendInvoiceEmail(p: InvoiceSentPayload) {
   })
 
   const dueLine = p.dueDate
-    ? new Date(p.dueDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+    ? new Date(p.dueDate).toLocaleDateString("en-US", { timeZone: TZ, month: "long", day: "numeric", year: "numeric" })
     : null
 
   const methods = p.paymentMethods ?? ["stripe"]
@@ -217,7 +220,7 @@ export async function sendProposalReminderToClient(p: ProposalReminderPayload) {
   const proposalUrl = `${PORTAL_URL}/proposals/${p.proposalId}`;
 
   const expiresLine = p.expiresAt
-    ? new Date(p.expiresAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+    ? new Date(p.expiresAt).toLocaleDateString("en-US", { timeZone: TZ, month: "long", day: "numeric", year: "numeric" })
     : null;
 
   const bodyText = p.dayMark === 14
@@ -260,7 +263,7 @@ export async function sendProposalReminderToAdmin(p: ProposalReminderPayload) {
         <p><strong>Client</strong> &nbsp;${p.clientName} (${p.contactName})</p>
         <p><strong>Contact</strong> &nbsp;${p.contactEmail}</p>
         <p><strong>Days since sent</strong> &nbsp;${p.dayMark}</p>
-        ${p.expiresAt ? `<p><strong>Expires</strong> &nbsp;${new Date(p.expiresAt).toLocaleDateString("en-US", { month: "long", day: "numeric" })}</p>` : ""}
+        ${p.expiresAt ? `<p><strong>Expires</strong> &nbsp;${new Date(p.expiresAt).toLocaleDateString("en-US", { timeZone: TZ, month: "long", day: "numeric" })}</p>` : ""}
       </div>
       <p>A reminder was also sent to the client. You may want to follow up personally.</p>
       <a class="cta" href="${proposalUrl}" style="color:#FAF8F5;text-decoration:none;">View proposal →</a>
