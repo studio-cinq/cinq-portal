@@ -55,14 +55,16 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     setColor(doc, INK, 0.38)
     doc.text("INVOICE", marginL, y)
 
-    // Status badge (top right)
-    const statusColors: Record<string, readonly number[]> = {
-      paid: SAGE, sent: AMBER, overdue: [192, 57, 43], draft: INK,
+    // Status badge (top right) — skip if paid, stamp handles it
+    if (invoice.status !== "paid") {
+      const statusColors: Record<string, readonly number[]> = {
+        sent: AMBER, overdue: [192, 57, 43], draft: INK,
+      }
+      const statusColor = statusColors[invoice.status] ?? INK
+      doc.setFontSize(8)
+      setColor(doc, statusColor, 0.85)
+      doc.text(invoice.status.toUpperCase(), W - marginR, y, { align: "right" })
     }
-    const statusColor = statusColors[invoice.status] ?? INK
-    doc.setFontSize(8)
-    setColor(doc, statusColor, 0.85)
-    doc.text(invoice.status.toUpperCase(), W - marginR, y, { align: "right" })
 
     y += 28
 
