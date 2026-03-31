@@ -78,14 +78,17 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
 
       const its = propItems ?? []
       setItems(its)
-      setChecked(its.map((i: any) => !i.is_optional))
+      setChecked(its.map((i: any) => i.is_required || !i.is_optional))
       setPhases(its.map((i: any) => i.phase ?? "now"))
       setLoading(false)
     }
     load()
   }, [params.id])
 
-  function toggleItem(i: number) { setChecked(c => c.map((v, idx) => idx === i ? !v : v)) }
+  function toggleItem(i: number) {
+    if (items[i]?.is_required) return  // can't deselect required items
+    setChecked(c => c.map((v, idx) => idx === i ? !v : v))
+  }
   function setPhase(i: number, phase: "now" | "later") { setPhases(p => p.map((v, idx) => idx === i ? phase : v)) }
 
   const schedule = Array.isArray(proposal?.payment_schedule) ? proposal.payment_schedule as number[] : [50, 50]
@@ -150,11 +153,13 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
 
   function renderItem(item: any) {
     const globalIndex = items.indexOf(item)
+    const isRequired = item.is_required
+    const canToggle = canInteract && !isRequired
     return (
       <div
         key={item.id}
-        onClick={() => canInteract && toggleItem(globalIndex)}
-        style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)", padding: "22px 0", cursor: canInteract ? "pointer" : "default" }}
+        onClick={() => canToggle && toggleItem(globalIndex)}
+        style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)", padding: "22px 0", cursor: canToggle ? "pointer" : "default" }}
       >
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
           <div style={{ display: "flex", alignItems: "flex-start", gap: 14, flex: 1 }}>
@@ -383,6 +388,11 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
                 <div style={{ ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.38 }}>Scope</div>
                 <div style={{ ...mono, fontSize: "var(--text-eyebrow)", opacity: 0.38 }}>Est. ${(baseTotal / 100).toLocaleString()}</div>
               </div>
+              {canInteract && (
+                <div style={{ ...body, fontSize: "var(--text-sm)", opacity: 0.45, lineHeight: 1.6, marginBottom: 4, marginTop: 6 }}>
+                  Select the services you'd like to move forward with.
+                </div>
+              )}
               {baseItems.map(item => renderItem(item))}
               <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)" }} />
             </div>
@@ -433,6 +443,11 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
                 <div style={{ ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.38 }}>Scope</div>
                 <div style={{ ...mono, fontSize: "var(--text-eyebrow)", opacity: 0.38 }}>Base estimate: ${(baseTotal / 100).toLocaleString()}</div>
               </div>
+              {canInteract && (
+                <div style={{ ...body, fontSize: "var(--text-sm)", opacity: 0.45, lineHeight: 1.6, marginBottom: 4, marginTop: 6 }}>
+                  Select the services you'd like to move forward with. Choose "Start now" or "Later" to prioritize your phases.
+                </div>
+              )}
               {baseItems.map(item => renderItem(item))}
               <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)" }} />
             </div>

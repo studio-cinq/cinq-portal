@@ -15,12 +15,13 @@ interface LineItem {
   phase: "now" | "later"
   is_recommended: boolean
   is_optional: boolean
+  is_required: boolean
 }
 
 const emptyItem = (): LineItem => ({
   name: "", description: "", price: "",
   timeline_min: "2", timeline_max: "4",
-  phase: "now", is_recommended: false, is_optional: false,
+  phase: "now", is_recommended: false, is_optional: false, is_required: false,
 })
 
 export default function NewProposalPage() {
@@ -94,6 +95,7 @@ export default function NewProposalPage() {
         phase:              item.phase,
         is_recommended:     item.is_recommended,
         is_optional:        item.is_optional,
+        is_required:        item.is_required,
         sort_order:         idx,
         accepted:           false,
       }))
@@ -182,6 +184,7 @@ export default function NewProposalPage() {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <span style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.4 }}>Item {i + 1}</span>
+                    {item.is_required && <span style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink)", border: "0.5px solid rgba(15,15,14,0.2)", padding: "2px 7px" }}>Required</span>}
                     {item.is_optional && <span style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "#c95a3b", border: "0.5px solid rgba(201,90,59,0.3)", padding: "2px 7px" }}>Optional</span>}
                     {item.is_recommended && <span style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "#b5a042", border: "0.5px solid rgba(232,200,91,0.4)", padding: "2px 7px" }}>Recommended</span>}
                   </div>
@@ -228,6 +231,10 @@ export default function NewProposalPage() {
                   </div>
 
                   <div style={{ display: "flex", gap: 24 }}>
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, opacity: 0.65, cursor: "pointer" }}>
+                      <input type="checkbox" checked={item.is_required} onChange={e => setItem(i, "is_required", e.target.checked)} />
+                      Required (client can't deselect)
+                    </label>
                     <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, opacity: 0.65, cursor: "pointer" }}>
                       <input type="checkbox" checked={item.is_recommended} onChange={e => setItem(i, "is_recommended", e.target.checked)} />
                       Recommended
