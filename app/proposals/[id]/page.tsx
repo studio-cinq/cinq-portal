@@ -45,7 +45,6 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
       setProposal(prop)
 
       if (!prop.viewed_at) {
-        // First view — record both timestamps, notify admin
         await supabase.from("proposals").update({
           viewed_at: new Date().toISOString(),
           last_viewed_at: new Date().toISOString(),
@@ -55,13 +54,11 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
           body: JSON.stringify({ proposalId: params.id }),
         }).catch((err) => console.error("[notify] proposal-viewed:", err))
       } else {
-        // Return visit — always update last_viewed_at
         const now = new Date()
         await supabase.from("proposals").update({
           last_viewed_at: now.toISOString(),
         } as any).eq("id", params.id)
 
-        // Re-notify if 24+ hours since last view
         const lastView = prop.last_viewed_at ? new Date(prop.last_viewed_at) : new Date(prop.viewed_at)
         const hoursSince = (now.getTime() - lastView.getTime()) / (1000 * 60 * 60)
         if (hoursSince >= 24) {
@@ -86,7 +83,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
   }, [params.id])
 
   function toggleItem(i: number) {
-    if (items[i]?.is_required) return  // can't deselect required items
+    if (items[i]?.is_required) return
     setChecked(c => c.map((v, idx) => idx === i ? !v : v))
   }
   function setPhase(i: number, phase: "now" | "later") { setPhases(p => p.map((v, idx) => idx === i ? phase : v)) }
@@ -94,16 +91,24 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
   const schedule = Array.isArray(proposal?.payment_schedule) ? proposal.payment_schedule as number[] : [50, 50]
   const depositPct = schedule[0] ?? 50
 
+  // Split items into categories
+  const requiredItems   = items.filter(i => i.is_required)
+  const selectableItems = items.filter(i => !i.is_required && !i.is_optional)
+  const optionalItems   = items.filter(i => i.is_optional)
+
+  const requiredTotal   = requiredItems.reduce((s, i) => s + (i.price ?? 0), 0)
+  const selectableTotal = selectableItems.reduce((s, i) => s + (i.price ?? 0), 0)
+  const optionalTotal   = optionalItems.reduce((s, i) => s + (i.price ?? 0), 0)
+  const baseTotal       = requiredTotal + selectableTotal
+
+  // Phase 1 = all required items + checked selectable/optional items set to "now"
   const phase1Total = items.reduce((sum, item, i) => {
+    if (item.is_required) return sum + (item.price ?? 0)  // required always included as "now"
     if (!checked[i] || phases[i] !== "now") return sum
     return sum + (item.price ?? 0)
   }, 0)
 
-  const deposit       = Math.round(phase1Total * (depositPct / 100))
-  const baseItems     = items.filter(i => !i.is_optional)
-  const optionalItems = items.filter(i => i.is_optional)
-  const baseTotal     = baseItems.reduce((s, i) => s + (i.price ?? 0), 0)
-  const optionalTotal = optionalItems.reduce((s, i) => s + (i.price ?? 0), 0)
+  const deposit = Math.round(phase1Total * (depositPct / 100))
 
   const scheduleLabel = schedule.map((p, i) => {
     if (i === 0) return `${p}% deposit due now`
@@ -151,15 +156,52 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
   const isAccepted  = proposal.status === "accepted"
   const canInteract = !isAccepted && !isExpired
 
-  function renderItem(item: any) {
+  // ── Render a required item (no checkbox, no phasing) ──
+  function renderRequiredItem(item: any) {
+    return (
+      <div key={item.id} style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)", padding: "22px 0" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap", marginBottom: 6 }}>
+              <span style={{ ...serif, fontSize: isMobile ? 15 : 16, fontWeight: 400, opacity: 0.88, letterSpacing: "-0.01em" }}>
+                {item.name}
+              </span>
+            </div>
+            {item.description && (
+              <div style={{ fontSize: "var(--text-body)", opacity: 0.55, lineHeight: 1.75, letterSpacing: "0.01em" }}>
+                {item.description.split(/\r?\n/).map((line: string, i: number) => (
+                  <div key={i} style={{ ...body, display: "flex", gap: 8, marginBottom: line.trim() ? 4 : 0 }}>
+                    {line.trim().startsWith('—') || line.trim().startsWith('-') || line.trim().startsWith('•')
+                      ? <><span style={{ opacity: 0.4, flexShrink: 0 }}>—</span><span>{line.replace(/^[\-—•]\s*/, '')}</span></>
+                      : <span>{line}</span>
+                    }
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div style={{ textAlign: "right", flexShrink: 0 }}>
+            <div style={{ ...mono, fontSize: isMobile ? 13 : 14, opacity: 0.82 }}>
+              ${(item.price / 100).toLocaleString()}
+            </div>
+            <div style={{ ...mono, fontSize: "var(--text-eyebrow)", opacity: 0.35, marginTop: 4, letterSpacing: "0.06em" }}>
+              {item.timeline_weeks_min}–{item.timeline_weeks_max} wks
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Render a selectable item (with checkbox + phasing) ──
+  function renderSelectableItem(item: any) {
     const globalIndex = items.indexOf(item)
-    const isRequired = item.is_required
-    const canToggle = canInteract && !isRequired
     return (
       <div
         key={item.id}
-        onClick={() => canToggle && toggleItem(globalIndex)}
-        style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)", padding: "22px 0", cursor: canToggle ? "pointer" : "default" }}
+        onClick={() => canInteract && toggleItem(globalIndex)}
+        style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)", padding: "22px 0", cursor: canInteract ? "pointer" : "default" }}
       >
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
           <div style={{ display: "flex", alignItems: "flex-start", gap: 14, flex: 1 }}>
@@ -237,6 +279,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
     )
   }
 
+  // ── Pricing panel ──
   const pricingPanel = (
     <div style={{
       padding: isMobile ? "32px 24px" : "48px 32px",
@@ -251,18 +294,34 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
       </div>
 
       <div style={{ marginBottom: 24, minHeight: 60 }}>
-        {items.map((item, i) => checked[i] && (
+        {/* Required items — always shown */}
+        {requiredItems.map(item => (
           <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "9px 0", borderBottom: "0.5px solid rgba(15,15,14,0.07)" }}>
-            <span style={{ ...serif, fontSize: "var(--text-body)", opacity: phases[i] === "later" ? 0.35 : 0.7 }}>
+            <span style={{ ...serif, fontSize: "var(--text-body)", opacity: 0.7 }}>
               {item.name}
-              {phases[i] === "later" && <span style={{ ...mono, fontSize: "var(--text-eyebrow)", marginLeft: 6, opacity: 0.5 }}>later</span>}
             </span>
-            <span style={{ ...mono, fontSize: "var(--text-sm)", opacity: phases[i] === "later" ? 0.4 : 0.65 }}>
+            <span style={{ ...mono, fontSize: "var(--text-sm)", opacity: 0.65 }}>
               ${(item.price / 100).toLocaleString()}
             </span>
           </div>
         ))}
-        {items.every((_, i) => !checked[i]) && (
+        {/* Selectable + optional items — only shown when checked */}
+        {items.filter(i => !i.is_required).map((item, _) => {
+          const globalIndex = items.indexOf(item)
+          if (!checked[globalIndex]) return null
+          return (
+            <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "9px 0", borderBottom: "0.5px solid rgba(15,15,14,0.07)" }}>
+              <span style={{ ...serif, fontSize: "var(--text-body)", opacity: phases[globalIndex] === "later" ? 0.35 : 0.7 }}>
+                {item.name}
+                {phases[globalIndex] === "later" && <span style={{ ...mono, fontSize: "var(--text-eyebrow)", marginLeft: 6, opacity: 0.5 }}>later</span>}
+              </span>
+              <span style={{ ...mono, fontSize: "var(--text-sm)", opacity: phases[globalIndex] === "later" ? 0.4 : 0.65 }}>
+                ${(item.price / 100).toLocaleString()}
+              </span>
+            </div>
+          )
+        })}
+        {requiredItems.length === 0 && items.every((_, i) => !checked[i]) && (
           <div style={{ ...body, fontSize: "var(--text-body)", opacity: 0.4, paddingTop: 8 }}>No items selected.</div>
         )}
       </div>
@@ -333,6 +392,62 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
     </div>
   )
 
+  // ── Scope sections (shared between mobile and desktop) ──
+  function renderScopeSections() {
+    return (
+      <>
+        {/* Required items — "Included in your project" */}
+        {requiredItems.length > 0 && (
+          <div style={{ marginBottom: isMobile ? 36 : 40 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
+              <div style={{ ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.38 }}>
+                Included in your project
+              </div>
+              <div style={{ ...mono, fontSize: "var(--text-eyebrow)", opacity: 0.38 }}>
+                ${(requiredTotal / 100).toLocaleString()}
+              </div>
+            </div>
+            {requiredItems.map(item => renderRequiredItem(item))}
+            <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)" }} />
+          </div>
+        )}
+
+        {/* Selectable items — "Customize your scope" */}
+        {selectableItems.length > 0 && (
+          <div style={{ marginBottom: isMobile ? 36 : 40 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
+              <div style={{ ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.38 }}>
+                {requiredItems.length > 0 ? "Customize your scope" : "Scope"}
+              </div>
+              <div style={{ ...mono, fontSize: "var(--text-eyebrow)", opacity: 0.38 }}>
+                {requiredItems.length > 0 ? `+${(selectableTotal / 100).toLocaleString()}` : `Base estimate: $${(selectableTotal / 100).toLocaleString()}`}
+              </div>
+            </div>
+            {canInteract && (
+              <div style={{ ...body, fontSize: "var(--text-sm)", opacity: 0.45, lineHeight: 1.6, marginBottom: 4, marginTop: 6 }}>
+                Select the services you'd like to add{isMobile ? "." : ". Choose \"Start now\" or \"Later\" to prioritize your phases."}
+              </div>
+            )}
+            {selectableItems.map(item => renderSelectableItem(item))}
+            <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)" }} />
+          </div>
+        )}
+
+        {/* Optional add-ons */}
+        {optionalItems.length > 0 && (
+          <div style={{ marginBottom: isMobile ? 44 : 52 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
+              <div style={{ ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.38 }}>Optional add-ons</div>
+              <div style={{ ...mono, fontSize: "var(--text-eyebrow)", opacity: 0.38 }}>+${(optionalTotal / 100).toLocaleString()}{isMobile ? "" : " if added"}</div>
+            </div>
+            {optionalItems.map(item => renderSelectableItem(item))}
+            <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)" }} />
+          </div>
+        )}
+      </>
+    )
+  }
+
   return (
     <div style={{ background: "var(--bg-grad)", minHeight: "100vh", ...serif }}>
 
@@ -383,30 +498,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
               </div>
             )}
 
-            <div style={{ marginBottom: 36 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
-                <div style={{ ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.38 }}>Scope</div>
-                <div style={{ ...mono, fontSize: "var(--text-eyebrow)", opacity: 0.38 }}>Est. ${(baseTotal / 100).toLocaleString()}</div>
-              </div>
-              {canInteract && (
-                <div style={{ ...body, fontSize: "var(--text-sm)", opacity: 0.45, lineHeight: 1.6, marginBottom: 4, marginTop: 6 }}>
-                  Select the services you'd like to move forward with.
-                </div>
-              )}
-              {baseItems.map(item => renderItem(item))}
-              <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)" }} />
-            </div>
-
-            {optionalItems.length > 0 && (
-              <div style={{ marginBottom: 44 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
-                  <div style={{ ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.38 }}>Optional add-ons</div>
-                  <div style={{ ...mono, fontSize: "var(--text-eyebrow)", opacity: 0.38 }}>+${(optionalTotal / 100).toLocaleString()}</div>
-                </div>
-                {optionalItems.map(item => renderItem(item))}
-                <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)" }} />
-              </div>
-            )}
+            {renderScopeSections()}
 
             {proposal.closing && (
               <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)", paddingTop: 36 }}>
@@ -438,30 +530,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
               </div>
             )}
 
-            <div style={{ marginBottom: 40 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
-                <div style={{ ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.38 }}>Scope</div>
-                <div style={{ ...mono, fontSize: "var(--text-eyebrow)", opacity: 0.38 }}>Base estimate: ${(baseTotal / 100).toLocaleString()}</div>
-              </div>
-              {canInteract && (
-                <div style={{ ...body, fontSize: "var(--text-sm)", opacity: 0.45, lineHeight: 1.6, marginBottom: 4, marginTop: 6 }}>
-                  Select the services you'd like to move forward with. Choose "Start now" or "Later" to prioritize your phases.
-                </div>
-              )}
-              {baseItems.map(item => renderItem(item))}
-              <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)" }} />
-            </div>
-
-            {optionalItems.length > 0 && (
-              <div style={{ marginBottom: 52 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
-                  <div style={{ ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.38 }}>Optional add-ons</div>
-                  <div style={{ ...mono, fontSize: "var(--text-eyebrow)", opacity: 0.38 }}>+${(optionalTotal / 100).toLocaleString()} if added</div>
-                </div>
-                {optionalItems.map(item => renderItem(item))}
-                <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)" }} />
-              </div>
-            )}
+            {renderScopeSections()}
 
             {proposal.closing && (
               <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)", paddingTop: 40 }}>
