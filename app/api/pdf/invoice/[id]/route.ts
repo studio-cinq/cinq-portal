@@ -4,8 +4,8 @@ import { jsPDF } from "jspdf"
 
 const INK = [15, 15, 14] as const
 const CREAM = [244, 241, 236] as const
-const SAGE = [107, 143, 113] as const
-const AMBER = [176, 125, 58] as const
+const SAGE = [143, 167, 181] as const
+const AMBER = [201, 90, 59] as const
 
 function setColor(doc: jsPDF, rgb: readonly number[], opacity: number = 1) {
   if (opacity < 1) {

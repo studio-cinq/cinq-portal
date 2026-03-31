@@ -56,7 +56,7 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
   }, [])
 
   const colors = {
-    success: { bg: "rgba(107,143,113,0.12)", border: "rgba(107,143,113,0.25)", text: "var(--sage)" },
+    success: { bg: "rgba(143,167,181,0.12)", border: "rgba(143,167,181,0.25)", text: "var(--sage)" },
     info:    { bg: "rgba(15,15,14,0.06)", border: "rgba(15,15,14,0.12)", text: "var(--ink)" },
     error:   { bg: "rgba(192,57,43,0.08)", border: "rgba(192,57,43,0.2)", text: "var(--danger)" },
   }

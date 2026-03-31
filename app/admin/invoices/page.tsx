@@ -106,7 +106,7 @@ export default async function AdminInvoicesPage() {
 function SummaryCard({ label, value, green, highlight }: { label: string; value: string; green?: boolean; highlight?: boolean }) {
   return (
     <div style={{
-      background: highlight ? "rgba(176,125,58,0.06)" : "rgba(255,255,255,0.35)",
+      background: highlight ? "rgba(201,90,59,0.06)" : "rgba(255,255,255,0.35)",
       border: `0.5px solid rgba(15,15,14,${highlight ? 0.15 : 0.1})`,
       padding: "16px 20px",
     }}>

@@ -295,8 +295,8 @@ export default function EditProposalPage({ params }: { params: { id: string } })
                       <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.4 }}>
                         {item.id ? "Existing item" : "New item"}
                       </span>
-                      {item.is_optional && <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--amber)", border: "0.5px solid rgba(176,125,58,0.3)", padding: "2px 7px" }}>Optional</span>}
-                      {item.is_recommended && <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--sage)", border: "0.5px solid rgba(107,143,113,0.3)", padding: "2px 7px" }}>Recommended</span>}
+                      {item.is_optional && <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--amber)", border: "0.5px solid rgba(201,90,59,0.3)", padding: "2px 7px" }}>Optional</span>}
+                      {item.is_recommended && <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--sage)", border: "0.5px solid rgba(143,167,181,0.3)", padding: "2px 7px" }}>Recommended</span>}
                     </div>
                     {visibleItems.length > 1 && (
                       <button onClick={() => removeItem(i)} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.3, background: "none", border: "none", cursor: "pointer", color: "var(--ink)" }}>

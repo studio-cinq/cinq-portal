@@ -33,8 +33,8 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
 
   const statusColors: Record<string, string> = {
     draft:    "rgba(15,15,14,0.35)",
-    sent:     "#B07D3A",
-    accepted: "#6B8F71",
+    sent:     "#c95a3b",
+    accepted: "#8fa7b5",
     declined: "#c0392b",
   }
 
@@ -119,14 +119,14 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
               value: proposal.viewed_at
                 ? new Date(proposal.viewed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
                 : "Not yet",
-              color: proposal.viewed_at ? "#6B8F71" : undefined,
+              color: proposal.viewed_at ? "#8fa7b5" : undefined,
             },
             {
               label: "Last viewed",
               value: proposal.last_viewed_at
                 ? new Date(proposal.last_viewed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })
                 : proposal.viewed_at ? "Same as first" : "—",
-              color: proposal.last_viewed_at ? "#6B8F71" : undefined,
+              color: proposal.last_viewed_at ? "#8fa7b5" : undefined,
             },
             {
               label: "Sent",
@@ -249,7 +249,7 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
                     <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, opacity: 0.4, marginLeft: 6, letterSpacing: "0.08em" }}>optional</span>
                   )}
                   {item.is_recommended && (
-                    <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, color: "#6B8F71", marginLeft: 6, letterSpacing: "0.08em" }}>rec.</span>
+                    <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, color: "#8fa7b5", marginLeft: 6, letterSpacing: "0.08em" }}>rec.</span>
                   )}
                 </div>
                 <span style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 12, opacity: item.is_optional ? 0.4 : 0.7 }}>
@@ -328,12 +328,12 @@ function LineItemRow({ item }: { item: any }) {
               {item.name}
             </span>
             {item.is_recommended && (
-              <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6B8F71", border: "0.5px solid rgba(107,143,113,0.4)", padding: "2px 7px" }}>
+              <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase", color: "#8fa7b5", border: "0.5px solid rgba(143,167,181,0.4)", padding: "2px 7px" }}>
                 Recommended
               </span>
             )}
             {item.is_optional && (
-              <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase", color: "#B07D3A", border: "0.5px solid rgba(176,125,58,0.35)", padding: "2px 7px" }}>
+              <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase", color: "#c95a3b", border: "0.5px solid rgba(201,90,59,0.35)", padding: "2px 7px" }}>
                 Optional
               </span>
             )}

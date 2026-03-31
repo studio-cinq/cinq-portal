@@ -175,7 +175,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
                   {item.name}
                 </span>
                 {item.is_recommended && (
-                  <span style={{ ...mono, fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", padding: "3px 8px", border: "0.5px solid rgba(107,143,113,0.5)", color: "var(--sage)" }}>
+                  <span style={{ ...mono, fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", padding: "3px 8px", border: "0.5px solid rgba(143,167,181,0.5)", color: "var(--sage)" }}>
                     Recommended
                   </span>
                 )}

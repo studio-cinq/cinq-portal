@@ -423,8 +423,8 @@ export default function AdminCalendarPage() {
 function EventChip({ evt, compact, onDelete }: { evt: any; compact?: boolean; onDelete?: () => void }) {
   const [hovered, setHovered] = useState(false)
   const bgColors: Record<string, string> = {
-    meeting: "rgba(176,125,58,0.12)", presentation: "rgba(176,125,58,0.10)",
-    milestone: "rgba(107,143,113,0.12)", work: "rgba(15,15,14,0.08)", invoice_due: "rgba(15,15,14,0.06)",
+    meeting: "rgba(201,90,59,0.12)", presentation: "rgba(201,90,59,0.10)",
+    milestone: "rgba(143,167,181,0.12)", work: "rgba(15,15,14,0.08)", invoice_due: "rgba(15,15,14,0.06)",
   }
 
   return (

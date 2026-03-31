@@ -402,8 +402,8 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
               ...mono,
               fontSize: 10, letterSpacing: "0.08em",
               color: "var(--sage)", opacity: 0.8,
-              background: "rgba(107,143,113,0.08)",
-              border: "0.5px solid rgba(107,143,113,0.2)",
+              background: "rgba(143,167,181,0.08)",
+              border: "0.5px solid rgba(143,167,181,0.2)",
               padding: "10px 14px",
             }}>
               Invoice email will be re-sent to the client when you save.

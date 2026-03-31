@@ -528,7 +528,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                       <SectionHeader label="Time tracking" />
                       {totalMinutes > 0 && <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: "var(--op-muted)" as any }}>Total: {formatMinutes(totalMinutes)}</div>}
                     </div>
-                    <div style={{ border: "0.5px solid rgba(15,15,14,0.12)", padding: "16px 20px", background: timerRunning ? "rgba(107,143,113,0.06)" : "rgba(255,255,255,0.35)", marginBottom: 16, transition: "background 0.3s" }}>
+                    <div style={{ border: "0.5px solid rgba(15,15,14,0.12)", padding: "16px 20px", background: timerRunning ? "rgba(143,167,181,0.06)" : "rgba(255,255,255,0.35)", marginBottom: 16, transition: "background 0.3s" }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: timerRunning ? 12 : 0 }}>
                         <div style={{ fontFamily: "var(--font-mono)", fontSize: timerRunning ? 22 : "var(--text-body)", opacity: timerRunning ? 0.9 : 0.45 }}>
                           {timerRunning ? formatDuration(timerSeconds) : "Ready to track"}
@@ -796,7 +796,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                                 <span style={{
                                   fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase",
                                   padding: "2px 7px",
-                                  border: `0.5px solid ${evt.type === "milestone" ? "rgba(107,143,113,0.3)" : evt.type === "invoice_due" || evt.type === "work" ? "rgba(15,15,14,0.15)" : "rgba(176,125,58,0.3)"}`,
+                                  border: `0.5px solid ${evt.type === "milestone" ? "rgba(143,167,181,0.3)" : evt.type === "invoice_due" || evt.type === "work" ? "rgba(15,15,14,0.15)" : "rgba(201,90,59,0.3)"}`,
                                   color: evt.type === "milestone" ? "var(--sage)" : evt.type === "invoice_due" || evt.type === "work" ? "var(--ink)" : "var(--amber)",
                                   opacity: evt.type === "invoice_due" ? 0.5 : evt.type === "work" ? 0.55 : 1,
                                 }}>
@@ -976,7 +976,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                   </div>
                   <div style={{ width: 110 }}>
                     <div style={formLabel}>Hex</div>
-                    <input value={colorForm.hex} onChange={e => setColorForm(f => ({ ...f, hex: e.target.value }))} placeholder="#7A7F6A" style={{ ...formInput, fontFamily: "var(--font-mono)", fontSize: "var(--text-sm)" }} />
+                    <input value={colorForm.hex} onChange={e => setColorForm(f => ({ ...f, hex: e.target.value }))} placeholder="#8fa7b5" style={{ ...formInput, fontFamily: "var(--font-mono)", fontSize: "var(--text-sm)" }} />
                   </div>
                   <button onClick={addColorSwatch} disabled={!colorForm.name.trim() || !colorForm.hex.trim()} style={{
                     fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",

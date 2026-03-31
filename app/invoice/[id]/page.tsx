@@ -192,7 +192,7 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
               fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
               letterSpacing: "0.14em", textTransform: "uppercase",
               color: "var(--sage)", opacity: 0.85,
-              border: "0.5px solid rgba(107,143,113,0.3)", padding: "14px 28px",
+              border: "0.5px solid rgba(143,167,181,0.3)", padding: "14px 28px",
             }}>
               {justPaid ? "Payment received — thank you!" : `Paid${invoice.paid_at ? ` · ${new Date(invoice.paid_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : ""}`}
             </div>

@@ -16,7 +16,7 @@ export default function CopyLinkButton({ id }: { id: string }) {
       onClick={handleCopy}
       style={{
         fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase",
-        color: copied ? "#6B8F71" : "#0F0F0E",
+        color: copied ? "#8fa7b5" : "#0F0F0E",
         opacity: copied ? 0.8 : 0.4,
         background: "none", border: "0.5px solid rgba(15,15,14,0.15)",
         padding: "5px 10px", cursor: "pointer",

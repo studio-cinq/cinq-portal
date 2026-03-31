@@ -70,7 +70,7 @@ export default async function ReviewPage({
             {project.title}
           </div>
         </div>
-        <div style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "#B07D3A", opacity: 0.85 }}>
+        <div style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "#c95a3b", opacity: 0.85 }}>
           Round {deliverable.revision_used + 1} of {deliverable.revision_max}
         </div>
       </div>

@@ -107,7 +107,7 @@ export default function MarkPaidButton({ invoiceId, invoiceNumber, onMarked }: M
         textTransform: "uppercase",
         background: "none",
         color: "var(--sage)",
-        border: "0.5px solid rgba(107,143,113,0.3)",
+        border: "0.5px solid rgba(143,167,181,0.3)",
         padding: "4px 10px",
         cursor: "pointer",
         opacity: 0.7,

@@ -228,8 +228,8 @@ function InvoiceCard({ inv, variant }: { inv: any; variant: "paid" | "due" | "lo
 
 function StatusBadge({ variant, dueDate }: { variant: string; dueDate?: string }) {
   const configs: Record<string, { color: string; label: string; border: string }> = {
-    paid:   { color: "var(--sage)",  label: "Paid",  border: "rgba(107,143,113,0.4)" },
-    due:    { color: "var(--amber)", label: dueDate ? `Due ${new Date(dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : "Due", border: "rgba(176,125,58,0.4)" },
+    paid:   { color: "var(--sage)",  label: "Paid",  border: "rgba(143,167,181,0.4)" },
+    due:    { color: "var(--amber)", label: dueDate ? `Due ${new Date(dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : "Due", border: "rgba(201,90,59,0.4)" },
     locked: { color: "rgba(15,15,14,0.4)", label: "Not yet due", border: "rgba(15,15,14,0.15)" },
   }
   const c = configs[variant]
