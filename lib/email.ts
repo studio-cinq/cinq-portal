@@ -64,6 +64,51 @@ function emailShell(body: string) {
 </html>`
 }
 
+// ─── Proposal sent — to client ────────────────────────────────────────────────
+
+interface ProposalSentPayload {
+  proposalId: string;
+  proposalTitle: string;
+  subtitle?: string | null;
+  clientName: string;
+  contactName: string;
+  contactEmail: string;
+  estimateCents: number;
+  expiresAt?: string | null;
+}
+
+export async function sendProposalEmail(p: ProposalSentPayload) {
+  const proposalUrl = `${PORTAL_URL}/proposals/${p.proposalId}`;
+  const estimate = (p.estimateCents / 100).toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+  });
+
+  const expiresLine = p.expiresAt
+    ? new Date(p.expiresAt).toLocaleDateString("en-US", { timeZone: TZ, month: "long", day: "numeric", year: "numeric" })
+    : null;
+
+  const html = emailShell(`
+    <div class="body">
+      <p>Hi ${p.contactName} — a new proposal from Studio Cinq is ready for your review.</p>
+      ${p.subtitle ? `<p style="color:#6B6258;font-style:italic">${p.subtitle}</p>` : ""}
+      <div class="meta">
+        <p><strong>Proposal</strong> &nbsp;${p.proposalTitle}</p>
+        <p><strong>Estimate</strong> &nbsp;${estimate}</p>
+        ${expiresLine ? `<p><strong>Expires</strong> &nbsp;${expiresLine}</p>` : ""}
+      </div>
+      <a class="cta" href="${proposalUrl}" style="color:#FAF8F5;text-decoration:none;">View proposal →</a>
+    </div>
+  `);
+
+  return resend.emails.send({
+    from: "Studio Cinq <portal@studiocinq.com>",
+    to: p.contactEmail,
+    subject: `New proposal — ${p.proposalTitle}`,
+    html,
+  });
+}
+
 // ─── Proposal viewed ──────────────────────────────────────────────────────────
 
 interface ProposalViewedPayload {

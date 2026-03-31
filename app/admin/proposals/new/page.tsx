@@ -105,6 +105,15 @@ export default function NewProposalPage() {
       await supabase.from("proposal_items").insert(proposalItems)
     }
 
+    // Send email to client if status is "sent"
+    if (status === "sent") {
+      await fetch("/api/admin/send-proposal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ proposalId: proposal.id }),
+      }).catch(err => console.error("[send-proposal]", err))
+    }
+
     setLoading(false)
     router.push("/admin/proposals")
   }
