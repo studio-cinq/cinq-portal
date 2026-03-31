@@ -11,6 +11,7 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
   const [invoice, setInvoice] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [achDetails, setAchDetails] = useState<{ bankName: string; routingNumber: string; accountNumber: string; accountName: string } | null>(null)
   const searchParams = useSearchParams()
   const justPaid = searchParams.get("paid") === "true"
 
@@ -34,6 +35,15 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
         }
       })
   }, [params.id])
+
+  useEffect(() => {
+    if (!invoice) return
+    const methods: string[] = invoice.payment_methods ?? ["stripe"]
+    const isPaidCheck = invoice.status === "paid" || justPaid
+    if (methods.includes("ach") && !isPaidCheck) {
+      fetch("/api/ach-details").then(r => r.json()).then(setAchDetails).catch(() => {})
+    }
+  }, [invoice, justPaid])
 
   async function handlePay() {
     setSubmitting(true)
@@ -67,14 +77,6 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
   const paymentMethods: string[] = invoice.payment_methods ?? ["stripe"]
   const hasStripe = paymentMethods.includes("stripe")
   const hasACH = paymentMethods.includes("ach")
-
-  const [achDetails, setAchDetails] = useState<{ bankName: string; routingNumber: string; accountNumber: string; accountName: string } | null>(null)
-
-  useEffect(() => {
-    if (hasACH && !isPaid) {
-      fetch("/api/ach-details").then(r => r.json()).then(setAchDetails).catch(() => {})
-    }
-  }, [hasACH, isPaid])
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-grad)" }}>
