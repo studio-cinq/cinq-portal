@@ -28,7 +28,7 @@ const inputStyle: React.CSSProperties = {
 
 const labelStyle: React.CSSProperties = {
   ...mono,
-  fontSize: 8,
+  fontSize: 9,
   letterSpacing: "0.16em",
   textTransform: "uppercase",
   opacity: 0.45,
@@ -92,7 +92,7 @@ export default function NewClientPage() {
 
         {/* Header */}
         <div style={{ marginBottom: 48 }}>
-          <div style={{ ...mono, fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.38, marginBottom: 14 }}>
+          <div style={{ ...mono, fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.38, marginBottom: 14 }}>
             Clients / New
           </div>
           <h1 style={{ ...serif, fontWeight: 400, fontSize: 26, opacity: 0.88, letterSpacing: "-0.015em", margin: 0 }}>

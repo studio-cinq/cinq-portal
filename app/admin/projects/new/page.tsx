@@ -22,7 +22,7 @@ const inputStyle: React.CSSProperties = {
 
 const labelStyle: React.CSSProperties = {
   ...mono,
-  fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase",
+  fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase",
   opacity: 0.45, display: "block", marginBottom: 6,
 }
 
@@ -92,12 +92,12 @@ function NewProjectPageInner() {
       <PortalNav isAdmin />
       <main className="form-page-pad" style={{ maxWidth: 640, margin: "0 auto", padding: "48px 48px 80px" }}>
 
-        <Link href="/admin/studio" style={{ ...mono, fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.4, textDecoration: "none", display: "inline-block", marginBottom: 28 }}>
+        <Link href="/admin/studio" style={{ ...mono, fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.4, textDecoration: "none", display: "inline-block", marginBottom: 28 }}>
           ← Studio
         </Link>
 
         <div style={{ marginBottom: 48 }}>
-          <div style={{ ...mono, fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.38, marginBottom: 14 }}>
+          <div style={{ ...mono, fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.38, marginBottom: 14 }}>
             Projects / New
           </div>
           <h1 style={{ ...serif, fontWeight: 400, fontSize: 26, opacity: 0.88, letterSpacing: "-0.015em", margin: 0 }}>

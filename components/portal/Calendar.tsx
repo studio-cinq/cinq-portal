@@ -97,7 +97,7 @@ export default function Calendar({ events, onDateClick, compact }: CalendarProps
         {DAY_LABELS.map(d => (
           <div key={d} style={{
             fontFamily: "var(--font-mono)",
-            fontSize: 8,
+            fontSize: 9,
             letterSpacing: "0.1em",
             textTransform: "uppercase",
             textAlign: "center",

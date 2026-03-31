@@ -45,7 +45,7 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
 
         {/* Back */}
         <Link href="/admin/proposals" style={{
-          fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase",
+          fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase",
           opacity: 0.4, textDecoration: "none", display: "inline-block", marginBottom: 32,
           fontFamily: "'Matter SemiMono', monospace",
         }}>
@@ -55,7 +55,7 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
         {/* Header row */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 40 }}>
           <div>
-            <div style={{ fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.38, marginBottom: 10, fontFamily: "'Matter SemiMono', monospace" }}>
+            <div style={{ fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.38, marginBottom: 10, fontFamily: "'Matter SemiMono', monospace" }}>
               Proposal
             </div>
             <h1 style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontWeight: 400, fontSize: 26, opacity: 0.9, letterSpacing: "-0.015em", margin: "0 0 6px" }}>
@@ -74,7 +74,7 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
               href={`/admin/proposals/${proposal.id}/edit`}
               style={{
                 fontFamily: "'Matter SemiMono', monospace",
-                fontSize: 8, letterSpacing: "0.14em", textTransform: "uppercase",
+                fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase",
                 color: "#0F0F0E", textDecoration: "none",
                 border: "0.5px solid rgba(15,15,14,0.2)", padding: "8px 14px",
                 opacity: 0.6,
@@ -89,7 +89,7 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
               target="_blank"
               style={{
                 fontFamily: "'Matter SemiMono', monospace",
-                fontSize: 8, letterSpacing: "0.14em", textTransform: "uppercase",
+                fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase",
                 color: "#0F0F0E", textDecoration: "none",
                 border: "0.5px solid rgba(15,15,14,0.2)", padding: "8px 14px",
                 opacity: 0.6,
@@ -153,7 +153,7 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
               borderRight: (i + 1) % 4 !== 0 ? "0.5px solid rgba(15,15,14,0.1)" : "none",
               borderBottom: i < arr.length - (arr.length % 4 || 4) ? "0.5px solid rgba(15,15,14,0.1)" : "none",
             }}>
-              <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 8, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.4, marginBottom: 6 }}>
+              <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.4, marginBottom: 6 }}>
                 {cell.label}
               </div>
               <div style={{
@@ -194,7 +194,7 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
             <div style={{ marginBottom: 36 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12 }}>
                 <SectionLabel>Scope</SectionLabel>
-                <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 8, opacity: 0.38 }}>
+                <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, opacity: 0.38 }}>
                   Base estimate: ${(baseTotal / 100).toLocaleString()}
                 </div>
               </div>
@@ -206,7 +206,7 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
               <div style={{ marginBottom: 40 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12 }}>
                   <SectionLabel>Optional add-ons</SectionLabel>
-                  <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 8, opacity: 0.38 }}>
+                  <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, opacity: 0.38 }}>
                     +${(optionalTotal / 100).toLocaleString()} if added
                   </div>
                 </div>
@@ -232,7 +232,7 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
             padding: "24px 24px 28px",
             position: "sticky", top: 80,
           }}>
-            <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.4, marginBottom: 20 }}>
+            <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.4, marginBottom: 20 }}>
               Summary
             </div>
 
@@ -246,10 +246,10 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
                     {item.name}
                   </span>
                   {item.is_optional && (
-                    <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 8, opacity: 0.4, marginLeft: 6, letterSpacing: "0.08em" }}>optional</span>
+                    <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, opacity: 0.4, marginLeft: 6, letterSpacing: "0.08em" }}>optional</span>
                   )}
                   {item.is_recommended && (
-                    <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 8, color: "#6B8F71", marginLeft: 6, letterSpacing: "0.08em" }}>rec.</span>
+                    <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, color: "#6B8F71", marginLeft: 6, letterSpacing: "0.08em" }}>rec.</span>
                   )}
                 </div>
                 <span style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 12, opacity: item.is_optional ? 0.4 : 0.7 }}>
@@ -260,16 +260,16 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
 
             <div style={{ marginTop: 20, paddingTop: 16, borderTop: "0.5px solid rgba(15,15,14,0.12)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 8, opacity: 0.45, letterSpacing: "0.08em", textTransform: "uppercase" }}>Base total</span>
+                <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, opacity: 0.45, letterSpacing: "0.08em", textTransform: "uppercase" }}>Base total</span>
                 <span style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 18, opacity: 0.88 }}>${(baseTotal / 100).toLocaleString()}</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 8, opacity: 0.35 }}>Deposit ({depositPct}%)</span>
+                <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, opacity: 0.35 }}>Deposit ({depositPct}%)</span>
                 <span style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 13, opacity: 0.55 }}>${(deposit / 100).toLocaleString()}</span>
               </div>
               {optionalTotal > 0 && (
                 <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, paddingTop: 8, borderTop: "0.5px solid rgba(15,15,14,0.07)" }}>
-                  <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 8, opacity: 0.35 }}>With add-ons</span>
+                  <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, opacity: 0.35 }}>With add-ons</span>
                   <span style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 13, opacity: 0.45 }}>${((baseTotal + optionalTotal) / 100).toLocaleString()}</span>
                 </div>
               )}
@@ -278,7 +278,7 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
             {/* Client note if accepted */}
             {proposal.client_note && (
               <div style={{ marginTop: 24, paddingTop: 20, borderTop: "0.5px solid rgba(15,15,14,0.1)" }}>
-                <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 8, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.4, marginBottom: 8 }}>
+                <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.4, marginBottom: 8 }}>
                   Client note
                 </div>
                 <div style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 13, opacity: 0.65, lineHeight: 1.7, fontStyle: "italic" }}>
@@ -290,7 +290,7 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
             {/* Stripe session if accepted */}
             {proposal.stripe_session_id && (
               <div style={{ marginTop: 16 }}>
-                <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 8, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.4, marginBottom: 6 }}>
+                <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.4, marginBottom: 6 }}>
                   Stripe session
                 </div>
                 <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, opacity: 0.4, wordBreak: "break-all" }}>
@@ -310,7 +310,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
       fontFamily: "'Matter SemiMono', monospace",
-      fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase",
+      fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase",
       opacity: 0.38, marginBottom: 14,
     }}>
       {children}
@@ -328,12 +328,12 @@ function LineItemRow({ item }: { item: any }) {
               {item.name}
             </span>
             {item.is_recommended && (
-              <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 8, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6B8F71", border: "0.5px solid rgba(107,143,113,0.4)", padding: "2px 7px" }}>
+              <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6B8F71", border: "0.5px solid rgba(107,143,113,0.4)", padding: "2px 7px" }}>
                 Recommended
               </span>
             )}
             {item.is_optional && (
-              <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 8, letterSpacing: "0.08em", textTransform: "uppercase", color: "#B07D3A", border: "0.5px solid rgba(176,125,58,0.35)", padding: "2px 7px" }}>
+              <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase", color: "#B07D3A", border: "0.5px solid rgba(176,125,58,0.35)", padding: "2px 7px" }}>
                 Optional
               </span>
             )}
@@ -348,7 +348,7 @@ function LineItemRow({ item }: { item: any }) {
           <div style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 15, opacity: 0.8, letterSpacing: "-0.01em" }}>
             ${(item.price / 100).toLocaleString()}
           </div>
-          <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 8, opacity: 0.35, marginTop: 4 }}>
+          <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, opacity: 0.35, marginTop: 4 }}>
             {item.timeline_weeks_min}–{item.timeline_weeks_max} wks
           </div>
         </div>

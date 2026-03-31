@@ -30,14 +30,14 @@ export default function ColorSwatches({ colors }: { colors: ColorSwatch[] }) {
               display: "flex", alignItems: "center", justifyContent: "center",
               opacity: copied === c.hex ? 1 : 0,
               transition: "opacity 0.2s",
-              fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase",
+              fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase",
               color: "rgba(255,255,255,0.8)",
             }}>
               {copied === c.hex ? "Copied" : "Copy"}
             </div>
           </div>
           <div style={{ fontSize: 9, color: "var(--ink)", opacity: 0.6, marginBottom: 2 }}>{c.name}</div>
-          <div style={{ fontSize: 8, color: "var(--ink)", opacity: 0.38, letterSpacing: "0.04em", fontFamily: "monospace" }}>{c.hex}</div>
+          <div style={{ fontSize: 9, color: "var(--ink)", opacity: 0.38, letterSpacing: "0.04em", fontFamily: "monospace" }}>{c.hex}</div>
         </div>
       ))}
     </div>

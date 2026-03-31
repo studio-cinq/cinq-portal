@@ -36,7 +36,7 @@ export default function DeleteButton({ endpoint, id, label = "Delete", confirm =
       disabled={loading}
       style={{
         fontFamily: "'Matter SemiMono', monospace",
-        fontSize: 8, letterSpacing: "0.1em", textTransform: "uppercase",
+        fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase",
         background: "none", border: "none",
         color: "#c0392b", opacity: loading ? 0.3 : 0.45,
         cursor: loading ? "default" : "pointer",

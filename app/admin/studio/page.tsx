@@ -213,7 +213,7 @@ function ActionItem({ client, tag, tagColor, text, href }: { client: string; tag
     <Link href={href} style={{ display: "block", padding: "13px 0", borderBottom: "0.5px solid rgba(15,15,14,0.1)", textDecoration: "none" }}>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
         <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: "var(--op-full)" as any }}>{client}</span>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: "0.1em", textTransform: "uppercase", padding: "3px 7px", border: `0.5px solid ${tagColor}60`, color: tagColor }}>{tag}</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", padding: "3px 7px", border: `0.5px solid ${tagColor}60`, color: tagColor }}>{tag}</span>
       </div>
       <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: "var(--op-muted)" as any, lineHeight: 1.4 }}>{text}</div>
     </Link>

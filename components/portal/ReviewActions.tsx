@@ -93,7 +93,7 @@ export default function ReviewActions({ projectId, deliverableId, revisionsRemai
             marginBottom: 8,
           }}
         />
-        <div style={{ fontSize: 8, color: "var(--ink)", opacity: 0.22, letterSpacing: "0.04em", lineHeight: 1.6 }}>
+        <div style={{ fontSize: 9, color: "var(--ink)", opacity: 0.22, letterSpacing: "0.04em", lineHeight: 1.6 }}>
           {revisionsRemaining} revision round{revisionsRemaining !== 1 ? "s" : ""} remaining after this one.
         </div>
       </div>
@@ -141,6 +141,6 @@ export default function ReviewActions({ projectId, deliverableId, revisionsRemai
 }
 
 const barLabel: React.CSSProperties = {
-  fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase",
+  fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase",
   color: "var(--ink)", opacity: 0.42, marginBottom: 12,
 }

@@ -81,7 +81,7 @@ export default function AnnotationPin({ annotation, index, onDelete, readOnly }:
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10 }}>
             <span style={{
               fontFamily: "var(--font-mono)",
-              fontSize: 8,
+              fontSize: 9,
               letterSpacing: "0.1em",
               textTransform: "uppercase",
               color: "var(--ink)",
@@ -94,7 +94,7 @@ export default function AnnotationPin({ annotation, index, onDelete, readOnly }:
                 onClick={() => onDelete(annotation.id)}
                 style={{
                   fontFamily: "var(--font-mono)",
-                  fontSize: 8,
+                  fontSize: 9,
                   letterSpacing: "0.1em",
                   textTransform: "uppercase",
                   color: "var(--danger)",

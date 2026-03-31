@@ -219,7 +219,7 @@ function AssetTile({ asset, dark }: { asset: any; dark?: boolean }) {
       </div>
       <div style={{
         fontFamily: "var(--font-mono)",
-        fontSize: 8, letterSpacing: "0.1em", textTransform: "uppercase",
+        fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase",
         color: dark ? "rgba(237,232,224,0.35)" : "rgba(15,15,14,0.35)",
       }}>
         {asset.file_type?.toUpperCase()}
@@ -245,7 +245,7 @@ function FileRow({ asset }: { asset: any }) {
           width: 28, height: 34,
           border: "0.5px solid rgba(15,15,14,0.18)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: "0.06em",
+          fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.06em",
           color: "var(--ink)", opacity: 0.5,
         }}>
           {ext}

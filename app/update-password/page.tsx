@@ -45,7 +45,7 @@ export default function UpdatePasswordPage() {
           <CinqLogo width={32} />
         </div>
 
-        <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase", color: "#0F0F0E", opacity: 0.4, marginBottom: 28 }}>
+        <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase", color: "#0F0F0E", opacity: 0.4, marginBottom: 28 }}>
           {done ? "Password set" : "Set your password"}
         </div>
 

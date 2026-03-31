@@ -192,7 +192,7 @@ function InvoiceCard({ inv, variant }: { inv: any; variant: "paid" | "due" | "lo
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               {showACH && (
                 <a href={`/invoice/${inv.id}`} style={{
-                  fontFamily: "var(--font-mono)", fontSize: 8,
+                  fontFamily: "var(--font-mono)", fontSize: 9,
                   letterSpacing: "0.1em", textTransform: "uppercase",
                   color: "var(--ink)", opacity: 0.5, textDecoration: "none",
                   border: "0.5px solid rgba(15,15,14,0.18)", padding: "6px 12px",
@@ -235,7 +235,7 @@ function StatusBadge({ variant, dueDate }: { variant: string; dueDate?: string }
   const c = configs[variant]
   return (
     <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 6 }}>
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: "0.1em", textTransform: "uppercase", padding: "3px 8px", border: `0.5px solid ${c.border}`, color: c.color }}>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", padding: "3px 8px", border: `0.5px solid ${c.border}`, color: c.color }}>
         {c.label}
       </span>
     </div>

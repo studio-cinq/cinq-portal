@@ -62,7 +62,7 @@ export default function ReviewToolbar({
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{
-                fontFamily: "var(--font-mono)", fontSize: 8,
+                fontFamily: "var(--font-mono)", fontSize: 9,
                 letterSpacing: "0.1em", textTransform: "uppercase",
                 color: "var(--ink)", opacity: 0.35, whiteSpace: "nowrap",
               }}>Page URL</span>
@@ -82,7 +82,7 @@ export default function ReviewToolbar({
               />
             </div>
             <p style={{
-              fontFamily: "var(--font-mono)", fontSize: 8,
+              fontFamily: "var(--font-mono)", fontSize: 9,
               color: "var(--ink)", opacity: 0.3, margin: 0,
             }}>If you navigated to a different page, paste the URL above so we know which page your notes are on.</p>
 
@@ -93,7 +93,7 @@ export default function ReviewToolbar({
                 paddingTop: 8, marginTop: 4,
               }}>
                 <span style={{
-                  fontFamily: "var(--font-mono)", fontSize: 8,
+                  fontFamily: "var(--font-mono)", fontSize: 9,
                   letterSpacing: "0.1em", textTransform: "uppercase",
                   color: "var(--ink)", opacity: 0.35,
                 }}>Note from Kacie</span>
@@ -122,7 +122,7 @@ export default function ReviewToolbar({
           <button
             onClick={() => setExpanded(!expanded)}
             style={{
-              fontFamily: "var(--font-mono)", fontSize: 8,
+              fontFamily: "var(--font-mono)", fontSize: 9,
               letterSpacing: "0.1em", textTransform: "uppercase",
               color: "var(--ink)", opacity: 0.4,
               background: "none", border: "none", cursor: "pointer",
@@ -145,7 +145,7 @@ export default function ReviewToolbar({
                 key={m}
                 onClick={() => onModeChange(m)}
                 style={{
-                  fontFamily: "var(--font-mono)", fontSize: 8,
+                  fontFamily: "var(--font-mono)", fontSize: 9,
                   letterSpacing: "0.12em", textTransform: "uppercase",
                   padding: "6px 14px",
                   border: "none", cursor: "pointer",
@@ -166,7 +166,7 @@ export default function ReviewToolbar({
             onClick={onSubmit}
             disabled={submitting || pinCount === 0}
             style={{
-              fontFamily: "var(--font-mono)", fontSize: 8,
+              fontFamily: "var(--font-mono)", fontSize: 9,
               letterSpacing: "0.12em", textTransform: "uppercase",
               background: "var(--ink)", color: "#EDE8E0",
               padding: "6px 14px", border: "none", cursor: "pointer",
@@ -181,7 +181,7 @@ export default function ReviewToolbar({
             onClick={onApprove}
             disabled={approving}
             style={{
-              fontFamily: "var(--font-mono)", fontSize: 8,
+              fontFamily: "var(--font-mono)", fontSize: 9,
               letterSpacing: "0.12em", textTransform: "uppercase",
               background: "none", color: "var(--ink)",
               padding: "6px 12px", cursor: "pointer",

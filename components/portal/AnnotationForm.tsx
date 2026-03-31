@@ -47,7 +47,7 @@ export default function AnnotationForm({ x, y, onSave, onCancel }: AnnotationFor
 
       <label style={{
         fontFamily: "var(--font-mono)",
-        fontSize: 8,
+        fontSize: 9,
         letterSpacing: "0.12em",
         textTransform: "uppercase",
         color: "var(--ink)",
@@ -85,7 +85,7 @@ export default function AnnotationForm({ x, y, onSave, onCancel }: AnnotationFor
           onClick={handleSave}
           disabled={!comment.trim()}
           style={{
-            fontFamily: "var(--font-mono)", fontSize: 8,
+            fontFamily: "var(--font-mono)", fontSize: 9,
             letterSpacing: "0.14em", textTransform: "uppercase",
             background: "var(--ink)", color: "#EDE8E0",
             padding: "8px 16px", border: "none", cursor: "pointer",
@@ -95,7 +95,7 @@ export default function AnnotationForm({ x, y, onSave, onCancel }: AnnotationFor
         <button
           onClick={onCancel}
           style={{
-            fontFamily: "var(--font-mono)", fontSize: 8,
+            fontFamily: "var(--font-mono)", fontSize: 9,
             letterSpacing: "0.14em", textTransform: "uppercase",
             background: "none", color: "var(--ink)",
             padding: "8px 12px", cursor: "pointer",

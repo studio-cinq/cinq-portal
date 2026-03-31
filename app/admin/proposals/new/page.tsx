@@ -121,11 +121,11 @@ export default function NewProposalPage() {
       <PortalNav isAdmin />
       <main className="form-page-pad" style={{ maxWidth: 860, margin: "0 auto", padding: "40px 48px 80px" }}>
 
-        <Link href="/admin/proposals" style={{ fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.4, textDecoration: "none", display: "inline-block", marginBottom: 28 }}>
+        <Link href="/admin/proposals" style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.4, textDecoration: "none", display: "inline-block", marginBottom: 28 }}>
           ← Proposals
         </Link>
 
-        <div style={{ fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.5, marginBottom: 40 }}>
+        <div style={{ fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.5, marginBottom: 40 }}>
           New proposal
         </div>
 
@@ -182,11 +182,11 @@ export default function NewProposalPage() {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <span style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.4 }}>Item {i + 1}</span>
-                    {item.is_optional && <span style={{ fontSize: 8, letterSpacing: "0.1em", textTransform: "uppercase", color: "#B07D3A", border: "0.5px solid rgba(176,125,58,0.3)", padding: "2px 7px" }}>Optional</span>}
-                    {item.is_recommended && <span style={{ fontSize: 8, letterSpacing: "0.1em", textTransform: "uppercase", color: "#6B8F71", border: "0.5px solid rgba(107,143,113,0.3)", padding: "2px 7px" }}>Recommended</span>}
+                    {item.is_optional && <span style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "#B07D3A", border: "0.5px solid rgba(176,125,58,0.3)", padding: "2px 7px" }}>Optional</span>}
+                    {item.is_recommended && <span style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "#6B8F71", border: "0.5px solid rgba(107,143,113,0.3)", padding: "2px 7px" }}>Recommended</span>}
                   </div>
                   {items.length > 1 && (
-                    <button onClick={() => removeItem(i)} style={{ fontSize: 8, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.3, background: "none", border: "none", cursor: "pointer", color: "#0F0F0E", fontFamily: "var(--font-sans)" }}>
+                    <button onClick={() => removeItem(i)} style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.3, background: "none", border: "none", cursor: "pointer", color: "#0F0F0E", fontFamily: "var(--font-sans)" }}>
                       Remove
                     </button>
                   )}
@@ -284,7 +284,7 @@ export default function NewProposalPage() {
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: 48 }}>
-      <div style={{ fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.4, marginBottom: 20, paddingBottom: 10, borderBottom: "0.5px solid rgba(15,15,14,0.1)" }}>{label}</div>
+      <div style={{ fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.4, marginBottom: 20, paddingBottom: 10, borderBottom: "0.5px solid rgba(15,15,14,0.1)" }}>{label}</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>{children}</div>
     </div>
   )
@@ -293,7 +293,7 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <div style={{ fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.45, marginBottom: 8 }}>{label}</div>
+      <div style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.45, marginBottom: 8 }}>{label}</div>
       {children}
     </div>
   )

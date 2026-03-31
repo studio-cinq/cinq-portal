@@ -30,7 +30,7 @@ export default function SlideViewer({ slides }: { slides: PresentationSlide[] })
       {slide.caption && (
         <div style={{
           textAlign: "center", marginTop: 16,
-          fontSize: 8, letterSpacing: "0.14em",
+          fontSize: 9, letterSpacing: "0.14em",
           textTransform: "uppercase", color: "rgba(237,232,224,0.25)",
         }}>
           {slide.caption}
@@ -66,7 +66,7 @@ export default function SlideViewer({ slides }: { slides: PresentationSlide[] })
       {/* Slide count */}
       <div style={{
         textAlign: "center", marginTop: 8,
-        fontSize: 8, letterSpacing: "0.14em", textTransform: "uppercase",
+        fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase",
         color: "rgba(237,232,224,0.2)",
       }}>
         Slide {current + 1} of {slides.length}

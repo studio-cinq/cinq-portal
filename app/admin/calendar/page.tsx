@@ -318,7 +318,7 @@ export default function AdminCalendarPage() {
                     borderRight: "0.5px solid rgba(15,15,14,0.06)",
                     background: isToday ? "rgba(15,15,14,0.04)" : "transparent",
                   }}>
-                    <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.4, marginBottom: 4 }}>
+                    <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.4, marginBottom: 4 }}>
                       {DAY_LABELS[day.getDay()]}
                     </div>
                     <div style={{
@@ -364,7 +364,7 @@ export default function AdminCalendarPage() {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", borderBottom: "0.5px solid rgba(15,15,14,0.1)" }}>
               {DAY_LABELS.map(d => (
                 <div key={d} style={{
-                  fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: "0.1em",
+                  fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.1em",
                   textTransform: "uppercase", opacity: 0.4,
                   padding: "10px 10px 8px", borderRight: "0.5px solid rgba(15,15,14,0.06)",
                 }}>
@@ -402,7 +402,7 @@ export default function AdminCalendarPage() {
                         <EventChip key={evt.id} evt={evt} compact onDelete={!evt.is_auto ? () => deleteEvent(evt.id) : undefined} />
                       ))}
                       {dayEvents.length > 3 && (
-                        <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, opacity: 0.35, paddingLeft: 4 }}>
+                        <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, opacity: 0.35, paddingLeft: 4 }}>
                           +{dayEvents.length - 3} more
                         </div>
                       )}
@@ -439,7 +439,7 @@ function EventChip({ evt, compact, onDelete }: { evt: any; compact?: boolean; on
       }}
     >
       {evt.event_time && !compact && (
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, opacity: 0.45, marginBottom: 1 }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, opacity: 0.45, marginBottom: 1 }}>
           {fmtTime(evt.event_time)}{evt.duration_minutes ? ` · ${evt.duration_minutes}m` : ""}
         </div>
       )}
@@ -452,7 +452,7 @@ function EventChip({ evt, compact, onDelete }: { evt: any; compact?: boolean; on
         {evt.title}
       </div>
       {!compact && (
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, opacity: 0.35, marginTop: 1 }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, opacity: 0.35, marginTop: 1 }}>
           {evt.client_name}{evt.project_title ? ` · ${evt.project_title}` : ""}
         </div>
       )}
@@ -484,7 +484,7 @@ const filterSelect: React.CSSProperties = {
 }
 
 const labelSm: React.CSSProperties = {
-  fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: "0.1em",
+  fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.1em",
   textTransform: "uppercase", opacity: 0.4, marginBottom: 4,
 }
 

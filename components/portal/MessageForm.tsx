@@ -67,7 +67,7 @@ export default function MessageForm({ projectId }: { projectId: string }) {
           border: "0.5px solid rgba(15,15,14,0.15)",
           padding: 10,
           fontFamily: "var(--font-sans)",
-          fontSize: 8, letterSpacing: "0.14em",
+          fontSize: 9, letterSpacing: "0.14em",
           textTransform: "uppercase",
           color: "var(--ink)", opacity: sending ? 0.3 : 0.5,
           cursor: sending ? "default" : "pointer",

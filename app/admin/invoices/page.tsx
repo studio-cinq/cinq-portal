@@ -65,7 +65,7 @@ export default async function AdminInvoicesPage() {
                   </span>
                 )}
                 {Array.isArray((inv as any).payment_methods) && (inv as any).payment_methods.includes("ach") && (
-                  <span style={{ marginLeft: 8, opacity: 0.5, fontSize: 8, letterSpacing: "0.08em", textTransform: "uppercase" as const, border: "0.5px solid rgba(15,15,14,0.15)", padding: "1px 6px" }}>
+                  <span style={{ marginLeft: 8, opacity: 0.5, fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase" as const, border: "0.5px solid rgba(15,15,14,0.15)", padding: "1px 6px" }}>
                     ACH
                   </span>
                 )}

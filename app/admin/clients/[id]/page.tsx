@@ -618,7 +618,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                     <div key={slide.id} style={{ position: "relative", border: "0.5px solid rgba(15,15,14,0.12)", background: "rgba(255,255,255,0.3)", aspectRatio: "4/3", overflow: "hidden" }}>
                       <img src={slide.image_url} alt={slide.caption ?? `Slide ${i + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                       <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(15,15,14,0.5)", padding: "6px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--cream)", opacity: 0.7 }}>{slide.caption ?? `Slide ${i + 1}`}</div>
+                        <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--cream)", opacity: 0.7 }}>{slide.caption ?? `Slide ${i + 1}`}</div>
                         <button
                           onClick={async () => {
                             await supabase.from("presentation_slides").delete().eq("id", slide.id)
@@ -703,9 +703,9 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                       <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "8px 0", borderBottom: "0.5px solid rgba(15,15,14,0.07)" }}>
                         <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
                           <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: item.accepted ? "var(--op-full)" as any : 0.35 }}>{item.name}</span>
-                          {item.accepted && item.phase === "now"   && <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--sage)" }}>accepted</span>}
-                          {item.accepted && item.phase === "later" && <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--amber)" }}>phase 2</span>}
-                          {!item.accepted && <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, opacity: 0.4 }}>declined</span>}
+                          {item.accepted && item.phase === "now"   && <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--sage)" }}>accepted</span>}
+                          {item.accepted && item.phase === "later" && <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--amber)" }}>phase 2</span>}
+                          {!item.accepted && <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, opacity: 0.4 }}>declined</span>}
                         </div>
                         <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-body)", opacity: item.accepted ? "var(--op-body)" as any : 0.38 }}>${(item.price / 100).toLocaleString()}</span>
                       </div>
@@ -756,7 +756,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                     ].map(l => (
                       <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
                         <div style={{ width: 5, height: 5, borderRadius: "50%", background: l.color, opacity: 0.7 }} />
-                        <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.45 }}>{l.label}</span>
+                        <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.45 }}>{l.label}</span>
                       </div>
                     ))}
                   </div>
@@ -794,7 +794,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                                   </span>
                                 )}
                                 <span style={{
-                                  fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: "0.1em", textTransform: "uppercase",
+                                  fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase",
                                   padding: "2px 7px",
                                   border: `0.5px solid ${evt.type === "milestone" ? "rgba(107,143,113,0.3)" : evt.type === "invoice_due" || evt.type === "work" ? "rgba(15,15,14,0.15)" : "rgba(176,125,58,0.3)"}`,
                                   color: evt.type === "milestone" ? "var(--sage)" : evt.type === "invoice_due" || evt.type === "work" ? "var(--ink)" : "var(--amber)",

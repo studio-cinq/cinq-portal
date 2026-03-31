@@ -31,8 +31,8 @@ export default function PayInvoiceButton({
       disabled={loading}
       style={{
         background: "var(--ink)", border: "none",
-        padding: "11px 24px", fontFamily: "var(--font-sans)",
-        fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase",
+        padding: "11px 24px", fontFamily: "var(--font-mono)",
+        fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase",
         color: "#EDE8E0", cursor: loading ? "default" : "pointer",
         opacity: loading ? 0.4 : 1, whiteSpace: "nowrap",
       }}

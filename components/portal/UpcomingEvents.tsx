@@ -113,7 +113,7 @@ export default function UpcomingEvents({ events }: UpcomingEventsProps) {
                       </span>
                       <span style={{
                         fontFamily: "var(--font-mono)",
-                        fontSize: 8,
+                        fontSize: 9,
                         letterSpacing: "0.1em",
                         textTransform: "uppercase",
                         padding: "2px 7px",
