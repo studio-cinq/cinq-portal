@@ -101,14 +101,14 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
   const optionalTotal   = optionalItems.reduce((s, i) => s + (i.price ?? 0), 0)
   const baseTotal       = requiredTotal + selectableTotal
 
-  // Phase 1 = all required items + checked selectable/optional items set to "now"
-  const phase1Total = items.reduce((sum, item, i) => {
-    if (item.is_required) return sum + (item.price ?? 0)  // required always included as "now"
-    if (!checked[i] || phases[i] !== "now") return sum
+  // Project total = all required items + all checked selectable/optional items
+  const selectedTotal = items.reduce((sum, item, i) => {
+    if (item.is_required) return sum + (item.price ?? 0)
+    if (!checked[i]) return sum
     return sum + (item.price ?? 0)
   }, 0)
 
-  const deposit = Math.round(phase1Total * (depositPct / 100))
+  const deposit = Math.round(selectedTotal * (depositPct / 100))
 
   const scheduleLabel = schedule.map((p, i) => {
     if (i === 0) return `${p}% deposit due now`
@@ -121,7 +121,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
 
   async function handleConfirm() {
-    if (phase1Total === 0) return
+    if (selectedTotal === 0) return
     setSubmitting(true)
     setCheckoutError(null)
     try {
@@ -186,7 +186,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
               ${(item.price / 100).toLocaleString()}
             </div>
             <div style={{ ...mono, fontSize: "var(--text-eyebrow)", opacity: 0.35, marginTop: 4, letterSpacing: "0.06em" }}>
-              {item.timeline_weeks_min}–{item.timeline_weeks_max} wks
+              {item.timeline_weeks_min === 0 && item.timeline_weeks_max === 0 ? "Ongoing" : `${item.timeline_weeks_min}–${item.timeline_weeks_max} wks`}
             </div>
           </div>
         </div>
@@ -247,7 +247,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
               ${(item.price / 100).toLocaleString()}
             </div>
             <div style={{ ...mono, fontSize: "var(--text-eyebrow)", opacity: 0.35, marginTop: 4, letterSpacing: "0.06em" }}>
-              {item.timeline_weeks_min}–{item.timeline_weeks_max} wks
+              {item.timeline_weeks_min === 0 && item.timeline_weeks_max === 0 ? "Ongoing" : `${item.timeline_weeks_min}–${item.timeline_weeks_max} wks`}
             </div>
           </div>
         </div>
@@ -270,7 +270,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
                   transition: "all 0.18s",
                 }}
               >
-                {p === "now" ? "Start now" : "Later"}
+                {p === "now" ? "Priority for launch" : "Second phase"}
               </button>
             ))}
           </div>
@@ -311,11 +311,11 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
           if (!checked[globalIndex]) return null
           return (
             <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "9px 0", borderBottom: "0.5px solid rgba(15,15,14,0.07)" }}>
-              <span style={{ ...serif, fontSize: "var(--text-body)", opacity: phases[globalIndex] === "later" ? 0.35 : 0.7 }}>
+              <span style={{ ...serif, fontSize: "var(--text-body)", opacity: 0.7 }}>
                 {item.name}
-                {phases[globalIndex] === "later" && <span style={{ ...mono, fontSize: "var(--text-eyebrow)", marginLeft: 6, opacity: 0.5 }}>later</span>}
+                {phases[globalIndex] === "later" && <span style={{ ...mono, fontSize: "var(--text-eyebrow)", marginLeft: 6, opacity: 0.5 }}>phase 2</span>}
               </span>
-              <span style={{ ...mono, fontSize: "var(--text-sm)", opacity: phases[globalIndex] === "later" ? 0.4 : 0.65 }}>
+              <span style={{ ...mono, fontSize: "var(--text-sm)", opacity: 0.65 }}>
                 ${(item.price / 100).toLocaleString()}
               </span>
             </div>
@@ -329,9 +329,9 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
       <div style={{ height: "0.5px", background: "rgba(15,15,14,0.12)", marginBottom: 20 }} />
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
-        <span style={{ ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.45 }}>Phase 1 total</span>
+        <span style={{ ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.45 }}>Project total</span>
         <span style={{ ...serif, fontSize: 22, opacity: 0.88, letterSpacing: "-0.01em" }}>
-          ${(phase1Total / 100).toLocaleString()}
+          ${(selectedTotal / 100).toLocaleString()}
         </span>
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 28 }}>
@@ -353,14 +353,14 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
             }}
           />
           <button
-            onClick={handleConfirm} disabled={phase1Total === 0 || submitting}
+            onClick={handleConfirm} disabled={selectedTotal === 0 || submitting}
             style={{
               width: "100%", boxSizing: "border-box",
               background: "var(--ink)", border: "none", padding: "16px",
               fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
               letterSpacing: "0.16em", textTransform: "uppercase",
-              color: "var(--cream)", cursor: phase1Total === 0 || submitting ? "default" : "pointer",
-              opacity: phase1Total === 0 || submitting ? 0.25 : 1,
+              color: "var(--cream)", cursor: selectedTotal === 0 || submitting ? "default" : "pointer",
+              opacity: selectedTotal === 0 || submitting ? 0.25 : 1,
               marginBottom: 16, transition: "opacity 0.2s",
             }}
           >
@@ -372,8 +372,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
             </div>
           )}
           <div style={{ ...mono, fontSize: "var(--text-eyebrow)", opacity: 0.4, letterSpacing: "0.03em", lineHeight: 1.8 }}>
-            {scheduleLabel.slice(1).map((l, i) => <span key={i}>{l}{i < scheduleLabel.length - 2 ? ". " : ""}</span>)}<br />
-            Scheduled items confirmed at no cost today.
+            {scheduleLabel.slice(1).map((l, i) => <span key={i}>{l}{i < scheduleLabel.length - 2 ? ". " : ""}</span>)}
           </div>
         </>
       )}
@@ -425,7 +424,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
             </div>
             {canInteract && (
               <div style={{ ...body, fontSize: "var(--text-sm)", opacity: 0.45, lineHeight: 1.6, marginBottom: 4, marginTop: 6 }}>
-                Select the services you'd like to add{isMobile ? "." : ". Choose \"Start now\" or \"Later\" to prioritize your phases."}
+                Select any additional phases you'd like to include in the project, then indicate whether each should be prioritized for launch or scheduled for the second phase.
               </div>
             )}
             {selectableItems.map(item => renderSelectableItem(item))}
@@ -437,7 +436,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
         {optionalItems.length > 0 && (
           <div style={{ marginBottom: isMobile ? 44 : 52 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
-              <div style={{ ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.38 }}>Optional add-ons</div>
+              <div style={{ ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.38 }}>Additional add-ons</div>
               <div style={{ ...mono, fontSize: "var(--text-eyebrow)", opacity: 0.38 }}>+${(optionalTotal / 100).toLocaleString()}{isMobile ? "" : " if added"}</div>
             </div>
             {optionalItems.map(item => renderSelectableItem(item))}

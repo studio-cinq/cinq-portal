@@ -12,6 +12,7 @@ interface LineItem {
   price: string
   timeline_min: string
   timeline_max: string
+  is_ongoing: boolean
   phase: "now" | "later"
   is_recommended: boolean
   is_optional: boolean
@@ -20,7 +21,7 @@ interface LineItem {
 
 const emptyItem = (): LineItem => ({
   name: "", description: "", price: "",
-  timeline_min: "2", timeline_max: "4",
+  timeline_min: "2", timeline_max: "4", is_ongoing: false,
   phase: "now", is_recommended: false, is_optional: false, is_required: false,
 })
 
@@ -90,8 +91,8 @@ export default function NewProposalPage() {
         name:               item.name,
         description:        item.description || null,
         price:              Math.round(parseFloat(item.price) * 100),
-        timeline_weeks_min: parseInt(item.timeline_min) || 2,
-        timeline_weeks_max: parseInt(item.timeline_max) || 4,
+        timeline_weeks_min: item.is_ongoing ? 0 : (parseInt(item.timeline_min) || 2),
+        timeline_weeks_max: item.is_ongoing ? 0 : (parseInt(item.timeline_max) || 4),
         phase:              item.phase,
         is_recommended:     item.is_recommended,
         is_optional:        item.is_optional,
@@ -217,10 +218,10 @@ export default function NewProposalPage() {
 
                   <div className="form-grid-3col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
                     <Field label="Timeline min (weeks)">
-                      <input type="number" value={item.timeline_min} onChange={e => setItem(i, "timeline_min", e.target.value)} style={inputStyle} />
+                      <input type="number" value={item.timeline_min} onChange={e => setItem(i, "timeline_min", e.target.value)} disabled={item.is_ongoing} style={{ ...inputStyle, opacity: item.is_ongoing ? 0.35 : 1 }} />
                     </Field>
                     <Field label="Timeline max (weeks)">
-                      <input type="number" value={item.timeline_max} onChange={e => setItem(i, "timeline_max", e.target.value)} style={inputStyle} />
+                      <input type="number" value={item.timeline_max} onChange={e => setItem(i, "timeline_max", e.target.value)} disabled={item.is_ongoing} style={{ ...inputStyle, opacity: item.is_ongoing ? 0.35 : 1 }} />
                     </Field>
                     <Field label="Default phase">
                       <select value={item.phase} onChange={e => setItem(i, "phase", e.target.value as "now" | "later")} style={inputStyle}>
@@ -229,6 +230,10 @@ export default function NewProposalPage() {
                       </select>
                     </Field>
                   </div>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, opacity: 0.65, cursor: "pointer" }}>
+                    <input type="checkbox" checked={item.is_ongoing} onChange={e => setItem(i, "is_ongoing", e.target.checked)} />
+                    Ongoing (spans the full project)
+                  </label>
 
                   <div style={{ display: "flex", gap: 24 }}>
                     <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, opacity: 0.65, cursor: "pointer" }}>

@@ -187,7 +187,8 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
         // Timeline
         doc.setFontSize(7)
         setColor(doc, INK, 0.35)
-        doc.text(`${item.timeline_weeks_min}–${item.timeline_weeks_max} weeks`, W - marginR, y, { align: "right" })
+        const timelineLabel = (item.timeline_weeks_min === 0 && item.timeline_weeks_max === 0) ? "Ongoing" : `${item.timeline_weeks_min}–${item.timeline_weeks_max} weeks`
+        doc.text(timelineLabel, W - marginR, y, { align: "right" })
         y += 12
 
         // Badges
