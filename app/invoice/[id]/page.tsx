@@ -106,12 +106,30 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
       <main style={{ maxWidth: 640, margin: "0 auto", padding: "48px 32px 80px" }}>
 
         {/* Header */}
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.42, marginBottom: 10 }}>
-          Invoice #{invoice.invoice_number}
+        <div style={{ position: "relative" }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.42, marginBottom: 10 }}>
+            Invoice #{invoice.invoice_number}
+          </div>
+          <h1 style={{ fontFamily: "var(--font-sans)", fontWeight: 400, fontSize: 28, letterSpacing: "-0.015em", opacity: 0.9, margin: "0 0 32px", paddingRight: isPaid ? 140 : 0 }}>
+            {invoice.description}
+          </h1>
+          {isPaid && (
+            <img
+              src="/paid-stamp.png"
+              alt="Paid"
+              style={{
+                position: "absolute",
+                top: -10,
+                right: -10,
+                width: 120,
+                height: 120,
+                objectFit: "contain",
+                opacity: 0.85,
+                pointerEvents: "none",
+              }}
+            />
+          )}
         </div>
-        <h1 style={{ fontFamily: "var(--font-sans)", fontWeight: 400, fontSize: 28, letterSpacing: "-0.015em", opacity: 0.9, margin: "0 0 32px" }}>
-          {invoice.description}
-        </h1>
 
         {/* Meta */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginBottom: 36, padding: "20px 0", borderTop: "0.5px solid rgba(15,15,14,0.1)", borderBottom: "0.5px solid rgba(15,15,14,0.1)" }}>
@@ -192,7 +210,7 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
               fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
               letterSpacing: "0.14em", textTransform: "uppercase",
               color: "var(--sage)", opacity: 0.85,
-              border: "0.5px solid rgba(143,167,181,0.3)", padding: "14px 28px",
+              padding: "14px 0",
             }}>
               {justPaid ? "Payment received — thank you!" : `Paid${invoice.paid_at ? ` · ${new Date(invoice.paid_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : ""}`}
             </div>

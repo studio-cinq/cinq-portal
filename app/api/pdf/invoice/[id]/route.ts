@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase-server"
 import { jsPDF } from "jspdf"
+import { PAID_STAMP_PNG } from "@/lib/paid-stamp"
 
 const INK = [15, 15, 14] as const
 const CREAM = [244, 241, 236] as const
@@ -233,15 +234,10 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       }
     }
 
-    // Paid stamp
+    // Paid stamp (image in upper-right)
     if (isPaid) {
-      y += 12
-      doc.setFontSize(8)
-      setColor(doc, SAGE, 0.85)
-      const paidDate = invoice.paid_at
-        ? new Date(invoice.paid_at).toLocaleDateString("en-US", { timeZone: "America/New_York", month: "long", day: "numeric", year: "numeric" })
-        : ""
-      doc.text(`PAID${paidDate ? ` — ${paidDate}` : ""}`, W - marginR, y, { align: "right" })
+      const stampSize = 100
+      doc.addImage(PAID_STAMP_PNG, "PNG", W - marginR - stampSize + 10, 40, stampSize, stampSize)
     }
 
     // ── Footer ──
