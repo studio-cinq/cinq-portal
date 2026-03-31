@@ -125,17 +125,22 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
     setSubmitting(true)
     setCheckoutError(null)
     try {
-      await supabase.from("proposals").update({ status: "accepted", client_note: note || null }).eq("id", params.id)
-      const res = await fetch("/api/proposal-checkout", {
+      const res = await fetch("/api/proposal-accept", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ proposalId: params.id, amount: deposit, depositPct, clientName: proposal?.clients?.name ?? "", title: proposal?.title ?? "Proposal deposit" }),
+        body: JSON.stringify({
+          proposalId: params.id,
+          selectedTotal,
+          deposit,
+          depositPct,
+          note: note || null,
+        }),
       })
-      if (!res.ok) throw new Error("Payment service unavailable")
-      const { url } = await res.json()
-      if (url) window.location.href = url
-      else throw new Error("No payment URL returned")
+      if (!res.ok) throw new Error("Failed to accept proposal")
+      const { invoiceUrl } = await res.json()
+      if (invoiceUrl) window.location.href = invoiceUrl
+      else throw new Error("No invoice URL returned")
     } catch (err) {
-      setCheckoutError("Something went wrong starting the payment. Please try again or reach out to Kacie.")
+      setCheckoutError("Something went wrong. Please try again or reach out to Kacie.")
       setSubmitting(false)
     }
   }
