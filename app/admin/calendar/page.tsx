@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { supabase } from "@/lib/supabase"
 import PortalNav from "@/components/portal/Nav"
 import { useToast } from "@/components/portal/Toast"
@@ -19,6 +19,7 @@ const HOUR_START = 7
 const HOUR_END = 18  // 6pm
 const HOUR_COUNT = HOUR_END - HOUR_START + 1
 const ROW_H = 52  // px per hour slot
+const SNAP_MINUTES = 15
 
 function toDateStr(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
@@ -41,6 +42,16 @@ function fmtHourLabel(hour: number) {
 function timeToMinutes(time: string): number {
   const [h, m] = time.split(":").map(Number)
   return h * 60 + m
+}
+
+function minutesToTime(mins: number): string {
+  const h = Math.floor(mins / 60)
+  const m = mins % 60
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`
+}
+
+function snapMinutes(mins: number): number {
+  return Math.round(mins / SNAP_MINUTES) * SNAP_MINUTES
 }
 
 function getWeekStart(d: Date) {
@@ -69,6 +80,11 @@ export default function AdminCalendarPage() {
   const { show: showToast, ToastContainer } = useToast()
 
   const [form, setForm] = useState({ ...emptyForm })
+
+  // ── Drag state ─────────────────────────────────────────
+  const [dragId, setDragId] = useState<string | null>(null)
+  const [dropTarget, setDropTarget] = useState<{ date: string; time?: string } | null>(null)
+  const weekGridRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => { loadAll() }, [])
 
@@ -195,7 +211,6 @@ export default function AdminCalendarPage() {
     }
 
     if (editingId) {
-      // Update
       const res = await fetch("/api/admin/events", {
         method: "PATCH", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: editingId, ...payload }),
@@ -211,7 +226,6 @@ export default function AdminCalendarPage() {
         showToast("Failed to update event", "error")
       }
     } else {
-      // Create
       const res = await fetch("/api/admin/events", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -239,6 +253,99 @@ export default function AdminCalendarPage() {
       if (editingId === id) resetForm()
       showToast("Event removed", "info")
     }
+  }
+
+  // ── Drag & drop ───────────────────────────────────────
+  async function moveEvent(eventId: string, newDate: string, newTime?: string) {
+    const updates: any = { event_date: newDate }
+    if (newTime !== undefined) updates.event_time = newTime || null
+
+    // Optimistic update
+    setEvents(prev => prev.map(e => e.id === eventId ? { ...e, ...updates } : e))
+
+    const res = await fetch("/api/admin/events", {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: eventId, ...updates }),
+    })
+
+    if (res.ok) {
+      // Refresh the moved event to get joined data
+      const { data } = await supabase.from("events").select("*, clients(name), projects(title)").eq("id", eventId).single()
+      if (data) setEvents(prev => prev.map(e => e.id === eventId ? data : e))
+      showToast("Event moved")
+    } else {
+      // Revert on failure
+      loadAll()
+      showToast("Failed to move event", "error")
+    }
+  }
+
+  function handleDragStart(e: React.DragEvent, eventId: string) {
+    if (eventId.startsWith("inv-")) { e.preventDefault(); return }
+    e.dataTransfer.setData("text/plain", eventId)
+    e.dataTransfer.effectAllowed = "move"
+    setDragId(eventId)
+  }
+
+  function handleDragEnd() {
+    setDragId(null)
+    setDropTarget(null)
+  }
+
+  // Week view: compute date + time from mouse position over the grid
+  function handleWeekGridDragOver(e: React.DragEvent) {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = "move"
+    if (!weekGridRef.current) return
+
+    const rect = weekGridRef.current.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+
+    // First 54px is the time label column
+    const colWidth = (rect.width - 54) / 7
+    const colIndex = Math.max(0, Math.min(6, Math.floor((x - 54) / colWidth)))
+    const dayDate = weekDays[colIndex]
+    if (!dayDate) return
+
+    const rawMinutes = HOUR_START * 60 + (y / ROW_H) * 60
+    const snapped = snapMinutes(Math.max(HOUR_START * 60, Math.min(HOUR_END * 60, rawMinutes)))
+
+    setDropTarget({ date: toDateStr(dayDate), time: minutesToTime(snapped) })
+  }
+
+  function handleWeekGridDrop(e: React.DragEvent) {
+    e.preventDefault()
+    const eventId = e.dataTransfer.getData("text/plain")
+    if (!eventId || eventId.startsWith("inv-") || !dropTarget) return
+    moveEvent(eventId, dropTarget.date, dropTarget.time)
+    setDragId(null)
+    setDropTarget(null)
+  }
+
+  // Month view: drop onto a day cell
+  function handleMonthCellDragOver(e: React.DragEvent) {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = "move"
+  }
+
+  function handleMonthCellDrop(e: React.DragEvent, dateStr: string) {
+    e.preventDefault()
+    const eventId = e.dataTransfer.getData("text/plain")
+    if (!eventId || eventId.startsWith("inv-")) return
+    moveEvent(eventId, dateStr)
+    setDragId(null)
+    setDropTarget(null)
+  }
+
+  // All-day row drop
+  function handleAllDayDrop(e: React.DragEvent, dateStr: string) {
+    e.preventDefault()
+    const eventId = e.dataTransfer.getData("text/plain")
+    if (!eventId || eventId.startsWith("inv-")) return
+    moveEvent(eventId, dateStr, "")  // empty string clears time → all day
+    setDragId(null)
+    setDropTarget(null)
   }
 
   if (loading) return (
@@ -434,7 +541,7 @@ export default function AdminCalendarPage() {
                 const ds = toDateStr(day)
                 return (eventsByDate[ds] ?? []).some(e => !e.event_time)
               })
-              if (!hasAllDay) return null
+              if (!hasAllDay && !dragId) return null
               return (
                 <div style={{ display: "grid", gridTemplateColumns: "54px repeat(7, 1fr)", borderBottom: "0.5px solid rgba(15,15,14,0.1)" }}>
                   <div style={{
@@ -450,13 +557,26 @@ export default function AdminCalendarPage() {
                     const isToday = ds === todayStr
                     const allDayEvts = (eventsByDate[ds] ?? []).filter(e => !e.event_time)
                     return (
-                      <div key={ds} style={{
-                        padding: "4px 4px", borderRight: "0.5px solid rgba(15,15,14,0.06)",
-                        background: isToday ? "rgba(15,15,14,0.02)" : "transparent",
-                        display: "flex", flexDirection: "column", gap: 2, minHeight: 28,
-                      }}>
+                      <div
+                        key={ds}
+                        onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move" }}
+                        onDrop={(e) => handleAllDayDrop(e, ds)}
+                        style={{
+                          padding: "4px 4px", borderRight: "0.5px solid rgba(15,15,14,0.06)",
+                          background: isToday ? "rgba(15,15,14,0.02)" : "transparent",
+                          display: "flex", flexDirection: "column", gap: 2, minHeight: 28,
+                        }}
+                      >
                         {allDayEvts.map(evt => (
-                          <EventChip key={evt.id} evt={evt} compact onEdit={() => startEdit(evt)} onDelete={!evt.is_auto ? () => deleteEvent(evt.id) : undefined} />
+                          <EventChip
+                            key={evt.id} evt={evt} compact
+                            onEdit={() => startEdit(evt)}
+                            onDelete={!evt.is_auto ? () => deleteEvent(evt.id) : undefined}
+                            draggable={!evt.is_auto}
+                            onDragStart={(e) => handleDragStart(e, evt.id)}
+                            onDragEnd={handleDragEnd}
+                            isDragging={dragId === evt.id}
+                          />
                         ))}
                       </div>
                     )
@@ -466,7 +586,12 @@ export default function AdminCalendarPage() {
             })()}
 
             {/* Time-slotted grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "54px repeat(7, 1fr)", overflowY: "auto", maxHeight: `${HOUR_COUNT * ROW_H + 2}px` }}>
+            <div
+              ref={weekGridRef}
+              onDragOver={handleWeekGridDragOver}
+              onDrop={handleWeekGridDrop}
+              style={{ display: "grid", gridTemplateColumns: "54px repeat(7, 1fr)", overflowY: "auto", maxHeight: `${HOUR_COUNT * ROW_H + 2}px`, position: "relative" }}
+            >
               {/* Time labels column */}
               <div style={{ borderRight: "0.5px solid rgba(15,15,14,0.06)" }}>
                 {Array.from({ length: HOUR_COUNT }, (_, i) => {
@@ -509,6 +634,28 @@ export default function AdminCalendarPage() {
                       }} />
                     ))}
 
+                    {/* Drop target indicator */}
+                    {dragId && dropTarget?.date === ds && dropTarget.time && (() => {
+                      const mins = timeToMinutes(dropTarget.time)
+                      const offset = mins - HOUR_START * 60
+                      const top = (offset / 60) * ROW_H
+                      return (
+                        <div style={{
+                          position: "absolute", top, left: 3, right: 3, height: 2,
+                          background: "var(--sage)", opacity: 0.6, zIndex: 10,
+                          borderRadius: 1, pointerEvents: "none",
+                        }}>
+                          <span style={{
+                            position: "absolute", left: 0, top: -14,
+                            fontFamily: "var(--font-mono)", fontSize: 9,
+                            color: "var(--sage)", opacity: 0.9, whiteSpace: "nowrap",
+                          }}>
+                            {fmtTime(dropTarget.time)}
+                          </span>
+                        </div>
+                      )
+                    })()}
+
                     {/* Positioned events */}
                     {dayEvents.map(evt => {
                       const mins = timeToMinutes(evt.event_time)
@@ -526,10 +673,19 @@ export default function AdminCalendarPage() {
                             top, left: 3, right: 3,
                             minHeight: 40,
                             height,
-                            zIndex: 2,
+                            zIndex: dragId === evt.id ? 1 : 2,
+                            opacity: dragId === evt.id ? 0.35 : 1,
+                            transition: "opacity 0.15s",
                           }}
                         >
-                          <EventChip evt={evt} timed onDelete={!evt.is_auto ? () => deleteEvent(evt.id) : undefined} />
+                          <EventChip
+                            evt={evt} timed
+                            onDelete={!evt.is_auto ? () => deleteEvent(evt.id) : undefined}
+                            draggable={!evt.is_auto}
+                            onDragStart={(e) => handleDragStart(e, evt.id)}
+                            onDragEnd={handleDragEnd}
+                            isDragging={dragId === evt.id}
+                          />
                         </div>
                       )
                     })}
@@ -558,17 +714,34 @@ export default function AdminCalendarPage() {
             {/* Day cells */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)" }}>
               {monthCells.map((day, i) => {
-                if (!day) return <div key={`empty-${i}`} style={{ minHeight: 100, borderRight: "0.5px solid rgba(15,15,14,0.06)", borderBottom: "0.5px solid rgba(15,15,14,0.06)", background: "rgba(15,15,14,0.02)" }} />
+                if (!day) return (
+                  <div
+                    key={`empty-${i}`}
+                    onDragOver={handleMonthCellDragOver}
+                    style={{ minHeight: 100, borderRight: "0.5px solid rgba(15,15,14,0.06)", borderBottom: "0.5px solid rgba(15,15,14,0.06)", background: "rgba(15,15,14,0.02)" }}
+                  />
+                )
                 const ds = toDateStr(day)
                 const isToday = ds === todayStr
                 const dayEvents = eventsByDate[ds] ?? []
+                const isDropHere = dragId && dropTarget?.date === ds
                 return (
-                  <div key={ds} style={{
-                    minHeight: 100, padding: "6px 6px 4px",
-                    borderRight: "0.5px solid rgba(15,15,14,0.06)",
-                    borderBottom: "0.5px solid rgba(15,15,14,0.06)",
-                    background: isToday ? "rgba(15,15,14,0.04)" : "transparent",
-                  }}>
+                  <div
+                    key={ds}
+                    onDragOver={(e) => {
+                      handleMonthCellDragOver(e)
+                      setDropTarget({ date: ds })
+                    }}
+                    onDragLeave={() => { if (dropTarget?.date === ds) setDropTarget(null) }}
+                    onDrop={(e) => handleMonthCellDrop(e, ds)}
+                    style={{
+                      minHeight: 100, padding: "6px 6px 4px",
+                      borderRight: "0.5px solid rgba(15,15,14,0.06)",
+                      borderBottom: "0.5px solid rgba(15,15,14,0.06)",
+                      background: isDropHere ? "rgba(143,167,181,0.08)" : isToday ? "rgba(15,15,14,0.04)" : "transparent",
+                      transition: "background 0.15s",
+                    }}
+                  >
                     <div style={{
                       fontFamily: "var(--font-sans)", fontSize: 11,
                       opacity: isToday ? 0.95 : 0.4, fontWeight: isToday ? 500 : 400,
@@ -582,7 +755,15 @@ export default function AdminCalendarPage() {
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                       {dayEvents.slice(0, 3).map(evt => (
-                        <EventChip key={evt.id} evt={evt} compact onEdit={() => startEdit(evt)} onDelete={!evt.is_auto ? () => deleteEvent(evt.id) : undefined} />
+                        <EventChip
+                          key={evt.id} evt={evt} compact
+                          onEdit={() => startEdit(evt)}
+                          onDelete={!evt.is_auto ? () => deleteEvent(evt.id) : undefined}
+                          draggable={!evt.is_auto}
+                          onDragStart={(e) => handleDragStart(e, evt.id)}
+                          onDragEnd={handleDragEnd}
+                          isDragging={dragId === evt.id}
+                        />
                       ))}
                       {dayEvents.length > 3 && (
                         <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, opacity: 0.35, paddingLeft: 4 }}>
@@ -603,9 +784,13 @@ export default function AdminCalendarPage() {
 }
 
 // ── Event chip ───────────────────────────────────────────
-function EventChip({ evt, compact, timed, onEdit, onDelete }: {
+function EventChip({ evt, compact, timed, onEdit, onDelete, draggable, onDragStart, onDragEnd, isDragging }: {
   evt: any; compact?: boolean; timed?: boolean;
-  onEdit?: () => void; onDelete?: () => void
+  onEdit?: () => void; onDelete?: () => void;
+  draggable?: boolean;
+  onDragStart?: (e: React.DragEvent) => void;
+  onDragEnd?: () => void;
+  isDragging?: boolean;
 }) {
   const [hovered, setHovered] = useState(false)
   const bgColors: Record<string, string> = {
@@ -615,6 +800,9 @@ function EventChip({ evt, compact, timed, onEdit, onDelete }: {
 
   return (
     <div
+      draggable={draggable}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={(e) => { if (onEdit && !evt.is_auto) { e.stopPropagation(); onEdit() } }}
@@ -623,9 +811,11 @@ function EventChip({ evt, compact, timed, onEdit, onDelete }: {
         borderLeft: `2px solid ${TYPE_COLORS[evt.type] ?? "var(--ink)"}`,
         padding: compact ? "2px 5px" : timed ? "4px 6px" : "5px 8px 4px",
         position: "relative",
-        cursor: evt.is_auto ? "default" : "pointer",
+        cursor: draggable ? "grab" : evt.is_auto ? "default" : "pointer",
         minHeight: timed ? "100%" : "auto",
         boxSizing: "border-box",
+        opacity: isDragging ? 0.35 : 1,
+        transition: "opacity 0.15s",
       }}
     >
       {evt.event_time && !compact && (
@@ -651,7 +841,7 @@ function EventChip({ evt, compact, timed, onEdit, onDelete }: {
           {evt.client_name}
         </div>
       )}
-      {onDelete && hovered && (
+      {onDelete && hovered && !isDragging && (
         <button onClick={(e) => { e.stopPropagation(); onDelete() }} style={{
           position: "absolute", top: 2, right: 3,
           fontFamily: "var(--font-mono)", fontSize: 9,
