@@ -166,7 +166,7 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
 
         {/* ACH bank details */}
         {hasACH && !isPaid && achDetails && achDetails.bankName && (
-          <div style={{ marginBottom: 36, padding: "16px 20px", background: "rgba(255,255,255,0.3)", border: "0.5px solid rgba(15,15,14,0.08)" }}>
+          <div style={{ marginBottom: 36, padding: "16px 0 16px 20px", borderLeft: "2px solid rgba(15,15,14,0.1)" }}>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.4, marginBottom: 12 }}>
               Bank transfer details
             </div>
