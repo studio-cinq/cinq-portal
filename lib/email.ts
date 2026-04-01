@@ -633,3 +633,32 @@ export async function sendMessageReplyEmail(p: MessageReplyPayload) {
     html,
   });
 }
+
+// ─── Portal invite — to client ──────────────────────────────────────────────
+
+interface PortalInvitePayload {
+  contactName: string;
+  contactEmail: string;
+  inviteLink: string;
+}
+
+export async function sendPortalInviteEmail(p: PortalInvitePayload) {
+  const firstName = p.contactName.split(" ")[0] || p.contactName
+
+  const html = emailShell(`
+    <div class="body">
+      <p>Hi ${firstName} — your Studio Cinq client portal is ready.</p>
+      <p>This is your private space to track your project, review deliverables, manage invoices, and access your brand files — all in one place.</p>
+      <p>Click below to set your password and get started.</p>
+      <a class="cta" href="${p.inviteLink}" style="color:#FAF8F5;text-decoration:none;">Set up your account →</a>
+      <p style="margin-top:24px;font-size:13px;color:#9E9589">If you have any questions, just reply to this email.</p>
+    </div>
+  `);
+
+  return resend.emails.send({
+    from: "Studio Cinq <portal@studiocinq.com>",
+    to: p.contactEmail,
+    subject: `Your Studio Cinq portal is ready`,
+    html,
+  });
+}
