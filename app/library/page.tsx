@@ -13,11 +13,16 @@ export default async function LibraryPage() {
     .eq("contact_email", user?.email ?? "").single()
   const client = clientRaw as any
 
-  const { data: unlockInvoice } = await supabase
-    .from("invoices").select("id")
+  // Check if files should be unlocked:
+  // 1. If any invoice with unlocks_files=true exists and is paid → unlocked
+  // 2. If NO invoice has unlocks_files=true at all → no payment gate, show files if they exist
+  const { data: gateInvoices } = await supabase
+    .from("invoices").select("id, status")
     .eq("client_id", client?.id ?? "")
-    .eq("unlocks_files", true).eq("status", "paid").maybeSingle()
-  const isUnlocked = !!unlockInvoice
+    .eq("unlocks_files", true)
+  const hasGateInvoice = (gateInvoices ?? []).length > 0
+  const gateIsPaid = (gateInvoices ?? []).some(inv => inv.status === "paid")
+  const isUnlocked = !hasGateInvoice || gateIsPaid
 
   const { data: projectsRaw } = await supabase
     .from("projects").select("id").eq("client_id", client?.id ?? "")
@@ -75,7 +80,9 @@ export default async function LibraryPage() {
             fontSize: "var(--text-sm)",
             color: "rgba(237,232,224,0.45)", letterSpacing: "0.04em",
           }}>
-            {isUnlocked ? "All files available for download" : "Files unlock after final payment"}
+            {isUnlocked
+              ? (assets.length > 0 ? "All files available for download" : "Files will appear here as your project progresses")
+              : "Files unlock after final payment"}
           </div>
         </div>
 
@@ -95,7 +102,7 @@ export default async function LibraryPage() {
       </div>
 
       {!isUnlocked ? (
-        <LockedState />
+        <LockedState hasOutstandingGate={hasGateInvoice && !gateIsPaid} />
       ) : (
         <main className="library-grid" style={{
           padding: "44px 48px 56px",
@@ -266,27 +273,32 @@ function FileRow({ asset }: { asset: any }) {
   )
 }
 
-function LockedState() {
+function LockedState({ hasOutstandingGate }: { hasOutstandingGate: boolean }) {
   return (
     <div style={{ padding: "80px 48px", textAlign: "center", maxWidth: 480, margin: "0 auto" }}>
       <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.4, marginBottom: 16 }}>
         Brand library
       </div>
       <div style={{ fontFamily: "var(--font-sans)", fontSize: 20, opacity: "var(--op-body)" as any, marginBottom: 14, letterSpacing: "-0.01em" }}>
-        Your files are almost ready.
+        {hasOutstandingGate ? "Your files are almost ready." : "Nothing here yet."}
       </div>
       <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-muted)" as any, lineHeight: 1.8 }}>
-        Your brand library will unlock automatically once the final invoice is paid. All logo files, brand guidelines, color values, and source files will be available here.
+        {hasOutstandingGate
+          ? "Your brand library will unlock automatically once the final invoice is paid. All logo files, brand guidelines, color values, and source files will be available here."
+          : "Your brand library will be available here once deliverables are ready. Logo files, brand guidelines, color values, and source files will all live in one place."
+        }
       </div>
-      <Link href="/invoices" style={{
-        display: "inline-block", marginTop: 28,
-        fontFamily: "var(--font-mono)",
-        fontSize: "var(--text-eyebrow)", letterSpacing: "0.14em", textTransform: "uppercase",
-        color: "var(--ink)", opacity: "var(--op-muted)" as any, textDecoration: "none",
-        border: "0.5px solid rgba(15,15,14,0.2)", padding: "10px 20px",
-      }}>
-        View invoices →
-      </Link>
+      {hasOutstandingGate && (
+        <Link href="/invoices" style={{
+          display: "inline-block", marginTop: 28,
+          fontFamily: "var(--font-mono)",
+          fontSize: "var(--text-eyebrow)", letterSpacing: "0.14em", textTransform: "uppercase",
+          color: "var(--ink)", opacity: "var(--op-muted)" as any, textDecoration: "none",
+          border: "0.5px solid rgba(15,15,14,0.2)", padding: "10px 20px",
+        }}>
+          View invoices →
+        </Link>
+      )}
     </div>
   )
 }

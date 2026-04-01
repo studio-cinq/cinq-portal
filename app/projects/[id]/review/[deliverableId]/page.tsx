@@ -71,7 +71,7 @@ export default async function ReviewPage({
           </div>
         </div>
         <div style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "#c95a3b", opacity: 0.85 }}>
-          Round {deliverable.revision_used + 1} of {deliverable.revision_max}
+          Round {Math.min(deliverable.revision_used + 1, deliverable.revision_max)} of {deliverable.revision_max}
         </div>
       </div>
 
@@ -110,7 +110,7 @@ export default async function ReviewPage({
         <div style={{ padding: "24px 28px", borderRight: "0.5px solid rgba(15,15,14,0.08)" }}>
           <div style={barLabel}>About this round</div>
           <div style={{ fontSize: 11, color: "var(--ink)", opacity: 0.5, lineHeight: 1.6 }}>
-            {deliverable.description ?? `Round ${deliverable.revision_used + 1} of ${deliverable.revision_max} for ${deliverable.name}.`}
+            {deliverable.description ?? `Round ${Math.min(deliverable.revision_used + 1, deliverable.revision_max)} of ${deliverable.revision_max} for ${deliverable.name}.`}
           </div>
         </div>
 
@@ -118,7 +118,7 @@ export default async function ReviewPage({
         <ReviewActions
           projectId={project.id}
           deliverableId={deliverable.id}
-          revisionsRemaining={deliverable.revision_max - deliverable.revision_used - 1}
+          revisionsRemaining={Math.max(0, deliverable.revision_max - deliverable.revision_used - 1)}
         />
       </div>
     </>

@@ -123,7 +123,10 @@ export default async function ProjectPage({ params }: { params: { id: string } }
                           }} />
                         ))}
                         <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", color: "var(--ink)", opacity: 0.38, marginLeft: 6, letterSpacing: "0.04em" }}>
-                          {del.revision_max - del.revision_used} round{del.revision_max - del.revision_used !== 1 ? "s" : ""} remaining
+                          {del.revision_used >= del.revision_max
+                            ? "All rounds used"
+                            : `${del.revision_max - del.revision_used} round${del.revision_max - del.revision_used !== 1 ? "s" : ""} remaining`
+                          }
                         </span>
                       </div>
                     )}

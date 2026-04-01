@@ -4,18 +4,26 @@ import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
 import CinqLogo from "@/components/CinqLogo"
 import DownloadPDFButton from "@/components/portal/DownloadPDFButton"
-import { useSearchParams } from "next/navigation"
 import { Suspense } from "react"
 
 function InvoicePageInner({ params }: { params: { id: string } }) {
   const [invoice, setInvoice] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [justPaid, setJustPaid] = useState(false)
   const [achDetails, setAchDetails] = useState<{ bankName: string; routingNumber: string; accountNumber: string; accountName: string } | null>(null)
-  const searchParams = useSearchParams()
-  const justPaid = searchParams.get("paid") === "true"
 
   useEffect(() => {
+    // Check for Stripe success redirect (has session_id param)
+    const url = new URL(window.location.href)
+    if (url.searchParams.get("session_id")) {
+      setJustPaid(true)
+      // Clean URL without reloading
+      url.searchParams.delete("session_id")
+      url.searchParams.delete("paid")
+      window.history.replaceState({}, "", url.pathname)
+    }
+
     supabase
       .from("invoices")
       .select("*, clients(name, contact_name, contact_email), projects(title)")

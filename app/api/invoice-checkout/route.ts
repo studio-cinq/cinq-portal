@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
       project_id: invoice.project_id,
       type: "invoice",
     },
-    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/invoice/${invoiceId}?paid=true`,
+    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/invoice/${invoiceId}?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/invoice/${invoiceId}`,
   })
 

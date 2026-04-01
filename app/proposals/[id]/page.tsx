@@ -108,7 +108,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
     return sum + (item.price ?? 0)
   }, 0)
 
-  const deposit = Math.round(selectedTotal * (depositPct / 100))
+  const deposit = Math.round((selectedTotal * depositPct) / 100)
 
   const scheduleLabel = schedule.map((p, i) => {
     if (i === 0) return `${p}% deposit due now`

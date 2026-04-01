@@ -47,7 +47,7 @@ const invoice = invoiceRaw as any
       client_id:   invoice.client_id,
       project_id:  invoice.project_id,
     },
-    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/invoices?paid=true`,
+    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/invoices`,
     cancel_url:  `${process.env.NEXT_PUBLIC_APP_URL}/invoices`,
   })
 
