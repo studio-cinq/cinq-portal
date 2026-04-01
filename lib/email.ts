@@ -252,6 +252,49 @@ export async function sendInvoiceEmail(p: InvoiceSentPayload) {
   })
 }
 
+// ─── Invoice paid — to admin ─────────────────────────────────────────────────
+
+interface InvoicePaidPayload {
+  invoiceId: string;
+  invoiceNumber: string;
+  description: string;
+  amountCents: number;
+  clientName: string;
+  contactName: string;
+  paidAt: Date;
+  paymentMethod?: string; // "stripe" or "ach"
+}
+
+export async function sendInvoicePaidEmail(p: InvoicePaidPayload) {
+  const amount = (p.amountCents / 100).toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+  });
+
+  const invoiceUrl = `${PORTAL_URL}/admin/invoices/${p.invoiceId}`;
+
+  const html = emailShell(`
+    <div class="body">
+      <p><strong>${p.clientName}</strong> just paid an invoice.</p>
+      <div class="meta">
+        <p><strong>Invoice</strong> &nbsp;#${p.invoiceNumber}</p>
+        <p><strong>Description</strong> &nbsp;${p.description}</p>
+        <p><strong>Amount</strong> &nbsp;${amount}</p>
+        <p><strong>Client</strong> &nbsp;${p.clientName} (${p.contactName})</p>
+        <p><strong>Paid</strong> &nbsp;${formatDate(p.paidAt)}</p>
+      </div>
+      <a class="cta" href="${invoiceUrl}" style="color:#FAF8F5;text-decoration:none;">View invoice →</a>
+    </div>
+  `);
+
+  return resend.emails.send({
+    from: "Studio Cinq Portal <portal@studiocinq.com>",
+    to: STUDIO_EMAIL,
+    subject: `Invoice paid — #${p.invoiceNumber} · ${amount} from ${p.clientName}`,
+    html,
+  });
+}
+
 // ─── Proposal reminder — to client ────────────────────────────────────────────
 
 interface ProposalReminderPayload {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
 import { supabaseAdmin } from "@/lib/supabase-server"
+import { sendInvoicePaidEmail } from "@/lib/email"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2024-06-20" })
 
@@ -24,14 +25,39 @@ export async function POST(req: NextRequest) {
 
     // Invoice payment
     if (type === "invoice" || invoiceId) {
+      const paidAt = new Date()
+
       await (supabaseAdmin as any)
         .from("invoices")
         .update({
           status:                   "paid",
-          paid_at:                  new Date().toISOString(),
+          paid_at:                  paidAt.toISOString(),
           stripe_payment_intent_id: session.payment_intent as string,
         })
         .eq("id", invoiceId)
+
+      // Notify admin
+      try {
+        const { data: invoice } = await (supabaseAdmin as any)
+          .from("invoices")
+          .select("*, clients(name, contact_name)")
+          .eq("id", invoiceId)
+          .single()
+
+        if (invoice) {
+          await sendInvoicePaidEmail({
+            invoiceId: invoice.id,
+            invoiceNumber: invoice.invoice_number ?? "—",
+            description: invoice.description ?? "",
+            amountCents: invoice.amount ?? 0,
+            clientName: invoice.clients?.name ?? "Unknown",
+            contactName: invoice.clients?.contact_name ?? "",
+            paidAt,
+          })
+        }
+      } catch (err) {
+        console.error("[webhook] invoice paid email failed:", err)
+      }
     }
 
     // Proposal deposit
