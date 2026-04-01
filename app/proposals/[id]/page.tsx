@@ -125,6 +125,13 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
     setSubmitting(true)
     setCheckoutError(null)
     try {
+      // Build per-item selections
+      const selections = items.map((item, i) => ({
+        id: item.id,
+        accepted: item.is_required || checked[i],
+        phase: item.is_required ? "now" : phases[i],
+      }))
+
       const res = await fetch("/api/proposal-accept", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -133,6 +140,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
           deposit,
           depositPct,
           note: note || null,
+          selections,
         }),
       })
       if (!res.ok) throw new Error("Failed to accept proposal")

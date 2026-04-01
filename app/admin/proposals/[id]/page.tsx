@@ -238,27 +238,38 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
               Summary
             </div>
 
-            {items.map((item: any) => (
-              <div key={item.id} style={{
-                display: "flex", justifyContent: "space-between", alignItems: "baseline",
-                padding: "8px 0", borderBottom: "0.5px solid rgba(15,15,14,0.07)",
-              }}>
-                <div>
-                  <span style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 12, opacity: item.is_optional ? 0.45 : 0.75 }}>
-                    {item.name}
+            {items.map((item: any) => {
+              const declined = isAccepted && !item.accepted && !item.is_required
+              return (
+                <div key={item.id} style={{
+                  display: "flex", justifyContent: "space-between", alignItems: "baseline",
+                  padding: "8px 0", borderBottom: "0.5px solid rgba(15,15,14,0.07)",
+                  opacity: declined ? 0.35 : 1,
+                  textDecoration: declined ? "line-through" : "none",
+                }}>
+                  <div>
+                    <span style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 12, opacity: item.is_optional && !declined ? 0.45 : 0.75 }}>
+                      {item.name}
+                    </span>
+                    {isAccepted && item.accepted && item.phase === "later" && (
+                      <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, opacity: 0.5, marginLeft: 6, letterSpacing: "0.08em" }}>phase 2</span>
+                    )}
+                    {isAccepted && item.accepted && item.phase === "now" && !item.is_required && (
+                      <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, color: "#8fa7b5", marginLeft: 6, letterSpacing: "0.08em" }}>priority</span>
+                    )}
+                    {!isAccepted && item.is_optional && (
+                      <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, opacity: 0.4, marginLeft: 6, letterSpacing: "0.08em" }}>optional</span>
+                    )}
+                    {item.is_recommended && !isAccepted && (
+                      <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, color: "#b5a042", marginLeft: 6, letterSpacing: "0.08em" }}>rec.</span>
+                    )}
+                  </div>
+                  <span style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 12, opacity: declined ? 0.4 : (item.is_optional ? 0.4 : 0.7) }}>
+                    ${(item.price / 100).toLocaleString()}
                   </span>
-                  {item.is_optional && (
-                    <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, opacity: 0.4, marginLeft: 6, letterSpacing: "0.08em" }}>optional</span>
-                  )}
-                  {item.is_recommended && (
-                    <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, color: "#b5a042", marginLeft: 6, letterSpacing: "0.08em" }}>rec.</span>
-                  )}
                 </div>
-                <span style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 12, opacity: item.is_optional ? 0.4 : 0.7 }}>
-                  ${(item.price / 100).toLocaleString()}
-                </span>
-              </div>
-            ))}
+              )
+            })}
 
             <div style={{ marginTop: 20, paddingTop: 16, borderTop: "0.5px solid rgba(15,15,14,0.12)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>

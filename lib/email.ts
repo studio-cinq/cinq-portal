@@ -143,7 +143,58 @@ export async function sendProposalViewedEmail(p: ProposalViewedPayload) {
   });
 }
 
-// ─── Proposal accepted ────────────────────────────────────────────────────────
+// ─── Shared item types for proposal emails ───────────────────────────────────
+
+interface SelectedItem {
+  name: string;
+  price: number;         // cents
+  phase: "now" | "later";
+  isRequired: boolean;
+}
+
+interface SkippedItem {
+  name: string;
+  price: number;         // cents
+  isOptional: boolean;
+}
+
+function formatItemList(selectedItems: SelectedItem[], skippedItems: SkippedItem[]) {
+  const fmt = (cents: number) => (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+
+  let html = ""
+
+  // Selected items
+  const priorityItems = selectedItems.filter(i => i.phase === "now")
+  const phase2Items = selectedItems.filter(i => i.phase === "later")
+
+  if (priorityItems.length > 0) {
+    html += `<p style="margin:0 0 4px;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:#9E9589">Priority for launch</p>`
+    for (const item of priorityItems) {
+      html += `<p style="margin:0 0 4px;font-size:13px;color:#2C2820">${item.name} &nbsp;<span style="color:#6B6258">${fmt(item.price)}</span>${item.isRequired ? ' <span style="color:#9E9589;font-size:11px">· included</span>' : ""}</p>`
+    }
+    html += `<br/>`
+  }
+
+  if (phase2Items.length > 0) {
+    html += `<p style="margin:0 0 4px;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:#9E9589">Second phase</p>`
+    for (const item of phase2Items) {
+      html += `<p style="margin:0 0 4px;font-size:13px;color:#2C2820">${item.name} &nbsp;<span style="color:#6B6258">${fmt(item.price)}</span></p>`
+    }
+    html += `<br/>`
+  }
+
+  // Skipped items
+  if (skippedItems.length > 0) {
+    html += `<p style="margin:0 0 4px;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:#9E9589">Not included (still available)</p>`
+    for (const item of skippedItems) {
+      html += `<p style="margin:0 0 4px;font-size:13px;color:#9E9589">${item.name} &nbsp;${fmt(item.price)}</p>`
+    }
+  }
+
+  return html
+}
+
+// ─── Proposal accepted — to admin ────────────────────────────────────────────
 
 interface ProposalAcceptedPayload {
   proposalId: string;
@@ -151,37 +202,100 @@ interface ProposalAcceptedPayload {
   clientName: string;
   contactName: string;
   contactEmail: string;
-  totalCents: number;       // sum of accepted proposal_items.price
-  stripeSessionId?: string;
+  totalCents: number;
   acceptedAt: Date;
+  selectedItems: SelectedItem[];
+  skippedItems: SkippedItem[];
+  depositCents: number;
+  depositPct: number;
+  clientNote?: string | null;
 }
 
 export async function sendProposalAcceptedEmail(p: ProposalAcceptedPayload) {
   const proposalUrl = `${PORTAL_URL}/admin/proposals/${p.proposalId}`;
-  const total = (p.totalCents / 100).toLocaleString("en-US", {
-    style: "currency",
-    currency: "USD",
-  });
+  const total = (p.totalCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+  const depositAmt = (p.depositCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
 
   const html = emailShell(`
     <div class="body">
-      <p>${p.contactName} at <strong>${p.clientName}</strong> accepted a proposal and completed checkout.</p>
+      <p>${p.contactName} at <strong>${p.clientName}</strong> accepted a proposal.</p>
       <div class="meta">
         <p><strong>Proposal</strong> &nbsp;${p.proposalTitle}</p>
         <p><strong>Client</strong> &nbsp;${p.clientName} (${p.contactName})</p>
-        <p><strong>Contact</strong> &nbsp;${p.contactEmail}</p>
-        <p><strong>Total</strong> &nbsp;${total}</p>
+        <p><strong>Project total</strong> &nbsp;${total}</p>
+        <p><strong>Deposit (${p.depositPct}%)</strong> &nbsp;${depositAmt}</p>
         <p><strong>Accepted</strong> &nbsp;${formatDate(p.acceptedAt)}</p>
-        ${p.stripeSessionId ? `<p><strong>Stripe session</strong> &nbsp;<code style="font-size:11px">${p.stripeSessionId}</code></p>` : ""}
+        ${p.clientNote ? `<p><strong>Client note</strong> &nbsp;<em>"${p.clientNote}"</em></p>` : ""}
       </div>
-      <a class="cta" href="${proposalUrl}"style="color:#FAF8F5;text-decoration:none;">View &amp; pay invoice →</a>
+      <div style="margin: 20px 0; padding: 16px 20px; background: #F0EBE3; border: 0.5px solid #DDD6CC;">
+        ${formatItemList(p.selectedItems, p.skippedItems)}
+      </div>
+      <a class="cta" href="${proposalUrl}" style="color:#FAF8F5;text-decoration:none;">View proposal →</a>
     </div>
   `);
 
   return resend.emails.send({
     from: "Studio Cinq Portal <portal@studiocinq.com>",
     to: STUDIO_EMAIL,
-    subject: `Proposal accepted 🎉 — ${p.clientName} · ${total}`,
+    subject: `Proposal accepted — ${p.clientName} · ${total}`,
+    html,
+  });
+}
+
+// ─── Proposal confirmation — to client ───────────────────────────────────────
+
+interface ProposalConfirmationPayload {
+  proposalId: string;
+  proposalTitle: string;
+  clientName: string;
+  contactName: string;
+  contactEmail: string;
+  selectedItems: SelectedItem[];
+  skippedItems: SkippedItem[];
+  selectedTotalCents: number;
+  depositCents: number;
+  depositPct: number;
+  schedule: number[];
+}
+
+export async function sendProposalConfirmationToClient(p: ProposalConfirmationPayload) {
+  const total = (p.selectedTotalCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+  const depositAmt = (p.depositCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+  const proposalUrl = `${PORTAL_URL}/proposals/${p.proposalId}`;
+
+  const scheduleLabel = p.schedule.map((pct, i) => {
+    if (i === 0) return `${pct}% deposit`
+    if (p.schedule.length === 2 && i === 1) return `${pct}% at completion`
+    if (p.schedule.length === 3 && i === 1) return `${pct}% at midpoint`
+    if (p.schedule.length === 3 && i === 2) return `${pct}% at completion`
+    return `${pct}%`
+  }).join(" · ")
+
+  const skippedNote = p.skippedItems.length > 0
+    ? `<p style="margin-top:12px;font-size:13px;color:#6B6258">The items listed under "not included" are still available if you'd like to add them later — just reach out.</p>`
+    : ""
+
+  const html = emailShell(`
+    <div class="body">
+      <p>Hi ${p.contactName} — thank you for confirming your project with Studio Cinq. Here's a summary of what you selected:</p>
+      <div style="margin: 20px 0; padding: 16px 20px; background: #F0EBE3; border: 0.5px solid #DDD6CC;">
+        ${formatItemList(p.selectedItems, p.skippedItems)}
+      </div>
+      <div class="meta">
+        <p><strong>Project total</strong> &nbsp;${total}</p>
+        <p><strong>Deposit due</strong> &nbsp;${depositAmt} (${p.depositPct}%)</p>
+        <p><strong>Payment schedule</strong> &nbsp;${scheduleLabel}</p>
+      </div>
+      ${skippedNote}
+      <p style="margin-top:16px">You'll receive a separate invoice for the deposit. If you have any questions, just reply to this email.</p>
+      <a class="cta" href="${proposalUrl}" style="color:#FAF8F5;text-decoration:none;">View proposal →</a>
+    </div>
+  `);
+
+  return resend.emails.send({
+    from: "Studio Cinq <portal@studiocinq.com>",
+    to: p.contactEmail,
+    subject: `Project confirmed — ${p.proposalTitle}`,
     html,
   });
 }
