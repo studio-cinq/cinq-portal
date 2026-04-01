@@ -34,10 +34,13 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
     const client = proposal.clients as any
     const allItems = (items ?? []) as any[]
-    const baseItems = allItems.filter((i: any) => !i.is_optional)
-    const optionalItems = allItems.filter((i: any) => i.is_optional)
-    const baseTotal = baseItems.reduce((s: number, i: any) => s + (i.price ?? 0), 0)
-    const optionalTotal = optionalItems.reduce((s: number, i: any) => s + (i.price ?? 0), 0)
+    const requiredItems   = allItems.filter((i: any) => i.is_required)
+    const selectableItems = allItems.filter((i: any) => !i.is_required && !i.is_optional)
+    const optionalItems   = allItems.filter((i: any) => i.is_optional)
+    const requiredTotal   = requiredItems.reduce((s: number, i: any) => s + (i.price ?? 0), 0)
+    const selectableTotal = selectableItems.reduce((s: number, i: any) => s + (i.price ?? 0), 0)
+    const optionalTotal   = optionalItems.reduce((s: number, i: any) => s + (i.price ?? 0), 0)
+    const baseTotal       = requiredTotal + selectableTotal
     const schedule = Array.isArray(proposal.payment_schedule) ? proposal.payment_schedule as number[] : [50, 50]
     const depositPct = schedule[0] ?? 50
     const depositCents = Math.round(baseTotal * (depositPct / 100))
@@ -214,7 +217,14 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       }
     }
 
-    renderItems("SCOPE", baseItems, baseTotal)
+    if (requiredItems.length > 0) {
+      renderItems("INCLUDED IN YOUR PROJECT", requiredItems, requiredTotal)
+    }
+
+    if (selectableItems.length > 0) {
+      if (requiredItems.length > 0) y += 10
+      renderItems(requiredItems.length > 0 ? "CUSTOMIZE YOUR SCOPE" : "SCOPE", selectableItems, selectableTotal)
+    }
 
     if (optionalItems.length > 0) {
       y += 10

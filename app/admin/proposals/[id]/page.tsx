@@ -4,6 +4,7 @@ import Link from "next/link"
 import PortalNav from "@/components/portal/Nav"
 import CopyLinkButton from "@/components/portal/CopyLinkButton"
 import DownloadPDFButton from "@/components/portal/DownloadPDFButton"
+import ResendProposalButton from "@/components/portal/ResendProposalButton"
 
 export default async function AdminProposalDetailPage({ params }: { params: { id: string } }) {
   const supabase = await createServerComponentClient()
@@ -83,6 +84,7 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
               Edit
             </Link>
             <DownloadPDFButton type="proposal" id={proposal.id} />
+            <ResendProposalButton proposalId={proposal.id} />
             <CopyLinkButton id={proposal.id} />
             <Link
               href={`/proposals/${proposal.id}`}
@@ -205,7 +207,7 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
             {optionalItems.length > 0 && (
               <div style={{ marginBottom: 40 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12 }}>
-                  <SectionLabel>Optional add-ons</SectionLabel>
+                  <SectionLabel>Additional add-ons</SectionLabel>
                   <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, opacity: 0.38 }}>
                     +${(optionalTotal / 100).toLocaleString()} if added
                   </div>
@@ -327,6 +329,11 @@ function LineItemRow({ item }: { item: any }) {
             <span style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 15, opacity: 0.85, letterSpacing: "-0.01em" }}>
               {item.name}
             </span>
+            {item.is_required && (
+              <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink)", border: "0.5px solid rgba(15,15,14,0.2)", padding: "2px 7px" }}>
+                Required
+              </span>
+            )}
             {item.is_recommended && (
               <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase", color: "#b5a042", border: "0.5px solid rgba(232,200,91,0.4)", padding: "2px 7px" }}>
                 Recommended
@@ -349,7 +356,7 @@ function LineItemRow({ item }: { item: any }) {
             ${(item.price / 100).toLocaleString()}
           </div>
           <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, opacity: 0.35, marginTop: 4 }}>
-            {item.timeline_weeks_min}–{item.timeline_weeks_max} wks
+            {item.timeline_weeks_min === 0 && item.timeline_weeks_max === 0 ? "Ongoing" : `${item.timeline_weeks_min}–${item.timeline_weeks_max} wks`}
           </div>
         </div>
       </div>

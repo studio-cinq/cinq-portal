@@ -234,8 +234,8 @@ export default function NewProposalPage() {
                     </Field>
                     <Field label="Default phase">
                       <select value={item.phase} onChange={e => setItem(i, "phase", e.target.value as "now" | "later")} style={inputStyle}>
-                        <option value="now">Start now</option>
-                        <option value="later">Schedule later</option>
+                        <option value="now">Priority for launch</option>
+                        <option value="later">Second phase</option>
                       </select>
                     </Field>
                   </div>
