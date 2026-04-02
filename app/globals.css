@@ -367,6 +367,13 @@ body {
   .admin-studio-left    { border-right: none !important; padding: 24px 20px !important; }
   .admin-studio-right   { padding: 24px 20px !important; border-top: 0.5px solid rgba(15,15,14,0.1); }
 
+  /* Admin studio dashboard — redesigned */
+  .admin-top-band      { grid-template-columns: 1fr !important; gap: 28px !important; }
+  .admin-client-name   { flex: 0 0 auto !important; min-width: 0 !important; max-width: 140px !important; }
+  .admin-client-project { display: none !important; }
+  .admin-client-outstanding { flex: 0 0 auto !important; }
+  .admin-activity-grid { grid-template-columns: 1fr !important; }
+
   /* Client workspace header */
   .client-header-pad    { padding: 16px 20px 0 !important; }
   .client-header-row    { flex-direction: column !important; align-items: flex-start !important; gap: 16px !important; }
