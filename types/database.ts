@@ -38,10 +38,21 @@ export interface Client {
   notes?: string
 }
 
+export interface ClientContact {
+  id: string
+  created_at: string
+  client_id: string
+  name: string
+  email: string
+  role?: string | null
+  is_primary: boolean
+}
+
 export interface Project {
   id: string
   created_at: string
   client_id: string
+  contact_id?: string | null
   title: string
   scope: string
   status: ProjectStatus
@@ -200,6 +211,7 @@ export type Database = {
   public: {
     Tables: {
       clients: { Row: Client; Insert: Omit<Client, "id" | "created_at">; Update: Partial<Client> }
+      client_contacts: { Row: ClientContact; Insert: Omit<ClientContact, "id" | "created_at">; Update: Partial<ClientContact> }
       projects: { Row: Project; Insert: Omit<Project, "id" | "created_at">; Update: Partial<Project> }
       deliverables: { Row: Deliverable; Insert: Omit<Deliverable, "id" | "created_at">; Update: Partial<Deliverable> }
       presentation_slides: { Row: PresentationSlide; Insert: Omit<PresentationSlide, "id" | "created_at">; Update: Partial<PresentationSlide> }

@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     const auth = await requireAdmin()
     if (auth.error) return auth.error
 
-    const { email, clientName } = await req.json()
+    const { email, clientName, contactName, contactId } = await req.json()
     if (!email) return NextResponse.json({ error: "Missing email" }, { status: 400 })
 
     // Generate invite link without sending Supabase's default email
@@ -17,7 +17,7 @@ export async function POST(req: Request) {
       email,
       options: {
         redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/update-password`,
-        data: { client_name: clientName ?? "" },
+        data: { client_name: clientName ?? "", contact_id: contactId ?? "" },
       },
     })
 
@@ -33,7 +33,7 @@ export async function POST(req: Request) {
 
     // Send branded invite email via Resend
     await sendPortalInviteEmail({
-      contactName: clientName ?? "",
+      contactName: contactName ?? clientName ?? "",
       contactEmail: email,
       inviteLink: actionLink,
     })

@@ -31,12 +31,14 @@ function NewProjectPageInner() {
   const searchParams = useSearchParams()
   const preselectedClient = searchParams.get("client") ?? ""
 
-  const [clients, setClients] = useState<any[]>([])
-  const [saving, setSaving]   = useState(false)
-  const [error, setError]     = useState<string | null>(null)
+  const [clients, setClients]   = useState<any[]>([])
+  const [contacts, setContacts] = useState<any[]>([])
+  const [saving, setSaving]     = useState(false)
+  const [error, setError]       = useState<string | null>(null)
 
   const [form, setForm] = useState({
     client_id:    preselectedClient,
+    contact_id:   "",
     title:        "",
     scope:        "",
     status:       "active",
@@ -52,6 +54,15 @@ function NewProjectPageInner() {
     })
   }, [])
 
+  // Load contacts when client changes
+  useEffect(() => {
+    if (!form.client_id) { setContacts([]); return }
+    fetch(`/api/admin/contacts?client_id=${form.client_id}`)
+      .then(res => res.json())
+      .then(json => setContacts(json.contacts ?? []))
+      .catch(() => setContacts([]))
+  }, [form.client_id])
+
   function set(field: string, value: any) {
     setForm(f => ({ ...f, [field]: value }))
   }
@@ -65,6 +76,7 @@ function NewProjectPageInner() {
 
     const { data, error } = await supabase.from("projects").insert({
       client_id:    form.client_id,
+      contact_id:   form.contact_id || null,
       title:        form.title.trim(),
       scope:        form.scope.trim() || null,
       status:       form.status,
@@ -119,6 +131,21 @@ function NewProjectPageInner() {
               {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
+
+          {/* Contact (optional) */}
+          {contacts.length > 0 && (
+            <div>
+              <label style={labelStyle}>Assign to contact <span style={{ opacity: 0.5 }}>(optional)</span></label>
+              <select
+                value={form.contact_id}
+                onChange={e => set("contact_id", e.target.value)}
+                style={{ ...inputStyle, cursor: "pointer" }}
+              >
+                <option value="">All contacts (shared project)</option>
+                {contacts.map((c: any) => <option key={c.id} value={c.id}>{c.name}{c.role ? ` · ${c.role}` : ""}</option>)}
+              </select>
+            </div>
+          )}
 
           {/* Title */}
           <div>

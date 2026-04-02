@@ -45,8 +45,13 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
   const [replyText, setReplyText]             = useState("")
   const [replyProjectId, setReplyProjectId]   = useState<string>("")
   const [sendingReply, setSendingReply]       = useState(false)
-  const [inviting, setInviting]               = useState(false)
-  const [inviteStatus, setInviteStatus]       = useState<"idle" | "sent">("idle")
+  const [contacts, setContacts]                 = useState<any[]>([])
+  const [inviting, setInviting]               = useState<string | false>(false)
+  const [inviteSent, setInviteSent]           = useState<Set<string>>(new Set())
+  const [showInviteDropdown, setShowInviteDropdown] = useState(false)
+  const [showAddContact, setShowAddContact]   = useState(false)
+  const [newContact, setNewContact]           = useState({ name: "", email: "", role: "" })
+  const [savingContact, setSavingContact]     = useState(false)
   const [events, setEvents]                   = useState<any[]>([])
   const [brandAssets, setBrandAssets]           = useState<any[]>([])
   const [colorSwatches, setColorSwatches]       = useState<any[]>([])
@@ -60,7 +65,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
   })
   const { show: showToast, ToastContainer }   = useToast()
 
-  useEffect(() => { loadAll() }, [params.id])
+  useEffect(() => { loadAll(); loadContacts() }, [params.id])
 
   useEffect(() => {
     if (selectedProject) {
@@ -278,18 +283,89 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
     }).catch(err => console.error("[notify-reply]", err))
   }
 
-  async function inviteClient() {
-    setInviting(true)
+  async function loadContacts() {
+    const res = await fetch(`/api/admin/contacts?client_id=${params.id}`)
+    if (res.ok) {
+      const json = await res.json()
+      setContacts(json.contacts ?? [])
+    }
+  }
+
+  async function inviteContact(contact: any) {
+    setInviting(contact.id)
     const res = await fetch("/api/admin/invite-client", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: client.contact_email, clientName: client.contact_name }),
+      body: JSON.stringify({ email: contact.email, clientName: client.name, contactName: contact.name, contactId: contact.id }),
     })
     setInviting(false)
     if (res.ok) {
-      setInviteStatus("sent")
-      showToast("Invite email sent")
+      setInviteSent(prev => new Set(prev).add(contact.id))
+      showToast(`Invite sent to ${contact.name}`)
     } else {
       showToast("Invite failed — try again", "error")
+    }
+  }
+
+  async function addContact() {
+    if (!newContact.name.trim() || !newContact.email.trim()) return
+    setSavingContact(true)
+    const res = await fetch("/api/admin/contacts", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ client_id: params.id, ...newContact }),
+    })
+    setSavingContact(false)
+    if (res.ok) {
+      const json = await res.json()
+      setContacts(prev => [...prev, json.contact])
+      setNewContact({ name: "", email: "", role: "" })
+      setShowAddContact(false)
+      showToast("Contact added")
+    } else {
+      const json = await res.json()
+      showToast(json.error ?? "Failed to add contact", "error")
+    }
+  }
+
+  async function deleteContact(contactId: string, contactName: string) {
+    if (!confirm(`Remove "${contactName}" from this client?`)) return
+    const res = await fetch("/api/admin/contacts", {
+      method: "DELETE", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: contactId }),
+    })
+    if (res.ok) {
+      setContacts(prev => prev.filter(c => c.id !== contactId))
+      showToast("Contact removed", "info")
+    } else {
+      const json = await res.json()
+      showToast(json.error ?? "Failed to remove contact", "error")
+    }
+  }
+
+  async function setPrimaryContact(contactId: string) {
+    const res = await fetch("/api/admin/contacts", {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: contactId, is_primary: true }),
+    })
+    if (res.ok) {
+      setContacts(prev => prev.map(c => ({ ...c, is_primary: c.id === contactId })))
+      showToast("Primary contact updated")
+    }
+  }
+
+  async function assignContactToProject(projectId: string, contactId: string | null) {
+    await supabase.from("projects").update({ contact_id: contactId }).eq("id", projectId)
+    setProjects(ps => ps.map(p => p.id === projectId ? { ...p, contact_id: contactId } : p))
+    const contactName = contacts.find(c => c.id === contactId)?.name ?? "no one"
+    showToast(contactId ? `Assigned to ${contactName}` : "Contact unassigned")
+
+    // Nudge if contact hasn't been invited yet
+    if (contactId) {
+      const contact = contacts.find(c => c.id === contactId)
+      if (contact && !inviteSent.has(contact.id)) {
+        // Check if they have an auth account
+        // We can't easily check this client-side, so just show a gentle nudge
+        showToast(`Reminder: ${contact.name} hasn't been invited to the portal yet`, "info")
+      }
     }
   }
 
@@ -399,15 +475,72 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
         <div className="client-header-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 20 }}>
           <div>
             <h1 style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-title)", opacity: "var(--op-full)" as any, letterSpacing: "-0.015em", marginBottom: 4 }}>{client.name}</h1>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: "var(--op-muted)" as any }}>{client.contact_name} &nbsp;·&nbsp; {client.contact_email}</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: "var(--op-muted)" as any }}>
+              {contacts.length > 0
+                ? contacts.filter(c => c.is_primary).map(c => c.name).join(", ") || contacts[0]?.name
+                : client.contact_name}
+              {contacts.length > 1 && <span style={{ opacity: 0.5 }}> &nbsp;+{contacts.length - 1} more</span>}
+            </div>
           </div>
           <div className="client-actions" style={{ display: "flex", gap: 8, paddingBottom: 20 }}>
             <Link href={`/admin/clients/${params.id}/preview`} style={{ ...actionBtn, borderColor: "rgba(143,167,181,0.4)" }} target="_blank">View as client</Link>
             <Link href={`/admin/clients/${params.id}/edit`} style={actionBtn}>Edit</Link>
             <Link href={`/admin/projects/new?client=${params.id}`} style={actionBtn}>+ Project</Link>
-            <button onClick={inviteClient} disabled={inviting} style={{ ...actionBtn, opacity: inviting ? 0.4 : 0.6, cursor: inviting ? "default" : "pointer", border: "0.5px solid rgba(15,15,14,0.2)", background: "transparent", color: "var(--ink)" }}>
-              {inviting ? "Sending…" : inviteStatus === "sent" ? "Invite sent ✓" : "Invite to portal"}
-            </button>
+            {/* Invite dropdown */}
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => setShowInviteDropdown(!showInviteDropdown)}
+                style={{ ...actionBtn, opacity: 0.6, cursor: "pointer", border: "0.5px solid rgba(15,15,14,0.2)", background: "transparent", color: "var(--ink)" }}
+              >
+                Invite to portal ▾
+              </button>
+              {showInviteDropdown && (
+                <div style={{
+                  position: "absolute", top: "100%", right: 0, marginTop: 4,
+                  background: "#FAFAF8", border: "0.5px solid rgba(15,15,14,0.12)",
+                  boxShadow: "0 8px 24px rgba(15,15,14,0.08)", zIndex: 50,
+                  minWidth: 260, padding: "8px 0",
+                }}>
+                  {contacts.length === 0 && (
+                    <div style={{ padding: "12px 16px", fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: 0.45 }}>
+                      No contacts yet. Add one below.
+                    </div>
+                  )}
+                  {contacts.map(contact => (
+                    <div key={contact.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 16px", gap: 12 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: 0.82, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {contact.name}
+                          {contact.is_primary && <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.4, marginLeft: 6 }}>Primary</span>}
+                        </div>
+                        <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, opacity: 0.4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{contact.email}</div>
+                      </div>
+                      <button
+                        onClick={() => { inviteContact(contact); }}
+                        disabled={inviting === contact.id || inviteSent.has(contact.id)}
+                        style={{
+                          fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase",
+                          background: inviteSent.has(contact.id) ? "transparent" : "var(--ink)", color: inviteSent.has(contact.id) ? "var(--sage)" : "var(--cream)",
+                          border: inviteSent.has(contact.id) ? "0.5px solid rgba(143,167,181,0.3)" : "none",
+                          padding: "5px 10px", cursor: inviting === contact.id ? "default" : "pointer",
+                          opacity: inviting === contact.id ? 0.4 : 1, flexShrink: 0,
+                        }}
+                      >
+                        {inviting === contact.id ? "…" : inviteSent.has(contact.id) ? "Sent ✓" : "Invite"}
+                      </button>
+                    </div>
+                  ))}
+                  <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)", marginTop: 4, padding: "8px 16px 4px" }}>
+                    <button
+                      onClick={() => { setShowAddContact(true); setShowInviteDropdown(false) }}
+                      style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", background: "none", border: "none", color: "var(--ink)", opacity: 0.45, cursor: "pointer", padding: "4px 0" }}
+                    >
+                      + Add contact
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
             <Link href={`/admin/invoices/new?client=${params.id}`} style={actionBtn}>+ Invoice</Link>
             <Link href={`/admin/proposals/new?client=${params.id}`} style={{ ...actionBtn, background: "var(--ink)", color: "var(--cream)", opacity: 1 }}>+ Proposal</Link>
           </div>
@@ -453,6 +586,20 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                       </div>
                     </div>
                     {selectedProject.scope && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-muted)" as any, lineHeight: 1.6 }}>{selectedProject.scope}</div>}
+                    {/* Contact assignment */}
+                    {contacts.length > 0 && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
+                        <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.35 }}>Contact:</span>
+                        <select
+                          value={selectedProject.contact_id ?? ""}
+                          onChange={e => assignContactToProject(selectedProject.id, e.target.value || null)}
+                          style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", background: "transparent", border: "0.5px solid rgba(15,15,14,0.12)", padding: "4px 8px", color: "var(--ink)", outline: "none", cursor: "pointer" }}
+                        >
+                          <option value="">All contacts (shared)</option>
+                          {contacts.map(c => <option key={c.id} value={c.id}>{c.name}{c.role ? ` · ${c.role}` : ""}</option>)}
+                        </select>
+                      </div>
+                    )}
                     {selectedProject.total_weeks && (
                       <div style={{ marginTop: 12 }}>
                         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
@@ -1069,11 +1216,41 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
           )}
         </div>
         <div className="admin-studio-right" style={{ padding: "32px 28px", borderLeft: "0.5px solid rgba(15,15,14,0.08)" }}>
+          {/* Contacts section */}
           <div style={{ marginBottom: 28 }}>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.5, marginBottom: 12 }}>Client</div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12 }}>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.5 }}>Contacts</div>
+              <button onClick={() => setShowAddContact(true)} style={{ fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: "0.1em", textTransform: "uppercase", background: "none", border: "none", color: "var(--ink)", opacity: 0.35, cursor: "pointer" }}>+ Add</button>
+            </div>
+            {contacts.map(contact => (
+              <div key={contact.id} style={{ padding: "8px 0", borderBottom: "0.5px solid rgba(15,15,14,0.06)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 2 }}>
+                  <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: 0.82 }}>
+                    {contact.name}
+                    {contact.is_primary && <span style={{ fontFamily: "var(--font-mono)", fontSize: 7, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.4, marginLeft: 5 }}>Primary</span>}
+                  </span>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    {!contact.is_primary && (
+                      <button onClick={() => setPrimaryContact(contact.id)} title="Set as primary" style={{ fontFamily: "var(--font-mono)", fontSize: 7, background: "none", border: "none", color: "var(--ink)", opacity: 0.25, cursor: "pointer" }}>★</button>
+                    )}
+                    {!contact.is_primary && (
+                      <button onClick={() => deleteContact(contact.id, contact.name)} title="Remove contact" style={{ fontFamily: "var(--font-mono)", fontSize: 9, background: "none", border: "none", color: "var(--danger)", opacity: 0.35, cursor: "pointer" }}>×</button>
+                    )}
+                  </div>
+                </div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, opacity: 0.35, wordBreak: "break-all" }}>{contact.email}</div>
+                {contact.role && <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, opacity: 0.3, marginTop: 1 }}>{contact.role}</div>}
+              </div>
+            ))}
+            {contacts.length === 0 && (
+              <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: 0.35, padding: "8px 0" }}>No contacts yet.</div>
+            )}
+          </div>
+
+          {/* Client info */}
+          <div style={{ marginBottom: 28 }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.5, marginBottom: 12 }}>Details</div>
             {[
-              { label: "Contact",  value: client.contact_name },
-              { label: "Email",    value: client.contact_email },
               { label: "Projects", value: String(projects.length) },
               { label: "Last seen", value: client.last_seen_at ? new Date(client.last_seen_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "Never" },
             ].map(row => (
@@ -1134,6 +1311,43 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
           </div>
         </div>
       </div>
+      {/* Add Contact Modal */}
+      {showAddContact && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(15,15,14,0.3)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setShowAddContact(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#F4F1EC", border: "0.5px solid rgba(15,15,14,0.12)", padding: "32px 36px", width: 380, boxShadow: "0 16px 48px rgba(15,15,14,0.12)" }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.5, marginBottom: 24 }}>Add contact</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+              <div>
+                <label style={formLabel}>Name *</label>
+                <input style={formInput} placeholder="Jane Smith" value={newContact.name} onChange={e => setNewContact(prev => ({ ...prev, name: e.target.value }))} />
+              </div>
+              <div>
+                <label style={formLabel}>Email *</label>
+                <input style={formInput} placeholder="jane@company.com" type="email" value={newContact.email} onChange={e => setNewContact(prev => ({ ...prev, email: e.target.value }))} />
+              </div>
+              <div>
+                <label style={formLabel}>Role <span style={{ opacity: 0.5 }}>(optional)</span></label>
+                <input style={formInput} placeholder="Marketing Director" value={newContact.role} onChange={e => setNewContact(prev => ({ ...prev, role: e.target.value }))} />
+              </div>
+              <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
+                <button onClick={addContact} disabled={savingContact || !newContact.name.trim() || !newContact.email.trim()} style={{
+                  fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase",
+                  background: "var(--ink)", color: "var(--cream)", border: "none", padding: "12px 24px",
+                  cursor: savingContact ? "default" : "pointer", opacity: savingContact ? 0.4 : 1,
+                }}>
+                  {savingContact ? "Saving…" : "Add contact"}
+                </button>
+                <button onClick={() => { setShowAddContact(false); setNewContact({ name: "", email: "", role: "" }) }} style={{
+                  fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.14em", textTransform: "uppercase",
+                  background: "transparent", border: "none", color: "var(--ink)", opacity: 0.4, cursor: "pointer", padding: "12px 0",
+                }}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <ToastContainer />
     </>
   )

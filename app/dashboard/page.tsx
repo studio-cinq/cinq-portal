@@ -97,7 +97,8 @@ export default async function DashboardPage() {
   const portalLibrary = await getPortalLibrarySnapshotByEmail(user?.email ?? "")
   const client = portalLibrary.client as any
   const clientId = client?.id ?? ""
-  const firstName = (client?.contact_name ?? client?.name ?? "").split(" ")[0] || "there"
+  const contact = portalLibrary.contact as any
+  const firstName = (contact?.name ?? client?.contact_name ?? client?.name ?? "").split(" ")[0] || "there"
 
   const projectsRes = await supabase
     .from("projects")

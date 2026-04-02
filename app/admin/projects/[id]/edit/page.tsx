@@ -14,10 +14,12 @@ export default function EditProjectPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [clientId, setClientId] = useState("")
+  const [contacts, setContacts] = useState<any[]>([])
 
   const [form, setForm] = useState({
     title: "",
     scope: "",
+    contact_id: "",
     status: "active",
     start_date: "",
     end_date: "",
@@ -32,12 +34,18 @@ export default function EditProjectPage() {
         setForm({
           title: data.title ?? "",
           scope: data.scope ?? "",
+          contact_id: data.contact_id ?? "",
           status: data.status ?? "active",
           start_date: data.start_date ?? "",
           end_date: data.end_date ?? "",
           total_weeks: data.total_weeks ? String(data.total_weeks) : "",
           current_week: data.current_week ? String(data.current_week) : "1",
         })
+        // Load contacts for this client
+        fetch(`/api/admin/contacts?client_id=${data.client_id}`)
+          .then(res => res.json())
+          .then(json => setContacts(json.contacts ?? []))
+          .catch(() => {})
       }
       setLoading(false)
     })
@@ -55,6 +63,7 @@ export default function EditProjectPage() {
     const { error: updateErr } = await supabase.from("projects").update({
       title: form.title.trim(),
       scope: form.scope.trim() || null,
+      contact_id: form.contact_id || null,
       status: form.status,
       start_date: form.start_date || null,
       end_date: form.end_date || null,
@@ -106,6 +115,21 @@ export default function EditProjectPage() {
             <label style={labelStyle}>Project title *</label>
             <input style={inputStyle} placeholder="Brand Identity & Launch" value={form.title} onChange={e => set("title", e.target.value)} />
           </div>
+
+          {/* Contact assignment */}
+          {contacts.length > 0 && (
+            <div>
+              <label style={labelStyle}>Assign to contact <span style={{ opacity: 0.5 }}>(optional)</span></label>
+              <select
+                value={form.contact_id}
+                onChange={e => set("contact_id", e.target.value)}
+                style={{ ...inputStyle, cursor: "pointer" }}
+              >
+                <option value="">All contacts (shared project)</option>
+                {contacts.map((c: any) => <option key={c.id} value={c.id}>{c.name}{c.role ? ` · ${c.role}` : ""}</option>)}
+              </select>
+            </div>
+          )}
 
           <div>
             <label style={labelStyle}>Scope <span style={{ opacity: 0.5 }}>(optional)</span></label>
