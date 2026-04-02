@@ -31,8 +31,8 @@ export default async function AdminClientsPage() {
         </div>
 
         <div className="admin-table-header" style={{ display: "grid", gridTemplateColumns: "1fr 160px 120px 80px 60px", gap: 24, paddingBottom: 10, borderBottom: "0.5px solid rgba(15,15,14,0.12)" }}>
-          {["Client", "Contact", "Projects", "", ""].map(h => (
-            <div key={h} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.45 }}>{h}</div>
+          {["Client", "Contact", "Projects", "", ""].map((h, i) => (
+            <div key={`${h}-${i}`} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.45 }}>{h}</div>
           ))}
         </div>
 
@@ -41,17 +41,16 @@ export default async function AdminClientsPage() {
           const totalProjects  = client.projects?.length ?? 0
 
           return (
-            <Link
+            <div
               key={client.id}
-              href={`/admin/clients/${client.id}`}
               className="admin-client-row"
               style={{
                 display: "grid", gridTemplateColumns: "1fr 160px 120px 80px 60px",
                 gap: 24, alignItems: "center", padding: "18px 0",
-                borderBottom: "0.5px solid rgba(15,15,14,0.08)", textDecoration: "none",
+                borderBottom: "0.5px solid rgba(15,15,14,0.08)",
               }}
             >
-              <div>
+              <Link href={`/admin/clients/${client.id}`} style={{ textDecoration: "none" }}>
                 <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-full)" as any, letterSpacing: "-0.01em" }}>
                   {client.name}
                 </div>
@@ -60,7 +59,7 @@ export default async function AdminClientsPage() {
                     {client.notes.slice(0, 60)}{client.notes.length > 60 ? "…" : ""}
                   </div>
                 )}
-              </div>
+              </Link>
 
               <div className="admin-client-col-hide">
                 <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: "var(--op-body)" as any }}>{client.contact_name}</div>
@@ -77,15 +76,15 @@ export default async function AdminClientsPage() {
                 )}
               </div>
 
-              <div style={{ textAlign: "right", fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: "var(--op-ghost)" as any }}>&rarr;</div>
+              <Link href={`/admin/clients/${client.id}`} style={{ textAlign: "right", fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: "var(--op-ghost)" as any, textDecoration: "none" }}>&rarr;</Link>
               <DeleteButton endpoint="/api/admin/delete/client" id={client.id} confirm={`Delete ${client.name}? This will also delete all their projects, invoices, and proposals. This cannot be undone.`} />
-            </Link>
+            </div>
           )
         })}
 
         {(!clients || clients.length === 0) && (
           <div style={{ padding: "48px 0", fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-ghost)" as any, textAlign: "center" }}>
-            No clients yet — <a href="/admin/clients/new" style={{ opacity: 0.6, textDecoration: "none", borderBottom: "0.5px solid rgba(15,15,14,0.2)" }}>add your first client</a> to get started.
+            No clients yet — <Link href="/admin/clients/new" style={{ opacity: 0.6, textDecoration: "none", borderBottom: "0.5px solid rgba(15,15,14,0.2)" }}>add your first client</Link> to get started.
           </div>
         )}
       </main>

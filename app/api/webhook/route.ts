@@ -2,17 +2,25 @@ import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
 import { supabaseAdmin } from "@/lib/supabase-server"
 import { sendInvoicePaidEmail } from "@/lib/email"
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2024-06-20" })
+import { getStripe } from "@/lib/stripe"
 
 export async function POST(req: NextRequest) {
   const body      = await req.text()
-  const signature = req.headers.get("stripe-signature")!
+  const signature = req.headers.get("stripe-signature")
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+
+  if (!signature) {
+    return NextResponse.json({ error: "Missing stripe-signature header" }, { status: 400 })
+  }
+
+  if (!webhookSecret) {
+    return NextResponse.json({ error: "STRIPE_WEBHOOK_SECRET is not configured" }, { status: 500 })
+  }
 
   let event: Stripe.Event
 
   try {
-    event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET!)
+    event = getStripe().webhooks.constructEvent(body, signature, webhookSecret)
   } catch {
     return NextResponse.json({ error: "Webhook signature failed" }, { status: 400 })
   }
@@ -24,17 +32,22 @@ export async function POST(req: NextRequest) {
     const proposalId = session.metadata?.proposal_id
 
     // Invoice payment
-    if (type === "invoice" || invoiceId) {
+    if (type === "invoice" || (invoiceId && !proposalId)) {
       const paidAt = new Date()
 
-      await (supabaseAdmin as any)
+      const { error: updateError } = await (supabaseAdmin as any)
         .from("invoices")
         .update({
           status:                   "paid",
           paid_at:                  paidAt.toISOString(),
-          stripe_payment_intent_id: session.payment_intent as string,
+          stripe_payment_intent_id: session.payment_intent as string ?? null,
         })
         .eq("id", invoiceId)
+
+      if (updateError) {
+        console.error("[webhook] invoice update failed:", updateError)
+        return NextResponse.json({ error: "DB update failed" }, { status: 500 })
+      }
 
       // Notify admin
       try {
@@ -59,16 +72,20 @@ export async function POST(req: NextRequest) {
         console.error("[webhook] invoice paid email failed:", err)
       }
     }
-
-    // Proposal deposit
-    if (type === "proposal_deposit" || proposalId) {
-      await (supabaseAdmin as any)
+    // Proposal deposit (else if to prevent double processing)
+    else if (type === "proposal_deposit" || proposalId) {
+      const { error: updateError } = await (supabaseAdmin as any)
         .from("proposals")
         .update({
           status:            "accepted",
           stripe_session_id: session.id,
         })
         .eq("id", proposalId)
+
+      if (updateError) {
+        console.error("[webhook] proposal update failed:", updateError)
+        return NextResponse.json({ error: "DB update failed" }, { status: 500 })
+      }
     }
   }
 

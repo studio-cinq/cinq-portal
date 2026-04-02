@@ -157,7 +157,7 @@ export default function EditProposalPage({ params }: { params: { id: string } })
 
     for (let idx = 0; idx < activeItems.length; idx++) {
       const item = activeItems[idx]
-      const payload = {
+      const payload: Record<string, any> = {
         proposal_id:        params.id,
         project_id:         null,
         name:               item.name,
@@ -170,7 +170,11 @@ export default function EditProposalPage({ params }: { params: { id: string } })
         is_optional:        item.is_optional,
         is_required:        item.is_required,
         sort_order:         idx,
-        accepted:           false,
+      }
+
+      // Only set accepted: false for new items; preserve existing acceptance status
+      if (!item.id) {
+        payload.accepted = false
       }
 
       if (item.id) {

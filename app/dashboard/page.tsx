@@ -1,599 +1,760 @@
 import { createServerComponentClient } from "@/lib/supabase-server"
+import { getPortalLibrarySnapshotByEmail } from "@/lib/portal-library"
 import Link from "next/link"
 import PortalNav from "@/components/portal/Nav"
 import ActivityTracker from "@/components/portal/ActivityTracker"
 
-// ── Status labels ──────────────────────────────────────────────────────────────
+/* ─── Status helpers ─── */
 
 const statusLabels: Record<string, string> = {
   kickoff_upcoming: "Kickoff Upcoming",
   awaiting_approval: "Awaiting Feedback",
-  in_progress:       "In Progress",
-  complete:          "Complete",
-  not_started:       "Not Started",
-  proposal_sent:     "Proposal Ready",
+  in_progress: "In Progress",
+  complete: "Complete",
+  not_started: "Not Started",
+  proposal_sent: "Proposal Ready",
 }
 
-const statusColors: Record<string, string> = {
-  kickoff_upcoming:  "var(--sage)",
-  awaiting_approval: "var(--amber)",
-  in_progress:       "var(--sage)",
-  complete:          "rgba(15,15,14,0.22)",
-  not_started:       "rgba(15,15,14,0.15)",
-  proposal_sent:     "rgba(15,15,14,0.15)",
+function formatCurrency(amount = 0) {
+  return `$${(amount / 100).toLocaleString()}`
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const label = statusLabels[status] ?? status
-  const color = statusColors[status] ?? "rgba(15,15,14,0.2)"
-
-  return (
-    <span style={{
-      fontFamily: "var(--font-mono)",
-      fontSize: "var(--text-eyebrow)",
-      letterSpacing: "0.1em", textTransform: "uppercase",
-      color,
-    }}>
-      {label}
-    </span>
-  )
+function projectStatus(project: any): string {
+  const deliverables = project.deliverables ?? []
+  if (deliverables.length === 0) return project.status ?? "kickoff_upcoming"
+  const hasReview = deliverables.some((d: any) => d.status === "awaiting_approval")
+  const hasActive = deliverables.some((d: any) => d.status === "in_progress")
+  const allDone = deliverables.length > 0 && deliverables.every((d: any) => d.status === "complete")
+  if (hasReview) return "awaiting_approval"
+  if (hasActive) return "in_progress"
+  if (allDone) return "complete"
+  return project.status ?? "not_started"
 }
 
-// ── Activity feed builder ──────────────────────────────────────────────────────
+function statusColor(status: string) {
+  if (status === "awaiting_approval") return "var(--amber)"
+  if (status === "in_progress") return "var(--sage)"
+  return "rgba(15,15,14,0.34)"
+}
 
-interface FeedItem {
-  date: Date
+function deliverableDotColor(status: string) {
+  if (status === "awaiting_approval") return "var(--amber)"
+  if (status === "in_progress") return "var(--sage)"
+  if (status === "complete" || status === "approved") return "rgba(15,15,14,0.24)"
+  return "rgba(15,15,14,0.08)"
+}
+
+/* ─── Contextual hero content ─── */
+
+function heroContent(status: string, firstName: string, hasProject: boolean, isComplete: boolean) {
+  if (!hasProject) {
+    return {
+      eyebrow: null,
+      greeting: `Welcome, ${firstName}`,
+      subline: "Your portal will come to life once your project begins.",
+    }
+  }
+
+  if (status === "awaiting_approval") {
+    return {
+      eyebrow: { label: "Awaiting your review", color: "var(--amber)" },
+      greeting: `${firstName}, your feedback is needed`,
+      subline: "A deliverable is ready for your review.",
+    }
+  }
+
+  if (isComplete) {
+    return {
+      eyebrow: { label: "Complete", color: "rgba(15,15,14,0.34)" },
+      greeting: `Hello, ${firstName}`,
+      subline: "Your project is complete. Final files and materials are available in your library.",
+    }
+  }
+
+  return {
+    eyebrow: { label: "In progress", color: "var(--sage)" },
+    greeting: `Hello, ${firstName}`,
+    subline: "We\u2019ll surface what needs your attention here.",
+  }
+}
+
+/* ─── Next step types ─── */
+
+type NextStep = {
   label: string
-  link?: string
-  type: "invoice" | "message" | "deliverable" | "review" | "file" | "event" | "proposal"
+  body: string
+  href: string
+  accent: string
+  tag: string
 }
 
-function buildActivityFeed(opts: {
-  invoices: any[]
-  messages: any[]
-  deliverables: any[]
-  reviewSessions: any[]
-  brandAssets: any[]
-  presentations: any[]
-  proposals: any[]
-}): FeedItem[] {
-  const feed: FeedItem[] = []
-
-  // Invoice events
-  for (const inv of opts.invoices) {
-    if (inv.paid_at) {
-      feed.push({
-        date: new Date(inv.paid_at),
-        label: `Invoice #${inv.invoice_number} paid — $${(inv.amount / 100).toLocaleString()}`,
-        link: "/invoices",
-        type: "invoice",
-      })
-    } else if (inv.status === "sent" || inv.status === "overdue") {
-      feed.push({
-        date: new Date(inv.created_at),
-        label: `Invoice #${inv.invoice_number} sent — $${(inv.amount / 100).toLocaleString()}`,
-        link: "/invoices",
-        type: "invoice",
-      })
-    }
-  }
-
-  // Messages from admin (not private, not from client)
-  for (const msg of opts.messages) {
-    if (!msg.from_client && !msg.private) {
-      const preview = msg.body?.slice(0, 60) ?? ""
-      feed.push({
-        date: new Date(msg.created_at),
-        label: `Message from Kacie${preview ? `: "${preview}${msg.body?.length > 60 ? "…" : ""}"` : ""}`,
-        type: "message",
-      })
-    }
-  }
-
-  // Proposal acceptance
-  for (const prop of opts.proposals) {
-    if (prop.status === "accepted") {
-      feed.push({
-        date: new Date(prop.viewed_at ?? prop.created_at),
-        label: `Proposal accepted — ${prop.title}`,
-        type: "proposal",
-      })
-    }
-  }
-
-  // Review sessions
-  for (const rs of opts.reviewSessions) {
-    if (rs.submitted_at) {
-      feed.push({
-        date: new Date(rs.submitted_at),
-        label: `Feedback submitted — Round ${rs.current_round}`,
-        type: "review",
-      })
-    }
-    if (rs.approved_at) {
-      feed.push({
-        date: new Date(rs.approved_at),
-        label: "Design approved",
-        type: "review",
-      })
-    }
-  }
-
-  // Brand assets uploaded
-  for (const asset of opts.brandAssets) {
-    feed.push({
-      date: new Date(asset.created_at),
-      label: `File shared — ${asset.name}`,
-      link: "/library",
-      type: "file",
-    })
-  }
-
-  // Presentation slides uploaded (group by deliverable)
-  const slidesByDeliverable = new Map<string, { count: number, date: Date, name: string }>()
-  for (const slide of opts.presentations) {
-    const key = slide.deliverable_id ?? slide.project_id ?? "unknown"
-    const existing = slidesByDeliverable.get(key)
-    const slideDate = new Date(slide.created_at)
-    if (!existing || slideDate > existing.date) {
-      slidesByDeliverable.set(key, {
-        count: (existing?.count ?? 0) + 1,
-        date: slideDate,
-        name: slide.caption ?? "Presentation",
-      })
-    }
-  }
-  for (const [, group] of Array.from(slidesByDeliverable)) {
-    feed.push({
-      date: group.date,
-      label: `Presentation uploaded — ${group.count} slide${group.count > 1 ? "s" : ""}`,
-      type: "deliverable",
-    })
-  }
-
-  // Sort by date descending, take recent 8
-  feed.sort((a, b) => b.date.getTime() - a.date.getTime())
-  return feed.slice(0, 8)
-}
-
-// ── Relative time formatting ───────────────────────────────────────────────────
-
-function relativeTime(date: Date): string {
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-  const diffHours = Math.floor(diffMs / 3600000)
-  const diffDays = Math.floor(diffMs / 86400000)
-
-  if (diffMins < 1) return "Just now"
-  if (diffMins < 60) return `${diffMins}m ago`
-  if (diffHours < 24) return `${diffHours}h ago`
-  if (diffDays < 7) return `${diffDays}d ago`
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
-}
-
-// ── Page ────────────────────────────────────────────────────────────────────────
+/* ─── Page ─── */
 
 export default async function DashboardPage() {
   const supabase = await createServerComponentClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: clientRaw } = await supabase
-    .from("clients").select("*")
-    .eq("contact_email", user?.email ?? "").single()
-  const client = clientRaw as any
-
+  const portalLibrary = await getPortalLibrarySnapshotByEmail(user?.email ?? "")
+  const client = portalLibrary.client as any
   const clientId = client?.id ?? ""
-  const isFirstLogin = !client?.first_login_at
   const firstName = (client?.contact_name ?? client?.name ?? "").split(" ")[0] || "there"
 
-  // Fetch projects first (needed for project-scoped queries)
   const projectsRes = await supabase
-    .from("projects").select("*, deliverables(*)")
-    .eq("client_id", clientId).order("created_at", { ascending: false })
+    .from("projects")
+    .select("*, deliverables(*)")
+    .eq("client_id", clientId)
+    .order("created_at", { ascending: false })
   const projects = (projectsRes.data ?? []) as any[]
-  const projectIds = projects.map((p: any) => p.id)
 
-  // Fetch remaining data in parallel
-  const [invoicesRes, messagesRes, reviewsRes, assetsRes, slidesRes, proposalsRes] = await Promise.all([
-    supabase.from("invoices").select("*").eq("client_id", clientId).order("created_at", { ascending: false }),
-    supabase.from("messages").select("*").eq("client_id", clientId).order("created_at", { ascending: false }).limit(20),
-    supabase.from("review_sessions").select("*").eq("client_id", clientId).order("created_at", { ascending: false }),
-    projectIds.length > 0
-      ? supabase.from("brand_assets").select("*").in("project_id", projectIds).order("created_at", { ascending: false }).limit(10)
-      : Promise.resolve({ data: [], error: null }),
-    projectIds.length > 0
-      ? supabase.from("presentation_slides").select("*").in("project_id", projectIds).order("created_at", { ascending: false }).limit(20)
-      : Promise.resolve({ data: [], error: null }),
-    supabase.from("proposals").select("*").eq("client_id", clientId).order("created_at", { ascending: false }),
-  ])
-
+  const invoicesRes = await supabase
+    .from("invoices")
+    .select("*")
+    .eq("client_id", clientId)
+    .order("created_at", { ascending: false })
   const allInvoices = (invoicesRes.data ?? []) as any[]
-  const messages = (messagesRes.data ?? []) as any[]
-  const reviewSessions = (reviewsRes.data ?? []) as any[]
-  const clientAssets = (assetsRes.data ?? []) as any[]
-  const clientSlides = (slidesRes.data ?? []) as any[]
-  const proposals = (proposalsRes.data ?? []) as any[]
 
-  // Outstanding invoices
-  const dueInvoices = allInvoices.filter(i => i.status === "sent" || i.status === "overdue")
+  // Fetch accepted proposals for this client
+  const proposalsRes = await supabase
+    .from("proposals")
+    .select("*, proposal_items(*)")
+    .eq("client_id", clientId)
+    .eq("status", "accepted")
+    .order("created_at", { ascending: false })
+    .limit(1)
+  const acceptedProposal = (proposalsRes.data?.[0] ?? null) as any
 
-  // Paid total
-  const paidTotal = allInvoices
-    .filter(i => i.status === "paid")
-    .reduce((s, i) => s + (i.amount ?? 0), 0)
+  const proposalItems = (acceptedProposal?.proposal_items ?? []).sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+  const approvedScope = proposalItems.filter((i: any) => i.accepted && i.phase === "now")
+  const laterPhase = proposalItems.filter((i: any) => i.accepted && i.phase === "later")
 
-  const dueTotal = dueInvoices.reduce((s, i) => s + (i.amount ?? 0), 0)
+  const currentProject =
+    projects.find((p) => {
+      const s = projectStatus(p)
+      return s === "in_progress" || s === "awaiting_approval" || s === "kickoff_upcoming"
+    }) ?? projects[0] ?? null
 
-  // Activity feed
-  const feed = buildActivityFeed({
-    invoices: allInvoices,
-    messages,
-    deliverables: [],
-    reviewSessions,
-    brandAssets: clientAssets,
-    presentations: clientSlides,
-    proposals,
-  })
+  const currentStatus = currentProject ? projectStatus(currentProject) : "not_started"
+  const deliverables = (currentProject?.deliverables ?? []).sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+  const completedCount = deliverables.filter((d: any) => d.status === "complete" || d.status === "approved").length
 
-  // Needs attention: due invoices + deliverables awaiting review
-  const attentionItems: { label: string; sublabel: string; link: string; color: string }[] = []
+  const dueInvoices = allInvoices.filter((inv) => inv.status === "sent" || inv.status === "overdue")
+  const paidTotal = allInvoices.filter((inv) => inv.status === "paid").reduce((s, inv) => s + (inv.amount ?? 0), 0)
+  const dueTotal = dueInvoices.reduce((s, inv) => s + (inv.amount ?? 0), 0)
+  const totalContract = paidTotal + dueTotal
+  const paidPct = totalContract > 0 ? Math.round((paidTotal / totalContract) * 100) : 100
 
-  for (const inv of dueInvoices) {
-    attentionItems.push({
-      label: `Invoice #${inv.invoice_number} due`,
-      sublabel: `$${(inv.amount / 100).toLocaleString()}${inv.due_date ? ` · Due ${new Date(inv.due_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : ""}`,
-      link: "/invoices",
-      color: "var(--amber)",
-    })
-  }
+  /* ─── Next steps (only actionable items) ─── */
 
-  for (const project of projects) {
-    for (const d of (project.deliverables ?? [])) {
-      if (d.status === "awaiting_approval") {
-        attentionItems.push({
-          label: `Feedback requested`,
-          sublabel: `${d.name} — ${project.title}`,
-          link: `/projects/${project.id}`,
-          color: "var(--sage)",
-        })
-      }
+  const nextSteps: NextStep[] = []
+
+  if (currentProject) {
+    const awaitingFeedback = deliverables.filter((d: any) => d.status === "awaiting_approval")
+    if (awaitingFeedback.length > 0) {
+      nextSteps.push({
+        label: "Review the latest deliverable",
+        body: "Your feedback is needed before we move into the next stage.",
+        href: `/projects/${currentProject.id}`,
+        accent: "var(--amber)",
+        tag: "Feedback needed",
+      })
     }
   }
 
-  // Compute project status
-  function projectStatus(project: any): string {
-    const deliverables = project.deliverables ?? []
-    if (deliverables.length === 0) return project.status ?? "kickoff_upcoming"
-    const hasReview = deliverables.some((d: any) => d.status === "awaiting_approval")
-    const hasActive = deliverables.some((d: any) => d.status === "in_progress")
-    const allDone = deliverables.length > 0 && deliverables.every((d: any) => d.status === "complete")
-    if (hasReview) return "awaiting_approval"
-    if (hasActive) return "in_progress"
-    if (allDone) return "complete"
-    return project.status ?? "not_started"
+  if (dueInvoices.length > 0) {
+    nextSteps.push({
+      label: "Review your current invoice",
+      body: "Payment can be completed in the billing section.",
+      href: "/invoices",
+      accent: "var(--amber)",
+      tag: "Billing",
+    })
   }
+
+  const filesCount = portalLibrary.assets.length
+  const colors = portalLibrary.colors ?? []
+  const typefaces = portalLibrary.typefaces ?? []
+  const showLibrary = portalLibrary.isUnlocked && filesCount > 0
+
+  // Only show actionable next steps — skip the low-priority "browse files" if it's the only one
+  const hasActionableSteps = nextSteps.length > 0
+
+  /* ─── Hero content ─── */
+
+  const hero = heroContent(currentStatus, firstName, !!currentProject, currentStatus === "complete")
 
   return (
     <>
       <PortalNav clientName={client?.name} />
       <ActivityTracker />
 
-      <main style={{
-        padding: "clamp(40px, 8vh, 64px) clamp(24px, 5vw, 48px)",
-        maxWidth: 960,
-        margin: "0 auto",
-      }}>
+      <main style={{ maxWidth: 980, margin: "0 auto", padding: "clamp(24px, 4vw, 40px)" }}>
 
-        {/* ── Greeting ── */}
-        <div style={{ marginBottom: isFirstLogin ? 16 : 44 }}>
-          <div style={{
-            fontFamily: "var(--font-sans)",
-            fontSize: "clamp(24px, 3vw, 32px)",
-            letterSpacing: "-0.01em",
-            opacity: 0.9,
-          }}>
-            {isFirstLogin ? `Welcome, ${firstName}` : `Hello, ${firstName}`}
+        {/* ━━━ Hero ━━━ */}
+        <section
+          className="portal-reveal"
+          style={{
+            paddingBottom: 36,
+            marginBottom: 36,
+            borderBottom: "0.5px solid rgba(15,15,14,0.1)",
+          }}
+        >
+          <div style={{ maxWidth: 580 }}>
+            {/* Status eyebrow */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18 }}>
+              {hero.eyebrow && (
+                <span style={{
+                  width: 5, height: 5, borderRadius: "50%",
+                  background: hero.eyebrow.color, flexShrink: 0,
+                }} />
+              )}
+              <span style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: "var(--text-eyebrow)",
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: hero.eyebrow?.color ?? "rgba(15,15,14,0.34)",
+              }}>
+                {hero.eyebrow?.label ?? "Client Portal"}
+              </span>
+            </div>
+
+            <h1 style={{
+              fontFamily: "var(--font-sans)",
+              fontSize: "clamp(36px, 5.5vw, 56px)",
+              lineHeight: 1.0,
+              letterSpacing: "-0.035em",
+              fontWeight: 400,
+              color: "var(--ink)",
+              opacity: 0.88,
+              marginBottom: 14,
+            }}>
+              {hero.greeting}
+            </h1>
+
+            <p style={{
+              fontFamily: "var(--font-serif)",
+              fontStyle: "italic",
+              fontSize: "clamp(16px, 2.2vw, 19px)",
+              lineHeight: 1.7,
+              color: "var(--ink)",
+              opacity: 0.42,
+              maxWidth: 480,
+            }}>
+              {hero.subline}
+            </p>
           </div>
-        </div>
+        </section>
 
-        {/* ── First login orientation ── */}
-        {isFirstLogin && (
-          <div style={{
-            fontFamily: "var(--font-sans)",
-            fontSize: "var(--text-body)",
-            lineHeight: 1.8,
-            opacity: 0.55,
-            maxWidth: 540,
-            marginBottom: 48,
-          }}>
-            This is your client portal — your home base for project details, invoices, files, and next steps with Studio Cinq.
-          </div>
-        )}
+        {/* ━━━ Project Card ━━━ */}
+        {currentProject ? (
+          <section className="portal-reveal portal-delay-1" style={{ marginBottom: 40 }}>
+            <div style={sectionLabelStyle}>Current Project</div>
 
-        {/* ── Returning login subtitle ── */}
-        {!isFirstLogin && (
-          <div style={{
-            fontFamily: "var(--font-sans)",
-            fontSize: "var(--text-body)",
-            opacity: 0.4,
-            marginBottom: 44,
-            marginTop: -36,
-          }}>
-            Here&apos;s a snapshot of what&apos;s active in your portal.
-          </div>
-        )}
-
-        {/* ── Needs attention ── */}
-        {attentionItems.length > 0 && (
-          <div style={{ marginBottom: 40 }}>
-            <div style={sectionLabel}>Needs your attention</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {attentionItems.map((item, i) => (
-                <Link key={i} href={item.link} style={{
-                  display: "flex", alignItems: "center", justifyContent: "space-between",
-                  background: "rgba(255,255,255,0.3)",
-                  border: "0.5px solid rgba(15,15,14,0.1)",
-                  padding: "16px 20px",
-                  textDecoration: "none", gap: 16,
-                }}>
-                  <div>
-                    <div style={{
-                      fontFamily: "var(--font-mono)",
-                      fontSize: "var(--text-eyebrow)",
-                      letterSpacing: "0.12em", textTransform: "uppercase",
-                      color: item.color, marginBottom: 4,
-                    }}>
-                      {item.label}
-                    </div>
+            <Link
+              href={`/projects/${currentProject.id}`}
+              className="portal-card-hover"
+              style={{
+                display: "block",
+                textDecoration: "none",
+                background: "rgba(255,255,255,0.28)",
+                border: "0.5px solid rgba(15,15,14,0.08)",
+                padding: "clamp(22px, 3vw, 32px)",
+                marginTop: 14,
+              }}
+            >
+              {/* Header: title + status */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, marginBottom: 6 }}>
+                <div>
+                  <div style={{
+                    fontFamily: "var(--font-sans)",
+                    fontSize: "clamp(18px, 2.8vw, 24px)",
+                    lineHeight: 1.08,
+                    letterSpacing: "-0.025em",
+                    color: "var(--ink)",
+                    opacity: 0.88,
+                  }}>
+                    {currentProject.title}
+                  </div>
+                  {currentProject.scope && (
                     <div style={{
                       fontFamily: "var(--font-sans)",
                       fontSize: "var(--text-body)",
-                      color: "var(--ink)", opacity: 0.6,
+                      color: "var(--ink)",
+                      opacity: 0.46,
+                      letterSpacing: "-0.01em",
+                      marginTop: 6,
                     }}>
-                      {item.sublabel}
+                      {currentProject.scope}
                     </div>
+                  )}
+                </div>
+                <span style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "var(--text-eyebrow)",
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  color: statusColor(currentStatus),
+                  flexShrink: 0,
+                  marginTop: 6,
+                }}>
+                  {statusLabels[currentStatus] ?? currentStatus}
+                </span>
+              </div>
+
+              {/* Deliverable progress dots */}
+              {deliverables.length > 0 && (
+                <div style={{ margin: "24px 0 22px", overflowX: "auto" }}>
+                  <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 14, minHeight: 20 }}>
+                    <div style={{
+                      position: "absolute",
+                      top: "50%", left: 3, right: 3,
+                      height: 1,
+                      background: "rgba(15,15,14,0.06)",
+                      transform: "translateY(-50%)",
+                    }} />
+                    {deliverables.length > 1 && (
+                      <div style={{
+                        position: "absolute",
+                        top: "50%", left: 3,
+                        height: 1,
+                        width: `${(completedCount / (deliverables.length - 1)) * 100}%`,
+                        maxWidth: "calc(100% - 6px)",
+                        background: "rgba(15,15,14,0.14)",
+                        transform: "translateY(-50%)",
+                      }} />
+                    )}
+                    {deliverables.map((d: any) => (
+                      <div key={d.id} style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", minWidth: 0 }}>
+                        <div style={{
+                          width: 7, height: 7, borderRadius: "50%",
+                          background: deliverableDotColor(d.status),
+                          flexShrink: 0,
+                        }} />
+                      </div>
+                    ))}
                   </div>
-                  <span style={{ fontSize: 11, color: "var(--ink)", opacity: 0.18 }}>&rarr;</span>
-                </Link>
-              ))}
+                  <div style={{ display: "flex", gap: 14, marginTop: 8 }}>
+                    {deliverables.map((d: any) => (
+                      <div key={d.id} style={{
+                        fontFamily: "var(--font-mono)",
+                        fontSize: 8,
+                        letterSpacing: "0.08em",
+                        textTransform: "uppercase",
+                        color: "var(--ink)",
+                        opacity: d.status === "awaiting_approval" ? 0.52 : 0.26,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        minWidth: 0,
+                        maxWidth: 100,
+                      }}>
+                        {d.name}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Footer: timeline + arrow */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "var(--text-eyebrow)",
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  color: "var(--ink)",
+                  opacity: 0.3,
+                }}>
+                  {currentProject.total_weeks && currentProject.current_week
+                    ? `Week ${currentProject.current_week} of ${currentProject.total_weeks}`
+                    : deliverables.length > 0
+                      ? `${deliverables.length} deliverable${deliverables.length !== 1 ? "s" : ""}`
+                      : ""
+                  }
+                </div>
+                <span style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "var(--text-eyebrow)",
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  color: "var(--ink)",
+                  opacity: 0.36,
+                }}>
+                  View Project &rarr;
+                </span>
+              </div>
+            </Link>
+          </section>
+        ) : (
+          /* ━━━ No-project empty state ━━━ */
+          <section className="portal-reveal portal-delay-1" style={{ marginBottom: 40, padding: "48px 0", textAlign: "center" }}>
+            <div style={{
+              fontFamily: "var(--font-serif)",
+              fontStyle: "italic",
+              fontSize: 20,
+              color: "var(--ink)",
+              opacity: 0.68,
+              marginBottom: 12,
+              letterSpacing: "-0.01em",
+            }}>
+              Your portal is ready.
             </div>
-          </div>
+            <div style={{
+              fontFamily: "var(--font-sans)",
+              fontSize: "var(--text-body)",
+              lineHeight: 1.8,
+              color: "var(--ink)",
+              opacity: 0.44,
+              maxWidth: 440,
+              margin: "0 auto",
+            }}>
+              Once your first project kicks off, you&apos;ll find everything here — deliverables, files, invoices, and next steps.
+            </div>
+          </section>
         )}
 
-        {/* ── Projects ── */}
-        <div style={{ marginBottom: 40 }}>
-          <div style={sectionLabel}>Projects</div>
-
-          {projects.length > 0 ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 0, borderTop: "0.5px solid rgba(15,15,14,0.08)" }}>
-              {projects.map(project => {
-                const status = projectStatus(project)
-                return (
-                  <Link
-                    key={project.id}
-                    href={`/projects/${project.id}`}
-                    className="project-row"
-                    style={{
-                      display: "flex", alignItems: "center", justifyContent: "space-between",
-                      padding: "20px 0",
-                      borderBottom: "0.5px solid rgba(15,15,14,0.08)",
-                      textDecoration: "none", gap: 16,
-                    }}
-                  >
-                    <div style={{ flex: 1, minWidth: 0 }}>
+        {/* ━━━ Approved Scope (from accepted proposal) ━━━ */}
+        {approvedScope.length > 0 && (
+          <section className="portal-reveal portal-delay-2" style={{ marginBottom: 40 }}>
+            <div style={sectionLabelStyle}>Approved Scope</div>
+            <div style={sectionBodyWrapStyle}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                {approvedScope.map((item: any) => (
+                  <div key={item.id} style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "baseline",
+                    gap: 16,
+                    padding: "12px 0",
+                    borderBottom: "0.5px solid rgba(15,15,14,0.06)",
+                  }}>
+                    <div>
                       <div style={{
                         fontFamily: "var(--font-sans)",
-                        fontSize: "clamp(16px, 2vw, 20px)",
-                        color: "var(--ink)", opacity: 0.85,
+                        fontSize: "var(--text-body)",
+                        color: "var(--ink)",
+                        opacity: 0.76,
                         letterSpacing: "-0.01em",
-                        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
                       }}>
-                        {project.title}
+                        {item.name}
                       </div>
-                      {project.scope && (
+                      {item.description && (
                         <div style={{
-                          fontFamily: "var(--font-mono)",
-                          fontSize: "var(--text-eyebrow)",
-                          letterSpacing: "0.08em", textTransform: "uppercase",
-                          color: "var(--ink)", opacity: 0.3, marginTop: 4,
+                          fontFamily: "var(--font-sans)",
+                          fontSize: "var(--text-sm)",
+                          color: "var(--ink)",
+                          opacity: 0.38,
+                          marginTop: 2,
                         }}>
-                          {project.scope}
+                          {item.description}
                         </div>
                       )}
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
-                      <StatusBadge status={status} />
-                      <span style={{ fontSize: 11, color: "var(--ink)", opacity: 0.18 }}>&rarr;</span>
-                    </div>
-                  </Link>
-                )
-              })}
-            </div>
-          ) : (
-            <div style={{
-              padding: "32px 0",
-              fontFamily: "var(--font-sans)",
-              fontSize: "var(--text-body)",
-              color: "var(--ink)", opacity: 0.4,
-              lineHeight: 1.7,
-            }}>
-              {isFirstLogin
-                ? "Your project is being set up. Once everything is ready, you'll see deliverables, timelines, and next steps right here."
-                : "No active projects at the moment."
-              }
-            </div>
-          )}
-        </div>
-
-        {/* ── Recent Activity (returning users, or first login with activity) ── */}
-        {feed.length > 0 && (
-          <div style={{ marginBottom: 40 }}>
-            <div style={sectionLabel}>Recent activity</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 0, borderTop: "0.5px solid rgba(15,15,14,0.08)" }}>
-              {feed.map((item, i) => {
-                const inner = (
-                  <div
-                    key={i}
-                    style={{
-                      display: "flex", alignItems: "baseline", justifyContent: "space-between",
-                      padding: "14px 0",
-                      borderBottom: "0.5px solid rgba(15,15,14,0.08)",
-                      gap: 16,
-                    }}
-                  >
-                    <span style={{
-                      fontFamily: "var(--font-sans)",
-                      fontSize: "var(--text-body)",
-                      color: "var(--ink)", opacity: 0.65,
-                      lineHeight: 1.5,
-                    }}>
-                      {item.label}
-                    </span>
                     <span style={{
                       fontFamily: "var(--font-mono)",
                       fontSize: "var(--text-eyebrow)",
-                      color: "var(--ink)", opacity: 0.3,
-                      flexShrink: 0, whiteSpace: "nowrap",
+                      letterSpacing: "0.06em",
+                      color: "var(--ink)",
+                      opacity: 0.32,
+                      flexShrink: 0,
                     }}>
-                      {relativeTime(item.date)}
+                      {formatCurrency(item.price)}
                     </span>
                   </div>
-                )
-
-                if (item.link) {
-                  return <Link key={i} href={item.link} style={{ textDecoration: "none" }}>{inner}</Link>
-                }
-                return inner
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* ── First login: What Happens Next ── */}
-        {isFirstLogin && projects.length > 0 && (
-          <div style={{ marginBottom: 40 }}>
-            <div style={sectionLabel}>What happens next</div>
-            <div style={{
-              fontFamily: "var(--font-sans)",
-              fontSize: "var(--text-body)",
-              color: "var(--ink)", opacity: 0.5,
-              lineHeight: 1.8,
-            }}>
-              Your project is underway. You&apos;ll be notified here and by email when deliverables are ready for your review, invoices are due, or when anything needs your input.
-            </div>
-          </div>
-        )}
-
-        {/* ── Billing snapshot ── */}
-        <div style={{ marginBottom: 40 }}>
-          <div style={sectionLabel}>Billing</div>
-          {allInvoices.length > 0 ? (
-            <div style={{
-              display: "flex", gap: 32, padding: "16px 0",
-              borderTop: "0.5px solid rgba(15,15,14,0.08)",
-              borderBottom: "0.5px solid rgba(15,15,14,0.08)",
-            }}>
-              {paidTotal > 0 && (
-                <div>
-                  <div style={{
-                    fontFamily: "var(--font-mono)",
-                    fontSize: "var(--text-eyebrow)",
-                    letterSpacing: "0.08em", textTransform: "uppercase",
-                    opacity: 0.35, marginBottom: 6,
-                  }}>
-                    Paid
-                  </div>
-                  <div style={{
-                    fontFamily: "var(--font-sans)",
-                    fontSize: 18, opacity: 0.8, letterSpacing: "-0.01em",
-                  }}>
-                    ${(paidTotal / 100).toLocaleString()}
-                  </div>
-                </div>
-              )}
-              {dueTotal > 0 && (
-                <div>
-                  <div style={{
-                    fontFamily: "var(--font-mono)",
-                    fontSize: "var(--text-eyebrow)",
-                    letterSpacing: "0.08em", textTransform: "uppercase",
-                    color: "var(--amber)", opacity: 0.85, marginBottom: 6,
-                  }}>
-                    Outstanding
-                  </div>
-                  <div style={{
-                    fontFamily: "var(--font-sans)",
-                    fontSize: 18, opacity: 0.8, letterSpacing: "-0.01em",
-                  }}>
-                    ${(dueTotal / 100).toLocaleString()}
-                  </div>
-                </div>
-              )}
-              {paidTotal > 0 && dueTotal === 0 && (
-                <div style={{
-                  fontFamily: "var(--font-sans)",
-                  fontSize: "var(--text-body)",
-                  opacity: 0.4, alignSelf: "center",
-                }}>
-                  No outstanding invoices
-                </div>
-              )}
-              <div style={{ marginLeft: "auto", alignSelf: "center" }}>
-                <Link href="/invoices" style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: "var(--text-eyebrow)",
-                  letterSpacing: "0.12em", textTransform: "uppercase",
-                  color: "var(--ink)", opacity: 0.4,
-                  textDecoration: "none",
-                }}>
-                  View all &rarr;
-                </Link>
+                ))}
               </div>
-            </div>
-          ) : (
-            <div style={{
-              padding: "16px 0",
-              fontFamily: "var(--font-sans)",
-              fontSize: "var(--text-body)",
-              color: "var(--ink)", opacity: 0.4,
-            }}>
-              No invoices at this time.
-            </div>
-          )}
-        </div>
 
-        {/* ── Resources ── */}
-        <div style={{ marginBottom: 40 }}>
-          <div style={sectionLabel}>Resources</div>
-          <div style={{
-            padding: "16px 0",
-            fontFamily: "var(--font-sans)",
-            fontSize: "var(--text-body)",
-            color: "var(--ink)", opacity: 0.4,
-            lineHeight: 1.7,
-          }}>
-            {clientAssets.length > 0 ? (
-              <Link href="/library" style={{ color: "var(--ink)", opacity: 0.6, textDecoration: "none" }}>
-                {clientAssets.length} file{clientAssets.length !== 1 ? "s" : ""} available in your brand library &rarr;
+              {/* Later phase items */}
+              {laterPhase.length > 0 && (
+                <div style={{ marginTop: 20 }}>
+                  <div style={{
+                    fontFamily: "var(--font-mono)",
+                    fontSize: "var(--text-eyebrow)",
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    color: "var(--ink)",
+                    opacity: 0.28,
+                    marginBottom: 10,
+                  }}>
+                    Available to add later
+                  </div>
+                  {laterPhase.map((item: any) => (
+                    <div key={item.id} style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "baseline",
+                      gap: 16,
+                      padding: "10px 0",
+                      borderBottom: "0.5px solid rgba(15,15,14,0.04)",
+                    }}>
+                      <span style={{
+                        fontFamily: "var(--font-sans)",
+                        fontSize: "var(--text-sm)",
+                        color: "var(--ink)",
+                        opacity: 0.46,
+                      }}>
+                        {item.name}
+                      </span>
+                      <span style={{
+                        fontFamily: "var(--font-mono)",
+                        fontSize: "var(--text-eyebrow)",
+                        letterSpacing: "0.06em",
+                        color: "var(--ink)",
+                        opacity: 0.22,
+                        flexShrink: 0,
+                      }}>
+                        {formatCurrency(item.price)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* ━━━ Next Steps + Billing Grid ━━━ */}
+        <div
+          className={`portal-reveal ${approvedScope.length > 0 ? "portal-delay-3" : "portal-delay-2"} dashboard-section-grid`}
+          style={{
+            display: "grid",
+            gridTemplateColumns: "minmax(0, 1.12fr) minmax(240px, 300px)",
+            gap: 42,
+            alignItems: "start",
+          }}
+        >
+          {/* Next Steps */}
+          <section>
+            <div style={sectionLabelStyle}>Next Steps</div>
+            <div style={sectionBodyWrapStyle}>
+              {hasActionableSteps ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {nextSteps.slice(0, 3).map((step, i) => (
+                    <Link
+                      key={i}
+                      href={step.href}
+                      className="portal-row-hover"
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        justifyContent: "space-between",
+                        gap: 16,
+                        textDecoration: "none",
+                        padding: "14px 16px 14px 14px",
+                        borderLeft: `2px solid ${step.accent}`,
+                        background: "rgba(255,255,255,0.18)",
+                      }}
+                    >
+                      <div>
+                        <div style={{
+                          fontFamily: "var(--font-mono)",
+                          fontSize: 8,
+                          letterSpacing: "0.14em",
+                          textTransform: "uppercase",
+                          color: step.accent,
+                          opacity: 0.88,
+                          marginBottom: 6,
+                        }}>
+                          {step.tag}
+                        </div>
+                        <div style={nextStepTitleStyle}>{step.label}</div>
+                        <div style={nextStepBodyStyle}>{step.body}</div>
+                      </div>
+                      <span style={arrowStyle}>&rarr;</span>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ maxWidth: 440 }}>
+                  <p style={{ ...bodyCopyStyle, marginBottom: 10, opacity: 0.66 }}>
+                    Nothing is needed from you right now.
+                  </p>
+                  <p style={bodyCopyStyle}>We&apos;ll update this space when the next step is ready.</p>
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Billing Overview */}
+          <section>
+            <div style={sectionLabelStyle}>Billing Overview</div>
+            <div style={sectionBodyWrapStyle}>
+              {paidTotal > 0 ? (
+                <>
+                  <div style={{ marginBottom: 6 }}>
+                    <div style={{
+                      fontFamily: "var(--font-sans)",
+                      fontSize: "clamp(26px, 3.5vw, 34px)",
+                      letterSpacing: "-0.03em",
+                      color: "var(--ink)",
+                      opacity: 0.84,
+                      lineHeight: 1.1,
+                    }}>
+                      {formatCurrency(paidTotal)}
+                    </div>
+                    <div style={{
+                      fontFamily: "var(--font-mono)",
+                      fontSize: "var(--text-eyebrow)",
+                      letterSpacing: "0.14em",
+                      textTransform: "uppercase",
+                      color: "var(--ink)",
+                      opacity: 0.3,
+                      marginTop: 6,
+                    }}>
+                      Paid to date
+                    </div>
+                  </div>
+
+                  {totalContract > 0 && (
+                    <div style={{
+                      width: "100%",
+                      height: 2,
+                      background: "rgba(15,15,14,0.06)",
+                      margin: "16px 0",
+                      position: "relative",
+                      overflow: "hidden",
+                    }}>
+                      <div style={{
+                        position: "absolute",
+                        top: 0, left: 0, bottom: 0,
+                        width: `${paidPct}%`,
+                        background: "var(--sage)",
+                        opacity: 0.7,
+                      }} />
+                    </div>
+                  )}
+
+                  <div style={{
+                    fontFamily: "var(--font-sans)",
+                    fontSize: "var(--text-body)",
+                    color: dueTotal > 0 ? "var(--amber)" : "var(--ink)",
+                    opacity: dueTotal > 0 ? 0.88 : 0.4,
+                    marginBottom: 20,
+                  }}>
+                    {dueTotal > 0 ? `${formatCurrency(dueTotal)} outstanding` : "Nothing due"}
+                  </div>
+                </>
+              ) : (
+                <p style={{ ...bodyCopyStyle, marginBottom: 20 }}>
+                  No payments yet. Invoices will appear here as your project progresses.
+                </p>
+              )}
+
+              <Link href="/invoices" className="portal-button-soft" style={inlineButtonStyle}>
+                View Billing
               </Link>
-            ) : (
-              "Files, presentations, and project materials will appear here as the project progresses."
-            )}
-          </div>
+            </div>
+          </section>
         </div>
 
+        {/* ━━━ Brand Library Preview ━━━ */}
+        {showLibrary && (
+          <section className={`portal-reveal ${approvedScope.length > 0 ? "portal-delay-4" : "portal-delay-3"}`} style={{ marginTop: 40 }}>
+            <div style={sectionLabelStyle}>Brand Library</div>
+            <div style={sectionBodyWrapStyle}>
+              {colors.length > 0 && (
+                <div style={{ display: "flex", gap: 4, marginBottom: 16 }}>
+                  {(colors as any[]).slice(0, 6).map((c: any) => (
+                    <div
+                      key={c.id}
+                      style={{
+                        width: 24, height: 24,
+                        background: c.hex,
+                        border: "0.5px solid rgba(15,15,14,0.06)",
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+
+              <div style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: "var(--text-eyebrow)",
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                color: "var(--ink)",
+                opacity: 0.34,
+                marginBottom: 18,
+              }}>
+                {filesCount} file{filesCount !== 1 ? "s" : ""}
+                {typefaces.length > 0 && ` \u00b7 ${typefaces.length} typeface${typefaces.length !== 1 ? "s" : ""}`}
+              </div>
+
+              <Link href="/library" className="portal-button-soft" style={inlineButtonStyle}>
+                View Library
+              </Link>
+            </div>
+          </section>
+        )}
       </main>
     </>
   )
 }
 
-const sectionLabel: React.CSSProperties = {
+/* ─── Style constants ─── */
+
+const inlineButtonStyle: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  minHeight: 40,
+  padding: "0 15px",
+  border: "0.5px solid rgba(15,15,14,0.16)",
+  color: "var(--ink)",
+  fontFamily: "var(--font-mono)",
+  fontSize: "var(--text-eyebrow)",
+  letterSpacing: "0.14em",
+  textTransform: "uppercase",
+  textDecoration: "none",
+  background: "rgba(255,255,255,0.26)",
+}
+
+const sectionLabelStyle: React.CSSProperties = {
   fontFamily: "var(--font-mono)",
   fontSize: "var(--text-eyebrow)" as any,
   letterSpacing: "0.18em",
   textTransform: "uppercase",
   color: "var(--ink)",
-  opacity: 0.38,
-  marginBottom: 14,
+  opacity: 0.36,
+  marginBottom: 0,
+}
+
+const sectionBodyWrapStyle: React.CSSProperties = {
+  paddingTop: 18,
+  borderTop: "0.5px solid rgba(15,15,14,0.14)",
+}
+
+const bodyCopyStyle: React.CSSProperties = {
+  fontFamily: "var(--font-sans)",
+  fontSize: "var(--text-body)",
+  lineHeight: 1.8,
+  color: "var(--ink)",
+  opacity: 0.56,
+  maxWidth: 520,
+}
+
+const nextStepTitleStyle: React.CSSProperties = {
+  fontFamily: "var(--font-sans)",
+  fontSize: "var(--text-lg)",
+  letterSpacing: "-0.01em",
+  color: "var(--ink)",
+  opacity: 0.84,
+  marginBottom: 4,
+}
+
+const nextStepBodyStyle: React.CSSProperties = {
+  fontFamily: "var(--font-sans)",
+  fontSize: "var(--text-body)",
+  lineHeight: 1.7,
+  color: "var(--ink)",
+  opacity: 0.48,
+  maxWidth: 420,
+}
+
+const arrowStyle: React.CSSProperties = {
+  fontSize: 12,
+  color: "var(--ink)",
+  opacity: 0.2,
+  flexShrink: 0,
+  marginTop: 4,
 }

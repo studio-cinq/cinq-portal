@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase-server"
 import { sendPortalInviteEmail } from "@/lib/email"
+import { requireAdmin } from "@/lib/admin-auth"
 
 export async function POST(req: Request) {
   try {
+    const auth = await requireAdmin()
+    if (auth.error) return auth.error
+
     const { email, clientName } = await req.json()
     if (!email) return NextResponse.json({ error: "Missing email" }, { status: 400 })
 

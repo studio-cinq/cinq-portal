@@ -14,7 +14,7 @@ export default async function AdminStudioPage() {
   const { data: invoicesRaw } = await supabase.from("invoices").select("*, clients(name)").in("status", ["sent", "overdue"]).order("due_date")
   const invoices = invoicesRaw as any[] | null
 
-  const { data: messagesRaw } = await supabase.from("messages").select("*, projects(title, clients(name))").eq("from_client", true).eq("read", false)
+  const { data: messagesRaw } = await supabase.from("messages").select("*, projects(title, client_id, clients(name))").eq("from_client", true).eq("read", false)
   const messages = messagesRaw as any[] | null
 
   const activeCount    = projects?.filter(p => p.status === "active").length ?? 0
@@ -142,7 +142,7 @@ export default async function AdminStudioPage() {
                 client={((msg.projects as any)?.clients as any)?.name ?? ""}
                 tag="Message"
                 tagColor="var(--amber)"
-                text={msg.body.slice(0, 80) + (msg.body.length > 80 ? "…" : "")}
+                text={(msg.body ?? "").slice(0, 80) + ((msg.body ?? "").length > 80 ? "…" : "")}
                 href={`/admin/clients/${(msg.projects as any)?.client_id}`}
               />
             ))}

@@ -6,6 +6,8 @@ import type { ColorSwatch } from "@/types/database"
 export default function ColorSwatches({ colors }: { colors: ColorSwatch[] }) {
   const [copied, setCopied] = useState<string | null>(null)
 
+  if (!colors || colors.length === 0) return null
+
   function copy(hex: string) {
     navigator.clipboard.writeText(hex).catch(() => {})
     setCopied(hex)

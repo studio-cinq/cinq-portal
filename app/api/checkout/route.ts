@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from "next/server"
-import Stripe from "stripe"
 import { createServerComponentClient } from "@/lib/supabase-server"
-import type { Database } from "@/types/database"
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2024-06-20" })
+import { getStripe } from "@/lib/stripe"
 
 export async function POST(req: NextRequest) {
-  const { invoiceId } = await req.json()
+  let invoiceId: string
+  try {
+    const body = await req.json()
+    invoiceId = body.invoiceId
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
+  }
+
+  if (!invoiceId) {
+    return NextResponse.json({ error: "Missing invoiceId" }, { status: 400 })
+  }
 
   const supabase = await createServerComponentClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -27,7 +34,9 @@ const invoice = invoiceRaw as any
   if (!methods.includes("stripe")) return NextResponse.json({ error: "Card payments not enabled for this invoice" }, { status: 400 })
 
   // Create Stripe checkout session
-  const session = await stripe.checkout.sessions.create({
+  let session
+  try {
+    session = await getStripe().checkout.sessions.create({
     payment_method_types: ["card"],
     mode:                 "payment",
     customer_email:       user.email,
@@ -46,10 +55,15 @@ const invoice = invoiceRaw as any
       invoice_id:  invoice.id,
       client_id:   invoice.client_id,
       project_id:  invoice.project_id,
+      type:        "invoice",
     },
     success_url: `${process.env.NEXT_PUBLIC_APP_URL}/invoices`,
     cancel_url:  `${process.env.NEXT_PUBLIC_APP_URL}/invoices`,
-  })
+    })
+  } catch (err) {
+    console.error("[checkout]", err)
+    return NextResponse.json({ error: "Card checkout is temporarily unavailable." }, { status: 500 })
+  }
 
   return NextResponse.json({ url: session.url })
 }

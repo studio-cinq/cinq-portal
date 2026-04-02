@@ -17,28 +17,33 @@ export default function DeleteButton({ endpoint, id, label = "Delete", confirm =
   async function handleDelete() {
     if (!window.confirm(confirm)) return
     setLoading(true)
-    const res = await fetch(endpoint, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
-    })
-    setLoading(false)
-    if (res.ok) {
-      router.refresh()
-    } else {
-      alert("Something went wrong. Please try again.")
+    try {
+      const res = await fetch(endpoint, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      })
+      setLoading(false)
+      if (res.ok) {
+        router.refresh()
+      } else {
+        alert("Something went wrong. Please try again.")
+      }
+    } catch {
+      setLoading(false)
+      alert("Network error. Please try again.")
     }
   }
 
   return (
     <button
-      onClick={handleDelete}
+      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete() }}
       disabled={loading}
       style={{
-        fontFamily: "'Matter SemiMono', monospace",
-        fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase",
+        fontFamily: "var(--font-mono)",
+        fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase",
         background: "none", border: "none",
-        color: "#c0392b", opacity: loading ? 0.3 : 0.45,
+        color: "var(--danger)", opacity: loading ? 0.3 : 0.45,
         cursor: loading ? "default" : "pointer",
         padding: 0,
       }}

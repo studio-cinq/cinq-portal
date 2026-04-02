@@ -11,7 +11,7 @@ interface NavProps {
 }
 
 const CLIENT_LINKS = [
-  { href: "/dashboard", label: "Projects" },
+  { href: "/dashboard", label: "Dashboard" },
   { href: "/invoices",  label: "Invoices" },
   { href: "/library",   label: "Files"    },
 ]

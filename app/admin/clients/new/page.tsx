@@ -2,15 +2,8 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import PortalNav from "@/components/portal/Nav"
-
-const mono: React.CSSProperties = {
-  fontFamily: "'Matter SemiMono', 'DM Mono', monospace",
-}
-
-const serif: React.CSSProperties = {
-  fontFamily: "'Söhne', 'Inter', system-ui, sans-serif",
-}
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -19,16 +12,16 @@ const inputStyle: React.CSSProperties = {
   border: "none",
   borderBottom: "0.5px solid rgba(15,15,14,0.2)",
   padding: "10px 0",
-  fontFamily: "'Söhne', 'Inter', system-ui, sans-serif",
+  fontFamily: "var(--font-sans)",
   fontSize: 15,
-  color: "#0F0F0E",
+  color: "var(--ink)",
   outline: "none",
   letterSpacing: "-0.01em",
 }
 
 const labelStyle: React.CSSProperties = {
-  ...mono,
-  fontSize: 9,
+  fontFamily: "var(--font-mono)",
+  fontSize: "var(--text-eyebrow)",
   letterSpacing: "0.16em",
   textTransform: "uppercase",
   opacity: 0.45,
@@ -61,28 +54,33 @@ export default function NewClientPage() {
 
     setSaving(true)
 
-    const res = await fetch("/api/admin/clients", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name:          form.name.trim(),
-        contact_name:  form.contact_name.trim(),
-        contact_email: form.contact_email.trim(),
-        logo_url:      form.logo_url.trim() || null,
-        notes:         form.notes.trim() || null,
-      }),
-    })
+    try {
+      const res = await fetch("/api/admin/clients", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name:          form.name.trim(),
+          contact_name:  form.contact_name.trim(),
+          contact_email: form.contact_email.trim(),
+          logo_url:      form.logo_url.trim() || null,
+          notes:         form.notes.trim() || null,
+        }),
+      })
 
-    const json = await res.json()
+      const json = await res.json()
 
-    if (!res.ok) {
-      setError(json.error ?? "Something went wrong.")
+      if (!res.ok) {
+        setError(json.error ?? "Something went wrong.")
+        setSaving(false)
+        return
+      }
+
+      router.push("/admin/clients")
+      router.refresh()
+    } catch {
+      setError("Network error. Please try again.")
       setSaving(false)
-      return
     }
-
-    router.push("/admin/clients")
-    router.refresh()
   }
 
   return (
@@ -92,10 +90,14 @@ export default function NewClientPage() {
 
         {/* Header */}
         <div style={{ marginBottom: 48 }}>
-          <div style={{ ...mono, fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.38, marginBottom: 14 }}>
-            Clients / New
-          </div>
-          <h1 style={{ ...serif, fontWeight: 400, fontSize: 26, opacity: 0.88, letterSpacing: "-0.015em", margin: 0 }}>
+          <Link href="/admin/clients" style={{
+            fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
+            letterSpacing: "0.16em", textTransform: "uppercase",
+            opacity: 0.38, display: "inline-block", marginBottom: 14,
+          }}>
+            ← Clients
+          </Link>
+          <h1 style={{ fontFamily: "var(--font-sans)", fontWeight: 400, fontSize: 26, opacity: 0.88, letterSpacing: "-0.015em", margin: 0 }}>
             New client
           </h1>
         </div>
@@ -104,8 +106,9 @@ export default function NewClientPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
 
           <div>
-            <label style={labelStyle}>Client / studio name *</label>
+            <label htmlFor="name" style={labelStyle}>Client / studio name *</label>
             <input
+              id="name"
               style={inputStyle}
               placeholder="Acme Studio"
               value={form.name}
@@ -115,8 +118,9 @@ export default function NewClientPage() {
 
           <div className="form-grid-2col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
             <div>
-              <label style={labelStyle}>Contact name *</label>
+              <label htmlFor="contact_name" style={labelStyle}>Contact name *</label>
               <input
+                id="contact_name"
                 style={inputStyle}
                 placeholder="Jane Smith"
                 value={form.contact_name}
@@ -124,8 +128,9 @@ export default function NewClientPage() {
               />
             </div>
             <div>
-              <label style={labelStyle}>Contact email *</label>
+              <label htmlFor="contact_email" style={labelStyle}>Contact email *</label>
               <input
+                id="contact_email"
                 style={inputStyle}
                 type="email"
                 placeholder="jane@acme.com"
@@ -136,8 +141,9 @@ export default function NewClientPage() {
           </div>
 
           <div>
-            <label style={labelStyle}>Logo URL <span style={{ opacity: 0.5 }}>(optional)</span></label>
+            <label htmlFor="logo_url" style={labelStyle}>Logo URL <span style={{ opacity: 0.5 }}>(optional)</span></label>
             <input
+              id="logo_url"
               style={inputStyle}
               placeholder="https://..."
               value={form.logo_url}
@@ -146,8 +152,9 @@ export default function NewClientPage() {
           </div>
 
           <div>
-            <label style={labelStyle}>Notes <span style={{ opacity: 0.5 }}>(optional)</span></label>
+            <label htmlFor="notes" style={labelStyle}>Notes <span style={{ opacity: 0.5 }}>(optional)</span></label>
             <textarea
+              id="notes"
               style={{
                 ...inputStyle,
                 borderBottom: "0.5px solid rgba(15,15,14,0.2)",
@@ -162,7 +169,7 @@ export default function NewClientPage() {
           </div>
 
           {error && (
-            <div style={{ ...mono, fontSize: 10, color: "#c0392b", opacity: 0.8 }}>
+            <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", color: "var(--danger)", opacity: 0.8 }}>
               {error}
             </div>
           )}
@@ -172,9 +179,9 @@ export default function NewClientPage() {
               onClick={handleSubmit}
               disabled={saving}
               style={{
-                ...mono,
-                fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase",
-                background: "#0F0F0E", color: "#F4F1EC",
+                fontFamily: "var(--font-mono)",
+                fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase",
+                background: "var(--ink)", color: "var(--cream)",
                 border: "none", padding: "14px 28px",
                 cursor: saving ? "default" : "pointer",
                 opacity: saving ? 0.4 : 1,
@@ -187,9 +194,9 @@ export default function NewClientPage() {
             <button
               onClick={() => router.push("/admin/clients")}
               style={{
-                ...mono,
-                fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase",
-                background: "transparent", color: "#0F0F0E",
+                fontFamily: "var(--font-mono)",
+                fontSize: "var(--text-eyebrow)", letterSpacing: "0.14em", textTransform: "uppercase",
+                background: "transparent", color: "var(--ink)",
                 border: "none", padding: "14px 0",
                 cursor: "pointer", opacity: 0.35,
               }}

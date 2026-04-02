@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase-server"
 import { sendReviewInviteEmail } from "@/lib/email"
+import { requireAdmin } from "@/lib/admin-auth"
 
 export async function POST(req: Request) {
   try {
+    const auth = await requireAdmin()
+    if (auth.error) return auth.error
+
     const { projectId, clientId, siteUrl, notes } = await req.json()
 
     if (!projectId || !clientId || !siteUrl) {

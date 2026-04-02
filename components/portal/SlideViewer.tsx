@@ -5,6 +5,15 @@ import type { PresentationSlide } from "@/types/database"
 
 export default function SlideViewer({ slides }: { slides: PresentationSlide[] }) {
   const [current, setCurrent] = useState(0)
+
+  if (!slides || slides.length === 0) {
+    return (
+      <div style={{ textAlign: "center", padding: "40px 0", opacity: 0.4, fontSize: 13, fontFamily: "var(--font-mono)" }}>
+        No slides yet
+      </div>
+    )
+  }
+
   const slide = slides[current]
 
   return (

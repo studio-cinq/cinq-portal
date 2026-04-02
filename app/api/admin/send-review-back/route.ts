@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase-server"
 import { sendReviewInviteEmail } from "@/lib/email"
+import { requireAdmin } from "@/lib/admin-auth"
 
 export async function POST(req: Request) {
   try {
+    const auth = await requireAdmin()
+    if (auth.error) return auth.error
+
     const { sessionId, notes } = await req.json()
     if (!sessionId) return NextResponse.json({ error: "Missing sessionId" }, { status: 400 })
 

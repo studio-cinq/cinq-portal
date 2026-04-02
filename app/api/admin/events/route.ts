@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase-server"
+import { requireAdmin } from "@/lib/admin-auth"
 
 export async function POST(req: Request) {
   try {
+    const auth = await requireAdmin()
+    if (auth.error) return auth.error
+
     const body = await req.json()
     const { client_id, project_id, title, event_date, event_time, duration_minutes, type, notes } = body
 
@@ -39,6 +43,9 @@ export async function POST(req: Request) {
 
 export async function PATCH(req: Request) {
   try {
+    const auth = await requireAdmin()
+    if (auth.error) return auth.error
+
     const body = await req.json()
     const { id, ...updates } = body
 
@@ -64,6 +71,9 @@ export async function PATCH(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
+    const auth = await requireAdmin()
+    if (auth.error) return auth.error
+
     const { id } = await req.json()
     if (!id) return NextResponse.json({ error: "Missing event ID." }, { status: 400 })
 

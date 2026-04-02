@@ -6,8 +6,8 @@ import { useRouter, useSearchParams } from "next/navigation"
 import PortalNav from "@/components/portal/Nav"
 import Link from "next/link"
 
-const mono: React.CSSProperties = { fontFamily: "'Matter SemiMono', 'DM Mono', monospace" }
-const serif: React.CSSProperties = { fontFamily: "'Söhne', 'Inter', system-ui, sans-serif" }
+const mono: React.CSSProperties = { fontFamily: "var(--font-mono)" }
+const serif: React.CSSProperties = { fontFamily: "var(--font-sans)" }
 
 const inputStyle: React.CSSProperties = {
   width: "100%", boxSizing: "border-box",
@@ -15,14 +15,14 @@ const inputStyle: React.CSSProperties = {
   border: "none",
   borderBottom: "0.5px solid rgba(15,15,14,0.2)",
   padding: "10px 0",
-  fontFamily: "'Söhne', 'Inter', system-ui, sans-serif",
-  fontSize: 15, color: "#0F0F0E", outline: "none",
+  fontFamily: "var(--font-sans)",
+  fontSize: 15, color: "var(--ink)", outline: "none",
   letterSpacing: "-0.01em",
 }
 
 const labelStyle: React.CSSProperties = {
   ...mono,
-  fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase",
+  fontSize: "var(--text-eyebrow)" as any, letterSpacing: "0.16em", textTransform: "uppercase",
   opacity: 0.45, display: "block", marginBottom: 6,
 }
 

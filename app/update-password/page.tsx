@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { supabase } from "@/lib/supabase"
 import CinqLogo from "@/components/CinqLogo"
 
@@ -29,13 +29,13 @@ export default function UpdatePasswordPage() {
     }
 
     setDone(true)
-    setTimeout(() => { window.location.href = "/dashboard" }, 2000)
+    setTimeout(() => { window.location.href = "/login?message=password_updated" }, 2000)
   }
 
   return (
     <main style={{
       minHeight: "100vh",
-      background: "linear-gradient(160deg, #F4F1EC 0%, #E8E0D4 100%)",
+      background: "var(--bg-grad)",
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
       padding: "24px",
     }}>
@@ -45,19 +45,19 @@ export default function UpdatePasswordPage() {
           <CinqLogo width={32} />
         </div>
 
-        <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase", color: "#0F0F0E", opacity: 0.4, marginBottom: 28 }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--ink)", opacity: 0.4, marginBottom: 28 }}>
           {done ? "Password set" : "Set your password"}
         </div>
 
         <div style={{ width: "100%", height: "0.5px", background: "rgba(15,15,14,0.12)" }} />
 
         {done ? (
-          <div style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 13, opacity: 0.65, lineHeight: 1.7, padding: "20px 0", textAlign: "center" }}>
-            Password set — taking you to your portal…
+          <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, opacity: 0.65, lineHeight: 1.7, padding: "20px 0", textAlign: "center" }}>
+            Password set. Taking you back to sign in…
           </div>
         ) : (
           <form onSubmit={handleSubmit} style={{ width: "100%" }}>
-            <div style={{ fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 13, color: "#0F0F0E", opacity: 0.5, padding: "14px 0", lineHeight: 1.6 }}>
+            <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--ink)", opacity: 0.5, padding: "14px 0", lineHeight: 1.6 }}>
               Choose a password for your Studio Cinq portal account.
             </div>
             <input
@@ -65,6 +65,7 @@ export default function UpdatePasswordPage() {
               value={password}
               onChange={e => setPassword(e.target.value)}
               placeholder="New password"
+              aria-label="New password"
               required
               style={inputStyle}
             />
@@ -73,11 +74,12 @@ export default function UpdatePasswordPage() {
               value={confirm}
               onChange={e => setConfirm(e.target.value)}
               placeholder="Confirm password"
+              aria-label="Confirm password"
               required
               style={inputStyle}
             />
             <button type="submit" disabled={loading} style={btnStyle}>
-              {loading ? "Setting password…" : "Set password & enter portal"}
+              {loading ? "Setting password…" : "Save password"}
             </button>
           </form>
         )}
@@ -85,14 +87,14 @@ export default function UpdatePasswordPage() {
         <div style={{ width: "100%", height: "0.5px", background: "rgba(15,15,14,0.12)" }} />
 
         {error && (
-          <div style={{ marginTop: 16, fontFamily: "'Söhne', 'Inter', system-ui, sans-serif", fontSize: 11, color: "#0F0F0E", opacity: 0.5, textAlign: "center", lineHeight: 1.6 }}>
+          <div role="alert" aria-live="polite" style={{ marginTop: 16, fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--ink)", opacity: 0.5, textAlign: "center", lineHeight: 1.6 }}>
             {error}
           </div>
         )}
 
       </div>
 
-      <div style={{ position: "fixed", bottom: 28, fontFamily: "'Matter SemiMono', monospace", fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "#0F0F0E", opacity: 0.18 }}>
+      <div style={{ marginTop: "auto", paddingTop: 48, fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink)", opacity: 0.18 }}>
         Studio Cinq &nbsp;&middot;&nbsp; Private client access
       </div>
     </main>
@@ -104,16 +106,16 @@ const inputStyle: React.CSSProperties = {
   background: "rgba(255,255,255,0.45)",
   border: "0.5px solid rgba(15,15,14,0.18)",
   padding: "13px 16px",
-  fontFamily: "'Söhne', 'Inter', system-ui, sans-serif",
-  fontSize: 13, color: "#0F0F0E", outline: "none",
+  fontFamily: "var(--font-sans)",
+  fontSize: 13, color: "var(--ink)", outline: "none",
   letterSpacing: "0.01em", marginTop: 10,
 }
 
 const btnStyle: React.CSSProperties = {
   width: "100%", boxSizing: "border-box",
-  background: "#0F0F0E", border: "none",
+  background: "var(--ink)", border: "none",
   padding: "13px 16px", marginTop: 10,
-  fontFamily: "'Matter SemiMono', monospace",
-  fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase",
-  color: "#F4F1EC", cursor: "pointer",
+  fontFamily: "var(--font-mono)",
+  fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase",
+  color: "var(--cream)", cursor: "pointer",
 }

@@ -6,9 +6,14 @@ export default function CopyLinkButton({ id }: { id: string }) {
   const [copied, setCopied] = useState(false)
 
   async function handleCopy() {
-    await navigator.clipboard.writeText(`https://portal.studiocinq.com/proposals/${id}`)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    const base = typeof window !== "undefined" ? window.location.origin : "https://portal.studiocinq.com"
+    try {
+      await navigator.clipboard.writeText(`${base}/proposals/${id}`)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // Clipboard API not available (e.g. non-secure context)
+    }
   }
 
   return (

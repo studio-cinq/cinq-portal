@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase-server"
 import { sendInvoiceEmail } from "@/lib/email"
+import { requireAdmin } from "@/lib/admin-auth"
 
 export async function POST(req: Request) {
   try {
+    const auth = await requireAdmin()
+    if (auth.error) return auth.error
+
     const { invoiceNumber, clientId } = await req.json()
     if (!invoiceNumber || !clientId) return NextResponse.json({ error: "Missing fields" }, { status: 400 })
 

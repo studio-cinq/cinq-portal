@@ -1,47 +1,15 @@
 import { createServerComponentClient } from "@/lib/supabase-server"
+import { getPortalLibrarySnapshotByEmail } from "@/lib/portal-library"
 import PortalNav from "@/components/portal/Nav"
 import ColorSwatches from "@/components/portal/ColorSwatches"
+import DownloadAllButton from "@/components/portal/DownloadAllButton"
 import Link from "next/link"
 
 export default async function LibraryPage() {
   const supabase = await createServerComponentClient()
-
   const { data: { user } } = await supabase.auth.getUser()
-
-  const { data: clientRaw } = await supabase
-    .from("clients").select("*")
-    .eq("contact_email", user?.email ?? "").single()
-  const client = clientRaw as any
-
-  // Check if files should be unlocked:
-  // 1. If any invoice with unlocks_files=true exists and is paid → unlocked
-  // 2. If NO invoice has unlocks_files=true at all → no payment gate, show files if they exist
-  const { data: gateInvoices } = await supabase
-    .from("invoices").select("id, status")
-    .eq("client_id", client?.id ?? "")
-    .eq("unlocks_files", true)
-  const hasGateInvoice = (gateInvoices ?? []).length > 0
-  const gateIsPaid = (gateInvoices ?? []).some(inv => inv.status === "paid")
-  const isUnlocked = !hasGateInvoice || gateIsPaid
-
-  const { data: projectsRaw } = await supabase
-    .from("projects").select("id").eq("client_id", client?.id ?? "")
-  const projectIds = (projectsRaw ?? []).map((p: any) => p.id)
-
-  const { data: assetsRaw } = projectIds.length > 0
-    ? await supabase.from("brand_assets").select("*").in("project_id", projectIds).order("sort_order")
-    : { data: [] }
-  const assets = assetsRaw ?? []
-
-  const { data: colorsRaw } = projectIds.length > 0
-    ? await supabase.from("color_swatches").select("*").in("project_id", projectIds).order("sort_order")
-    : { data: [] }
-  const colors = colorsRaw ?? []
-
-  const { data: typefacesRaw } = projectIds.length > 0
-    ? await supabase.from("typeface_entries").select("*").in("project_id", projectIds).order("sort_order")
-    : { data: [] }
-  const typefaces = typefacesRaw ?? []
+  const { client, hasGateInvoice, gateIsPaid, isUnlocked, assets, colors, typefaces } =
+    await getPortalLibrarySnapshotByEmail(user?.email ?? "")
 
   const logoAssets   = assets.filter((a: any) => a.category === "logo")
   const guideAssets  = assets.filter((a: any) => a.category === "guidelines")
@@ -54,7 +22,7 @@ export default async function LibraryPage() {
       <PortalNav clientName={client?.name} />
 
       {/* Hero */}
-      <div className="hero-pad" style={{
+      <div className="hero-pad portal-reveal" style={{
         background: "var(--ink)",
         padding: "44px 48px 40px",
         display: "flex", alignItems: "flex-end", justifyContent: "space-between",
@@ -81,30 +49,20 @@ export default async function LibraryPage() {
             color: "rgba(237,232,224,0.45)", letterSpacing: "0.04em",
           }}>
             {isUnlocked
-              ? (assets.length > 0 ? "All files available for download" : "Files will appear here as your project progresses")
+              ? (assets.length > 0 ? "Open files individually below, or use the quick-open action." : "Files will appear here as your project progresses")
               : "Files unlock after final payment"}
           </div>
         </div>
 
         {isUnlocked && assets.length > 0 && (
-          <div style={{
-            fontFamily: "var(--font-mono)",
-            display: "flex", alignItems: "center", gap: 8,
-            fontSize: "var(--text-eyebrow)",
-            letterSpacing: "0.14em", textTransform: "uppercase",
-            color: "rgba(237,232,224,0.55)",
-            border: "0.5px solid rgba(237,232,224,0.25)",
-            padding: "10px 18px", cursor: "pointer",
-          }}>
-            ↓ &nbsp;Download everything
-          </div>
+          <DownloadAllButton assets={assets} />
         )}
       </div>
 
       {!isUnlocked ? (
         <LockedState hasOutstandingGate={hasGateInvoice && !gateIsPaid} />
       ) : (
-        <main className="library-grid" style={{
+        <main className="library-grid portal-reveal portal-delay-1" style={{
           padding: "44px 48px 56px",
           display: "grid", gridTemplateColumns: "1fr 1fr",
           gap: 48, maxWidth: 1100, margin: "0 auto",
@@ -208,7 +166,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 function AssetTile({ asset, dark }: { asset: any; dark?: boolean }) {
   return (
-    <a href={asset.file_url} style={{
+    <a href={asset.file_url} download={asset.name} target="_blank" rel="noopener" className="portal-card-hover" style={{
       display: "flex", flexDirection: "column",
       alignItems: "center", justifyContent: "center",
       gap: 10, aspectRatio: "4/3",
@@ -237,12 +195,13 @@ function AssetTile({ asset, dark }: { asset: any; dark?: boolean }) {
 
 function FileRow({ asset }: { asset: any }) {
   const ext  = asset.file_type?.toUpperCase() ?? "FILE"
-  const size = asset.file_size_bytes > 1024 * 1024
-    ? `${(asset.file_size_bytes / (1024 * 1024)).toFixed(1)} MB`
-    : `${Math.round(asset.file_size_bytes / 1024)} KB`
+  const bytes = asset.file_size_bytes ?? 0
+  const size = bytes > 1024 * 1024
+    ? `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+    : bytes > 0 ? `${Math.round(bytes / 1024)} KB` : "—"
 
   return (
-    <a href={asset.file_url} style={{
+    <a href={asset.file_url} download={asset.name} target="_blank" rel="noopener" className="portal-row-hover" style={{
       display: "flex", alignItems: "center", justifyContent: "space-between",
       padding: "13px 0", borderBottom: "0.5px solid rgba(15,15,14,0.08)",
       textDecoration: "none",
