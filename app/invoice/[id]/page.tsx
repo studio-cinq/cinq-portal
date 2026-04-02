@@ -11,7 +11,19 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [justPaid, setJustPaid] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+  const [paymentError, setPaymentError] = useState<string | null>(null)
   const [achDetails, setAchDetails] = useState<{ bankName: string; routingNumber: string; accountNumber: string; accountName: string } | null>(null)
+
+  useEffect(() => {
+    function checkViewport() {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    checkViewport()
+    window.addEventListener("resize", checkViewport)
+    return () => window.removeEventListener("resize", checkViewport)
+  }, [])
 
   useEffect(() => {
     // Check for Stripe success redirect (has session_id param)
@@ -55,14 +67,31 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
 
   async function handlePay() {
     setSubmitting(true)
-    const res = await fetch("/api/invoice-checkout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ invoiceId: params.id }),
-    })
-    const { url } = await res.json()
-    if (url) window.location.href = url
-    else setSubmitting(false)
+    setPaymentError(null)
+    try {
+      const res = await fetch("/api/invoice-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ invoiceId: params.id }),
+      })
+      const payload = await res.json().catch(() => ({}))
+
+      if (!res.ok) {
+        setPaymentError(payload.error ?? "Card checkout is temporarily unavailable.")
+        setSubmitting(false)
+        return
+      }
+
+      if (payload.url) {
+        window.location.href = payload.url
+        return
+      }
+
+      setPaymentError("Card checkout is temporarily unavailable.")
+    } catch {
+      setPaymentError("Card checkout is temporarily unavailable.")
+    }
+    setSubmitting(false)
   }
 
   if (loading) return (
@@ -92,7 +121,7 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
       {/* Nav */}
       <nav style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "0 48px", height: "var(--nav-h)",
+        padding: isMobile ? "0 20px" : "0 48px", height: "var(--nav-h)",
         borderBottom: "0.5px solid rgba(15,15,14,0.1)",
         background: "rgba(244,241,236,0.95)",
         backdropFilter: "blur(8px)",
@@ -111,14 +140,14 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
       </nav>
 
       {/* Content */}
-      <main style={{ maxWidth: 640, margin: "0 auto", padding: "48px 32px 80px" }}>
+      <main style={{ maxWidth: 640, margin: "0 auto", padding: isMobile ? "32px 20px 56px" : "48px 32px 80px" }}>
 
         {/* Header */}
         <div style={{ position: "relative" }}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.42, marginBottom: 10 }}>
             Invoice #{invoice.invoice_number}
           </div>
-          <h1 style={{ fontFamily: "var(--font-sans)", fontWeight: 400, fontSize: 28, letterSpacing: "-0.015em", opacity: 0.9, margin: "0 0 32px", paddingRight: isPaid ? 140 : 0 }}>
+          <h1 style={{ fontFamily: "var(--font-sans)", fontWeight: 400, fontSize: isMobile ? 22 : 28, letterSpacing: "-0.015em", opacity: 0.9, margin: "0 0 32px", paddingRight: isPaid ? (isMobile ? 88 : 140) : 0 }}>
             {invoice.description}
           </h1>
           {isPaid && (
@@ -127,10 +156,10 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
               alt="Paid"
               style={{
                 position: "absolute",
-                top: -10,
-                right: -10,
-                width: 120,
-                height: 120,
+                top: isMobile ? -2 : -10,
+                right: isMobile ? 0 : -10,
+                width: isMobile ? 76 : 120,
+                height: isMobile ? 76 : 120,
                 objectFit: "contain",
                 opacity: 0.85,
                 pointerEvents: "none",
@@ -140,7 +169,7 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
         </div>
 
         {/* Meta */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginBottom: 36, padding: "20px 0", borderTop: "0.5px solid rgba(15,15,14,0.1)", borderBottom: "0.5px solid rgba(15,15,14,0.1)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 16 : 24, marginBottom: 36, padding: "20px 0", borderTop: "0.5px solid rgba(15,15,14,0.1)", borderBottom: "0.5px solid rgba(15,15,14,0.1)" }}>
           {[
             { label: "From", value: "Studio Cinq" },
             { label: "To", value: client?.name ?? "—" },
@@ -162,7 +191,7 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
               <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.4 }}>Amount</span>
             </div>
             {lineItems.map((item: any, i: number) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "14px 0", borderBottom: "0.5px solid rgba(15,15,14,0.07)" }}>
+              <div key={i} style={{ display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", gap: isMobile ? 6 : 16, padding: "14px 0", borderBottom: "0.5px solid rgba(15,15,14,0.07)" }}>
                 <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.75 }}>{item.description}</span>
                 <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.75 }}>${(item.amount / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
               </div>
@@ -203,7 +232,7 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
               { label: "Account number", value: achDetails.accountNumber },
               { label: "Reference",      value: `Invoice #${invoice.invoice_number}` },
             ].map(row => (
-              <div key={row.label} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "0.5px solid rgba(15,15,14,0.05)" }}>
+              <div key={row.label} style={{ display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", gap: isMobile ? 4 : 16, padding: "7px 0", borderBottom: "0.5px solid rgba(15,15,14,0.05)" }}>
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.4 }}>{row.label}</span>
                 <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.75 }}>{row.value}</span>
               </div>
@@ -230,6 +259,7 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
                   letterSpacing: "0.16em", textTransform: "uppercase",
                   background: "var(--ink)", color: "var(--cream)",
                   border: "none", padding: "16px 32px",
+                  width: isMobile ? "100%" : undefined,
                   cursor: submitting ? "default" : "pointer",
                   opacity: submitting ? 0.4 : 1, transition: "opacity 0.2s",
                 }}>
@@ -253,6 +283,18 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
           )}
           <DownloadPDFButton type="invoice" id={params.id} label="↓ PDF" />
         </div>
+        {paymentError && (
+          <div role="alert" style={{
+            marginTop: 12,
+            fontFamily: "var(--font-sans)",
+            fontSize: "var(--text-sm)",
+            color: "var(--amber)",
+            opacity: 0.9,
+            lineHeight: 1.6,
+          }}>
+            {paymentError}
+          </div>
+        )}
 
         {/* Footer */}
         <div style={{ marginTop: 64, paddingTop: 20, borderTop: "0.5px solid rgba(15,15,14,0.08)" }}>

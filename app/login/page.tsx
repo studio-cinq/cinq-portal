@@ -10,13 +10,19 @@ function LoginPageInner() {
   const [password, setPassword]   = useState("")
   const [loading, setLoading]     = useState(false)
   const [error, setError]         = useState<string | null>(null)
+  const [notice, setNotice]       = useState<string | null>(null)
   const [resetSent, setResetSent] = useState(false)
   const [mode, setMode]           = useState<"login" | "reset">("login")
   const searchParams = useSearchParams()
 
   useEffect(() => {
     const msg = searchParams.get("message")
-    if (msg === "password_updated") setError(null)
+    if (msg === "password_updated") {
+      setError(null)
+      setNotice("Password updated. Sign in with your new password.")
+      return
+    }
+    setNotice(null)
   }, [searchParams])
 
   async function handleLogin(e: React.FormEvent) {
@@ -74,7 +80,7 @@ function LoginPageInner() {
             <button type="submit" disabled={loading} style={btnStyle}>
               {loading ? "Signing in…" : "Enter portal"}
             </button>
-            <button type="button" onClick={() => { setMode("reset"); setError(null) }} style={ghostBtnStyle}>
+            <button type="button" onClick={() => { setMode("reset"); setError(null); setNotice(null) }} style={ghostBtnStyle}>
               Forgot password
             </button>
           </form>
@@ -94,7 +100,7 @@ function LoginPageInner() {
             <button type="submit" disabled={loading} style={btnStyle}>
               {loading ? "Sending…" : "Send reset link"}
             </button>
-            <button type="button" onClick={() => { setMode("login"); setError(null) }} style={ghostBtnStyle}>
+            <button type="button" onClick={() => { setMode("login"); setError(null); setNotice(null) }} style={ghostBtnStyle}>
               Back to sign in
             </button>
           </form>
@@ -119,6 +125,17 @@ function LoginPageInner() {
         <div style={{ width: "100%", height: "0.5px", background: "rgba(15,15,14,0.12)" }} />
 
         <div role="alert" aria-live="polite">
+          {notice && (
+            <div style={{
+              marginTop: 16,
+              fontFamily: "var(--font-sans)",
+              fontSize: "var(--text-sm)",
+              color: "var(--ink)", opacity: 0.6,
+              textAlign: "center", lineHeight: 1.6,
+            }}>
+              {notice}
+            </div>
+          )}
           {error && (
             <div style={{
               marginTop: 16,

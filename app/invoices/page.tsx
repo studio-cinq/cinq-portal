@@ -31,7 +31,7 @@ export default async function InvoicesPage() {
       <PortalNav clientName={client?.name} />
       <InvoiceViewTracker invoiceIds={(invoices ?? []).filter(i => ["sent", "overdue"].includes(i.status)).map(i => i.id)} />
 
-      <main className="layout-grid" style={{
+      <main className="layout-grid portal-reveal" style={{
         display: "grid",
         gridTemplateColumns: "1fr 300px",
         maxWidth: 1100,
@@ -140,7 +140,7 @@ function InvoiceCard({ inv, variant }: { inv: any; variant: "paid" | "due" | "lo
   const fmt = (n: number) => `$${(n / 100).toLocaleString()}`
 
   return (
-    <div style={{
+    <div className="portal-card-hover" style={{
       border: "0.5px solid rgba(15,15,14,0.1)",
       background: variant === "due" ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.2)",
       padding: "24px 28px", marginBottom: 12,
@@ -191,7 +191,7 @@ function InvoiceCard({ inv, variant }: { inv: any; variant: "paid" | "due" | "lo
             <DownloadPDFButton type="invoice" id={inv.id} label="↓ Invoice PDF" />
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               {showACH && (
-                <a href={`/invoice/${inv.id}`} style={{
+                <a href={`/invoice/${inv.id}`} className="portal-button-soft" style={{
                   fontFamily: "var(--font-mono)", fontSize: 9,
                   letterSpacing: "0.1em", textTransform: "uppercase",
                   color: "var(--ink)", opacity: 0.5, textDecoration: "none",

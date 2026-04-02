@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase-server"
-import { Resend } from "resend"
-
-const resend = new Resend(process.env.RESEND_API_KEY)
+import { trySendEmail } from "@/lib/resend"
+import { requireAdmin } from "@/lib/admin-auth"
 
 export async function POST(req: Request) {
   try {
+    const auth = await requireAdmin()
+    if (auth.error) return auth.error
+
     const { sessionId, screenshotUrl, notes } = await req.json()
     if (!sessionId || !screenshotUrl) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 })
@@ -33,7 +35,7 @@ export async function POST(req: Request) {
     const reviewUrl = `${process.env.NEXT_PUBLIC_APP_URL}/review/${sessionId}`
 
     if (client?.contact_email) {
-      await resend.emails.send({
+      await trySendEmail({
         from: "Studio Cinq <portal@studiocinq.com>",
         to: client.contact_email,
         subject: `Round ${nextRound} ready for review — ${project?.title ?? "Website"}`,

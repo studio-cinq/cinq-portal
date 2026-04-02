@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server"
-import { Resend } from "resend"
 import { supabaseAdmin } from "@/lib/supabase-server"
-
-const resend = new Resend(process.env.RESEND_API_KEY)
+import { trySendEmail } from "@/lib/resend"
 
 export async function POST(req: Request) {
   try {
@@ -40,7 +38,7 @@ export async function POST(req: Request) {
       ? `Proposal revisited — ${client.name}`
       : `Proposal opened — ${client.name}`
 
-    await resend.emails.send({
+    await trySendEmail({
       from: "Studio Cinq Portal <portal@studiocinq.com>",
       to: process.env.ADMIN_EMAIL ?? "kacie@studiocinq.com",
       subject,
@@ -57,7 +55,7 @@ export async function POST(req: Request) {
           <a href="${proposalUrl}" style="display:inline-block;background:#1C1916;color:#F6F4EF;padding:10px 22px;font-family:monospace;font-size:12px;text-decoration:none;letter-spacing:0.06em">View proposal →</a>
         </div>
       `,
-    })
+    }).catch(() => {})
 
     return NextResponse.json({ ok: true })
   } catch (err) {

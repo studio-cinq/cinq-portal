@@ -245,10 +245,20 @@ create policy "Client reads own assets" on brand_assets for select using (
   project_id in (
     select p.id from projects p
     join clients c on c.id = p.client_id
-    join invoices i on i.project_id = p.id
     where c.contact_email = client_email()
-    and i.unlocks_files = true
-    and i.status = 'paid'
+    and (
+      not exists (
+        select 1 from invoices i
+        where i.client_id = c.id
+        and i.unlocks_files = true
+      )
+      or exists (
+        select 1 from invoices i
+        where i.client_id = c.id
+        and i.unlocks_files = true
+        and i.status = 'paid'
+      )
+    )
   )
 );
 

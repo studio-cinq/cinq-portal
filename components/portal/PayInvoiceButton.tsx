@@ -29,6 +29,7 @@ export default function PayInvoiceButton({
     <button
       onClick={handlePay}
       disabled={loading}
+      className="portal-button-dark"
       style={{
         background: "var(--ink)", border: "none",
         padding: "11px 24px", fontFamily: "var(--font-mono)",

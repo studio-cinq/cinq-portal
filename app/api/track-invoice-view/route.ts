@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase-server"
-import { Resend } from "resend"
-
-const resend = new Resend(process.env.RESEND_API_KEY)
+import { trySendEmail } from "@/lib/resend"
 
 export async function POST(req: Request) {
   try {
@@ -30,7 +28,7 @@ export async function POST(req: Request) {
       `#${inv.invoice_number} — $${(inv.amount / 100).toLocaleString()}`
     ).join(", ")
 
-    await resend.emails.send({
+    await trySendEmail({
       from: "Studio Cinq Portal <portal@studiocinq.com>",
       to: process.env.ADMIN_EMAIL ?? "kacie@studiocinq.com",
       subject: `Invoice viewed — ${client?.name ?? "Client"}`,

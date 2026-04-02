@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase-server"
+import { requireAdmin } from "@/lib/admin-auth"
 
 export async function PATCH(req: Request) {
   try {
+    const auth = await requireAdmin()
+    if (auth.error) return auth.error
+
     const body = await req.json()
     const { id, name, contact_name, contact_email, logo_url, notes } = body
 
@@ -35,6 +39,9 @@ export async function PATCH(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    const auth = await requireAdmin()
+    if (auth.error) return auth.error
+
     const body = await req.json()
     const { name, contact_name, contact_email, logo_url, notes } = body
 

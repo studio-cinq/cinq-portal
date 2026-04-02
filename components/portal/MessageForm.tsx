@@ -61,6 +61,7 @@ export default function MessageForm({ projectId }: { projectId: string }) {
       <button
         onClick={handleSend}
         disabled={sending || !body.trim()}
+        className="portal-button-soft"
         style={{
           width: "100%", boxSizing: "border-box",
           background: "transparent",

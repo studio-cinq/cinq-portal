@@ -1,16 +1,21 @@
 import { NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase-server"
-import { Resend } from "resend"
-
-const resend = new Resend(process.env.RESEND_API_KEY)
+import { trySendEmail } from "@/lib/resend"
 
 export async function POST(req: Request) {
   try {
     const { sessionId } = await req.json()
+    if (!sessionId) {
+      return NextResponse.json({ error: "Missing sessionId" }, { status: 400 })
+    }
 
     const { data: session } = await (supabaseAdmin.from("review_sessions") as any)
       .select("*, clients(name, contact_name), projects(title)")
       .eq("id", sessionId).single()
+
+    if (!session) {
+      return NextResponse.json({ error: "Review session not found" }, { status: 404 })
+    }
 
     await (supabaseAdmin.from("review_sessions") as any)
       .update({ status: "approved", approved_at: new Date().toISOString() })
@@ -19,7 +24,7 @@ export async function POST(req: Request) {
     const client = session?.clients as any
     const project = session?.projects as any
 
-    await resend.emails.send({
+    await trySendEmail({
       from: "Studio Cinq Portal <portal@studiocinq.com>",
       to: process.env.ADMIN_EMAIL ?? "kacie@studiocinq.com",
       subject: `Site approved 🎉 — ${client?.name ?? "Client"}`,

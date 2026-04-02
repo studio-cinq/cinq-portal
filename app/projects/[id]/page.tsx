@@ -58,7 +58,7 @@ export default async function ProjectPage({ params }: { params: { id: string } }
     <>
       <PortalNav clientName={client?.name} />
 
-      <main className="layout-grid" style={{
+      <main className="layout-grid portal-reveal" style={{
         display: "grid", gridTemplateColumns: "1fr 260px",
         maxWidth: 1100, margin: "0 auto",
         minHeight: "calc(100vh - 64px)",
@@ -67,7 +67,7 @@ export default async function ProjectPage({ params }: { params: { id: string } }
         {/* Left */}
         <div className="layout-left" style={{ padding: "40px 40px 64px 48px", borderRight: "0.5px solid rgba(15,15,14,0.08)" }}>
 
-          <Link href="/dashboard" style={{
+          <Link href="/dashboard" className="portal-row-hover" style={{
             fontFamily: "var(--font-mono)",
             fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase",
             color: "var(--ink)", opacity: 0.42, textDecoration: "none",
@@ -85,7 +85,7 @@ export default async function ProjectPage({ params }: { params: { id: string } }
 
           {/* Timeline */}
           {project.total_weeks && (
-            <div style={{ marginBottom: 40 }}>
+            <div className="portal-reveal portal-delay-1" style={{ marginBottom: 40 }}>
               <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.42, marginBottom: 12 }}>
                 <span>Project timeline</span>
                 <span>Week {project.current_week} of {project.total_weeks}</span>
@@ -103,7 +103,7 @@ export default async function ProjectPage({ params }: { params: { id: string } }
           )}
 
           {/* Deliverables */}
-          <div style={sectionStyle}>Deliverables</div>
+          <div className="portal-reveal portal-delay-1" style={sectionStyle}>Deliverables</div>
           <div style={{ marginBottom: 36 }}>
             <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.07)" }} />
             {deliverables?.map(del => (
@@ -142,7 +142,7 @@ export default async function ProjectPage({ params }: { params: { id: string } }
                       </span>
                     </div>
                     {del.status === "awaiting_approval" && (
-                      <Link href={`/projects/${project.id}/review/${del.id}`} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--amber)", textDecoration: "none", opacity: 0.9 }}>
+                      <Link href={`/projects/${project.id}/review/${del.id}`} className="portal-row-hover" style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--amber)", textDecoration: "none", opacity: 0.9 }}>
                         Review &rarr;
                       </Link>
                     )}
@@ -160,7 +160,7 @@ export default async function ProjectPage({ params }: { params: { id: string } }
 
           {/* Presentation */}
           {slides && slides.length > 0 && (
-            <div style={{ marginBottom: 36 }}>
+            <div className="portal-reveal portal-delay-2" style={{ marginBottom: 36 }}>
               <div style={sectionStyle}>Presentation</div>
               <div style={{
                 background: "var(--ink)", padding: "32px 24px",
@@ -172,7 +172,7 @@ export default async function ProjectPage({ params }: { params: { id: string } }
           )}
 
           {/* Decision log */}
-          <div style={sectionStyle}>Decision log</div>
+          <div className="portal-reveal portal-delay-2" style={sectionStyle}>Decision log</div>
           <div>
             {decisionLog?.map(entry => (
               <div key={entry.id} style={{ display: "flex", gap: 16, padding: "11px 0", borderBottom: "0.5px solid rgba(15,15,14,0.06)" }}>
@@ -196,14 +196,14 @@ export default async function ProjectPage({ params }: { params: { id: string } }
           {needsReview && (
             <>
               <div style={sidebarLabel}>Next step</div>
-              <div style={{ border: "0.5px solid rgba(15,15,14,0.1)", padding: 18, marginBottom: 28, background: "rgba(15,15,14,0.04)" }}>
+              <div className="portal-card-hover" style={{ border: "0.5px solid rgba(15,15,14,0.1)", padding: 18, marginBottom: 28, background: "rgba(15,15,14,0.04)" }}>
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--amber)", opacity: 0.9, marginBottom: 8 }}>
                   Your input needed
                 </div>
                 <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", color: "var(--ink)", opacity: "var(--op-body)" as any, lineHeight: 1.5, marginBottom: 14 }}>
                   {needsReview.name} is ready for your review.
                 </div>
-                <Link href={`/projects/${project.id}/review/${needsReview.id}`} style={{
+                <Link href={`/projects/${project.id}/review/${needsReview.id}`} className="portal-button-dark" style={{
                   display: "block", width: "100%", boxSizing: "border-box",
                   background: "var(--ink)", padding: "11px", textAlign: "center",
                   fontFamily: "var(--font-mono)",
