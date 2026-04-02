@@ -402,6 +402,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
             <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: "var(--op-muted)" as any }}>{client.contact_name} &nbsp;·&nbsp; {client.contact_email}</div>
           </div>
           <div className="client-actions" style={{ display: "flex", gap: 8, paddingBottom: 20 }}>
+            <Link href={`/admin/clients/${params.id}/preview`} style={{ ...actionBtn, borderColor: "rgba(143,167,181,0.4)" }} target="_blank">View as client</Link>
             <Link href={`/admin/clients/${params.id}/edit`} style={actionBtn}>Edit</Link>
             <Link href={`/admin/projects/new?client=${params.id}`} style={actionBtn}>+ Project</Link>
             <button onClick={inviteClient} disabled={inviting} style={{ ...actionBtn, opacity: inviting ? 0.4 : 0.6, cursor: inviting ? "default" : "pointer", border: "0.5px solid rgba(15,15,14,0.2)", background: "transparent", color: "var(--ink)" }}>
