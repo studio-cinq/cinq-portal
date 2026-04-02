@@ -100,28 +100,14 @@ export default async function DashboardPage() {
   const contact = portalLibrary.contact as any
   const firstName = (contact?.name ?? client?.contact_name ?? client?.name ?? "").split(" ")[0] || "there"
 
-  const projectsRes = await supabase
-    .from("projects")
-    .select("*, deliverables(*)")
-    .eq("client_id", clientId)
-    .order("created_at", { ascending: false })
+  // Fetch projects, invoices, and proposals in parallel
+  const [projectsRes, invoicesRes, proposalsRes] = await Promise.all([
+    supabase.from("projects").select("*, deliverables(*)").eq("client_id", clientId).order("created_at", { ascending: false }),
+    supabase.from("invoices").select("*").eq("client_id", clientId).order("created_at", { ascending: false }),
+    supabase.from("proposals").select("*, proposal_items(*)").eq("client_id", clientId).eq("status", "accepted").order("created_at", { ascending: false }).limit(1),
+  ])
   const projects = (projectsRes.data ?? []) as any[]
-
-  const invoicesRes = await supabase
-    .from("invoices")
-    .select("*")
-    .eq("client_id", clientId)
-    .order("created_at", { ascending: false })
   const allInvoices = (invoicesRes.data ?? []) as any[]
-
-  // Fetch accepted proposals for this client
-  const proposalsRes = await supabase
-    .from("proposals")
-    .select("*, proposal_items(*)")
-    .eq("client_id", clientId)
-    .eq("status", "accepted")
-    .order("created_at", { ascending: false })
-    .limit(1)
   const acceptedProposal = (proposalsRes.data?.[0] ?? null) as any
 
   const proposalItems = (acceptedProposal?.proposal_items ?? []).sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0))

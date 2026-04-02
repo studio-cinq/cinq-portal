@@ -66,19 +66,18 @@ export default async function AdminStudioPage() {
   const proposalsPending = proposalsPendingRaw as any[] ?? []
   const reviewSessions = reviewSessionsRaw as any[] ?? []
 
-  /* ─── Stats ─── */
+  /* ─── Stats (parallel) ─── */
 
   const activeCount = projects.filter(p => p.status === "active").length
-
-  const { data: paidInvoicesRaw } = await supabase
-    .from("invoices").select("amount, paid_at").eq("status", "paid")
-    .gte("paid_at", new Date(new Date().getFullYear(), 0, 1).toISOString())
-  const paidInvoices = paidInvoicesRaw as { amount: number; paid_at: string }[] ?? []
-  const ytdBilled = paidInvoices.reduce((s, i) => s + i.amount, 0)
   const outstanding = invoicesOpen.reduce((s, i) => s + i.amount, 0)
 
-  const { data: draftInvoicesRaw } = await supabase
-    .from("invoices").select("amount").eq("status", "draft")
+  const [{ data: paidInvoicesRaw }, { data: draftInvoicesRaw }] = await Promise.all([
+    supabase.from("invoices").select("amount, paid_at").eq("status", "paid")
+      .gte("paid_at", new Date(new Date().getFullYear(), 0, 1).toISOString()),
+    supabase.from("invoices").select("amount").eq("status", "draft"),
+  ])
+  const paidInvoices = paidInvoicesRaw as { amount: number; paid_at: string }[] ?? []
+  const ytdBilled = paidInvoices.reduce((s, i) => s + i.amount, 0)
   const draftTotal = (draftInvoicesRaw as { amount: number }[] ?? []).reduce((s, i) => s + i.amount, 0)
 
   /* ─── "Needs your attention" items ─── */
@@ -159,56 +158,46 @@ export default async function AdminStudioPage() {
 
   attention.sort((a, b) => a.urgency - b.urgency)
 
-  /* ─── "Recent activity" feed ─── */
+  /* ─── "Recent activity" feed (all queries in parallel) ─── */
+
+  const [
+    { data: recentPaidRaw },
+    { data: proposalViewsRaw },
+    { data: acceptedPropsRaw },
+    { data: invoiceViewsRaw },
+    { data: approvedReviewsRaw },
+    { data: submittedReviewsRaw },
+    { data: recentLoginsRaw },
+  ] = await Promise.all([
+    supabase.from("invoices").select("id, amount, paid_at, client_id, clients(name)").eq("status", "paid").not("paid_at", "is", null).order("paid_at", { ascending: false }).limit(10),
+    supabase.from("proposals").select("id, client_id, viewed_at, clients(name)").not("viewed_at", "is", null).order("viewed_at", { ascending: false }).limit(10),
+    supabase.from("proposals").select("id, client_id, updated_at, clients(name)").eq("status", "accepted").order("updated_at", { ascending: false }).limit(10),
+    supabase.from("invoices").select("id, client_id, viewed_at, clients(name)").not("viewed_at", "is", null).order("viewed_at", { ascending: false }).limit(10),
+    supabase.from("review_sessions").select("id, approved_at, projects(title, client_id, clients(name))").not("approved_at", "is", null).order("approved_at", { ascending: false }).limit(10),
+    supabase.from("review_sessions").select("id, submitted_at, projects(title, client_id, clients(name))").not("submitted_at", "is", null).order("submitted_at", { ascending: false }).limit(10),
+    supabase.from("clients").select("id, name, last_seen_at").not("last_seen_at", "is", null).order("last_seen_at", { ascending: false }).limit(10),
+  ])
 
   const activity: ActivityEvent[] = []
 
-  const { data: recentPaidRaw } = await supabase
-    .from("invoices").select("id, amount, paid_at, client_id, clients(name)")
-    .eq("status", "paid").not("paid_at", "is", null)
-    .order("paid_at", { ascending: false }).limit(10)
   for (const inv of (recentPaidRaw ?? []) as any[]) {
     if (inv.paid_at) activity.push({ id: `paid-${inv.id}`, client: inv.clients?.name ?? "", clientId: inv.client_id, label: `Paid $${(inv.amount / 100).toLocaleString()}`, timestamp: new Date(inv.paid_at), icon: "paid" })
   }
-
-  const { data: proposalViewsRaw } = await supabase
-    .from("proposals").select("id, client_id, viewed_at, clients(name)")
-    .not("viewed_at", "is", null).order("viewed_at", { ascending: false }).limit(10)
   for (const prop of (proposalViewsRaw ?? []) as any[]) {
     if (prop.viewed_at) activity.push({ id: `propview-${prop.id}`, client: prop.clients?.name ?? "", clientId: prop.client_id, label: "Viewed proposal", timestamp: new Date(prop.viewed_at), icon: "viewed" })
   }
-
-  const { data: acceptedPropsRaw } = await supabase
-    .from("proposals").select("id, client_id, updated_at, clients(name)")
-    .eq("status", "accepted").order("updated_at", { ascending: false }).limit(10)
   for (const prop of (acceptedPropsRaw ?? []) as any[]) {
     if (prop.updated_at) activity.push({ id: `accepted-${prop.id}`, client: prop.clients?.name ?? "", clientId: prop.client_id, label: "Accepted proposal", timestamp: new Date(prop.updated_at), icon: "accepted" })
   }
-
-  const { data: invoiceViewsRaw } = await supabase
-    .from("invoices").select("id, client_id, viewed_at, clients(name)")
-    .not("viewed_at", "is", null).order("viewed_at", { ascending: false }).limit(10)
   for (const inv of (invoiceViewsRaw ?? []) as any[]) {
     if (inv.viewed_at) activity.push({ id: `invview-${inv.id}`, client: inv.clients?.name ?? "", clientId: inv.client_id, label: "Viewed invoice", timestamp: new Date(inv.viewed_at), icon: "viewed" })
   }
-
-  const { data: approvedReviewsRaw } = await supabase
-    .from("review_sessions").select("id, approved_at, projects(title, client_id, clients(name))")
-    .not("approved_at", "is", null).order("approved_at", { ascending: false }).limit(10)
   for (const session of (approvedReviewsRaw ?? []) as any[]) {
     if (session.approved_at) { const proj = session.projects as any; activity.push({ id: `revapprove-${session.id}`, client: proj?.clients?.name ?? "", clientId: proj?.client_id ?? "", label: `Approved ${proj?.title ?? "review"}`, timestamp: new Date(session.approved_at), icon: "approved" }) }
   }
-
-  const { data: submittedReviewsRaw } = await supabase
-    .from("review_sessions").select("id, submitted_at, projects(title, client_id, clients(name))")
-    .not("submitted_at", "is", null).order("submitted_at", { ascending: false }).limit(10)
   for (const session of (submittedReviewsRaw ?? []) as any[]) {
     if (session.submitted_at) { const proj = session.projects as any; activity.push({ id: `revfeedback-${session.id}`, client: proj?.clients?.name ?? "", clientId: proj?.client_id ?? "", label: `Submitted feedback on ${proj?.title ?? "review"}`, timestamp: new Date(session.submitted_at), icon: "feedback" }) }
   }
-
-  const { data: recentLoginsRaw } = await supabase
-    .from("clients").select("id, name, last_seen_at")
-    .not("last_seen_at", "is", null).order("last_seen_at", { ascending: false }).limit(10)
   for (const c of (recentLoginsRaw ?? []) as any[]) {
     if (c.last_seen_at) activity.push({ id: `login-${c.id}`, client: c.name ?? "", clientId: c.id, label: "Logged into portal", timestamp: new Date(c.last_seen_at), icon: "login" })
   }

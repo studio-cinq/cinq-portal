@@ -69,12 +69,22 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
 
   useEffect(() => {
     if (selectedProject) {
-      loadDecisionLog(selectedProject.id)
-      loadSlides(selectedProject.id)
-      loadTimeEntries(selectedProject.id)
-      loadBrandAssets(selectedProject.id)
-      loadColorSwatches(selectedProject.id)
-      loadTypefaceEntries(selectedProject.id)
+      // Load all project-specific data in parallel
+      Promise.all([
+        supabase.from("decision_log").select("*").eq("project_id", selectedProject.id).order("logged_at", { ascending: false }),
+        supabase.from("presentation_slides").select("*").eq("project_id", selectedProject.id).order("sort_order"),
+        supabase.from("time_entries").select("*").eq("project_id", selectedProject.id).order("started_at", { ascending: false }),
+        supabase.from("brand_assets").select("*").eq("project_id", selectedProject.id).order("sort_order"),
+        supabase.from("color_swatches").select("*").eq("project_id", selectedProject.id).order("sort_order"),
+        supabase.from("typeface_entries").select("*").eq("project_id", selectedProject.id).order("sort_order"),
+      ]).then(([logRes, slidesRes, timeRes, assetsRes, colorsRes, typesRes]) => {
+        setDecisionLog(logRes.data ?? [])
+        setSlides(slidesRes.data ?? [])
+        setTimeEntries(timeRes.data ?? [])
+        setBrandAssets(assetsRes.data ?? [])
+        setColorSwatches(colorsRes.data ?? [])
+        setTypefaceEntries(typesRes.data ?? [])
+      })
       setReplyProjectId(selectedProject.id)
     }
   }, [selectedProject?.id])
@@ -87,34 +97,34 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
 
   async function loadAll() {
     setLoading(true)
-    const { data: c } = await supabase.from("clients").select("*").eq("id", params.id).single()
+
+    // Fetch everything in parallel — client, projects, invoices, proposals, events
+    const [clientRes, projRes, invRes, propsRes, evtsRes] = await Promise.all([
+      supabase.from("clients").select("*").eq("id", params.id).single(),
+      supabase.from("projects").select("*, deliverables(*)").eq("client_id", params.id).order("created_at", { ascending: false }),
+      supabase.from("invoices").select("*").eq("client_id", params.id).order("created_at", { ascending: false }),
+      supabase.from("proposals").select("*, proposal_items(*)").eq("client_id", params.id).order("created_at", { ascending: false }),
+      supabase.from("events").select("*, projects(title)").eq("client_id", params.id).order("event_date"),
+    ])
+
+    const c = clientRes.data
     if (!c) { setLoading(false); return }
     setClient(c)
 
-    const { data: proj } = await supabase.from("projects").select("*, deliverables(*)")
-      .eq("client_id", params.id).order("created_at", { ascending: false })
-    const ps = proj ?? []
+    const ps = projRes.data ?? []
     setProjects(ps)
     if (ps.length > 0) setSelectedProject(ps[0])
+    setInvoices(invRes.data ?? [])
+    setProposals(propsRes.data ?? [])
+    setEvents(evtsRes.data ?? [])
 
-    const { data: inv } = await supabase.from("invoices").select("*")
-      .eq("client_id", params.id).order("created_at", { ascending: false })
-    setInvoices(inv ?? [])
-
+    // Messages need project IDs — fire after projects resolve
     const projectIds = ps.map((p: any) => p.id)
     if (projectIds.length > 0) {
       const { data: msgs } = await supabase.from("messages").select("*, projects(title)")
         .in("project_id", projectIds).order("created_at", { ascending: false }).limit(30)
       setMessages(msgs ?? [])
     }
-
-    const { data: props } = await supabase.from("proposals").select("*, proposal_items(*)")
-      .eq("client_id", params.id).order("created_at", { ascending: false })
-    setProposals(props ?? [])
-
-    const { data: evts } = await supabase.from("events").select("*, projects(title)")
-      .eq("client_id", params.id).order("event_date")
-    setEvents(evts ?? [])
 
     setLoading(false)
   }
