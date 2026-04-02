@@ -1,6 +1,4 @@
-import { Resend } from "resend";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+import { sendEmail } from "@/lib/resend";
 
 const STUDIO_EMAIL = "kacie@studiocinq.com";
 const PORTAL_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://portal.studiocinq.com";
@@ -100,8 +98,9 @@ export async function sendProposalEmail(p: ProposalSentPayload) {
     </div>
   `);
 
-  return resend.emails.send({
+  return sendEmail({
     from: "Studio Cinq <portal@studiocinq.com>",
+    replyTo: STUDIO_EMAIL,
     to: p.contactEmail,
     subject: `New proposal — ${p.proposalTitle}`,
     html,
@@ -135,7 +134,7 @@ export async function sendProposalViewedEmail(p: ProposalViewedPayload) {
     </div>
   `);
 
-  return resend.emails.send({
+  return sendEmail({
     from: "Studio Cinq Portal <portal@studiocinq.com>",
     to: STUDIO_EMAIL,
     subject: `Proposal opened — ${p.clientName}`,
@@ -234,7 +233,7 @@ export async function sendProposalAcceptedEmail(p: ProposalAcceptedPayload) {
     </div>
   `);
 
-  return resend.emails.send({
+  return sendEmail({
     from: "Studio Cinq Portal <portal@studiocinq.com>",
     to: STUDIO_EMAIL,
     subject: `Proposal accepted — ${p.clientName} · ${total}`,
@@ -287,13 +286,14 @@ export async function sendProposalConfirmationToClient(p: ProposalConfirmationPa
         <p><strong>Payment schedule</strong> &nbsp;${scheduleLabel}</p>
       </div>
       ${skippedNote}
-      <p style="margin-top:16px">You'll receive a separate invoice for the deposit. If you have any questions, just reply to this email.</p>
+      <p style="margin-top:16px">Your deposit invoice has been created and is ready in your portal. If you have any questions, just reach out.</p>
       <a class="cta" href="${proposalUrl}" style="color:#FAF8F5;text-decoration:none;">View proposal →</a>
     </div>
   `);
 
-  return resend.emails.send({
+  return sendEmail({
     from: "Studio Cinq <portal@studiocinq.com>",
+    replyTo: STUDIO_EMAIL,
     to: p.contactEmail,
     subject: `Project confirmed — ${p.proposalTitle}`,
     html,
@@ -357,8 +357,9 @@ export async function sendInvoiceEmail(p: InvoiceSentPayload) {
 
   const cc = (p.ccEmails ?? []).filter(Boolean)
 
-  return resend.emails.send({
+  return sendEmail({
     from: "Studio Cinq <portal@studiocinq.com>",
+    replyTo: STUDIO_EMAIL,
     to: p.contactEmail,
     ...(cc.length > 0 ? { cc } : {}),
     subject: `Invoice #${p.invoiceNumber} — ${amount} due from Studio Cinq`,
@@ -401,7 +402,7 @@ export async function sendInvoicePaidEmail(p: InvoicePaidPayload) {
     </div>
   `);
 
-  return resend.emails.send({
+  return sendEmail({
     from: "Studio Cinq Portal <portal@studiocinq.com>",
     to: STUDIO_EMAIL,
     subject: `Invoice paid — #${p.invoiceNumber} · ${amount} from ${p.clientName}`,
@@ -445,8 +446,9 @@ export async function sendProposalReminderToClient(p: ProposalReminderPayload) {
     </div>
   `);
 
-  return resend.emails.send({
+  return sendEmail({
     from: "Studio Cinq <portal@studiocinq.com>",
+    replyTo: STUDIO_EMAIL,
     to: p.contactEmail,
     subject: p.dayMark === 14
       ? `Following up — ${p.proposalTitle}`
@@ -475,7 +477,7 @@ export async function sendProposalReminderToAdmin(p: ProposalReminderPayload) {
     </div>
   `);
 
-  return resend.emails.send({
+  return sendEmail({
     from: "Studio Cinq Portal <portal@studiocinq.com>",
     to: STUDIO_EMAIL,
     subject: `Proposal reminder (${p.dayMark}d) — ${p.clientName}`,
@@ -523,8 +525,9 @@ export async function sendReviewInviteEmail(p: ReviewInvitePayload) {
     </div>
   `)
 
-  return resend.emails.send({
+  return sendEmail({
     from: "Studio Cinq <portal@studiocinq.com>",
+    replyTo: STUDIO_EMAIL,
     to: p.contactEmail,
     subject: isFirstRound
       ? `Website review ready — ${p.projectTitle}`
@@ -560,7 +563,7 @@ export async function sendReviewSubmittedEmail(p: ReviewSubmittedPayload) {
     </div>
   `)
 
-  return resend.emails.send({
+  return sendEmail({
     from: "Studio Cinq Portal <portal@studiocinq.com>",
     to: STUDIO_EMAIL,
     subject: `Review feedback received — ${p.clientName} (Round ${p.round})`,
@@ -594,7 +597,7 @@ export async function sendReviewApprovedEmail(p: ReviewApprovedPayload) {
     </div>
   `)
 
-  return resend.emails.send({
+  return sendEmail({
     from: "Studio Cinq Portal <portal@studiocinq.com>",
     to: STUDIO_EMAIL,
     subject: `Website approved — ${p.clientName}`,
@@ -626,8 +629,9 @@ export async function sendMessageReplyEmail(p: MessageReplyPayload) {
     </div>
   `);
 
-  return resend.emails.send({
+  return sendEmail({
     from: "Studio Cinq <portal@studiocinq.com>",
+    replyTo: STUDIO_EMAIL,
     to: p.contactEmail,
     subject: `New message from Kacie — ${p.projectTitle}`,
     html,
@@ -655,8 +659,9 @@ export async function sendPortalInviteEmail(p: PortalInvitePayload) {
     </div>
   `);
 
-  return resend.emails.send({
+  return sendEmail({
     from: "Studio Cinq <portal@studiocinq.com>",
+    replyTo: STUDIO_EMAIL,
     to: p.contactEmail,
     subject: `Your Studio Cinq portal is ready`,
     html,

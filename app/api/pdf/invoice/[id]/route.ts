@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase-server"
 import { jsPDF } from "jspdf"
-import { PAID_STAMP_PNG } from "@/lib/paid-stamp"
+import fs from "fs"
+import path from "path"
 
 const INK = [15, 15, 14] as const
 const CREAM = [244, 241, 236] as const
@@ -238,8 +239,16 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
     // Paid stamp (image in upper-right)
     if (isPaid) {
-      const stampSize = 100
-      doc.addImage(PAID_STAMP_PNG, "PNG", W - marginR - stampSize + 10, 40, stampSize, stampSize)
+      try {
+        const stampPath = path.join(process.cwd(), "public", "paid-stamp.png")
+        const stampBuffer = fs.readFileSync(stampPath)
+        const stampBase64 = stampBuffer.toString("base64")
+        const stampSize = 100
+        doc.addImage(`data:image/png;base64,${stampBase64}`, "PNG", W - marginR - stampSize + 10, 40, stampSize, stampSize)
+      } catch (e) {
+        // Stamp image not found — skip silently
+        console.error("[pdf/invoice] paid stamp failed:", e)
+      }
     }
 
     // ── Footer ──
