@@ -74,7 +74,7 @@ function heroContent(status: string, firstName: string, hasProject: boolean, isC
   return {
     eyebrow: { label: "In progress", color: "var(--sage)" },
     greeting: `Hello, ${firstName}`,
-    subline: "We\u2019ll surface what needs your attention here.",
+    subline: ["Your place for project updates, shared files, invoices,", "and next steps with Studio Cinq."],
   }
 }
 
@@ -234,13 +234,16 @@ export default async function DashboardPage() {
             <p style={{
               fontFamily: "var(--font-serif)",
               fontStyle: "italic",
-              fontSize: "clamp(16px, 2.2vw, 19px)",
+              fontSize: "clamp(14px, 1.8vw, 16px)",
               lineHeight: 1.7,
               color: "var(--ink)",
               opacity: 0.42,
               maxWidth: 480,
             }}>
-              {hero.subline}
+              {Array.isArray(hero.subline)
+                ? hero.subline.map((line, i) => <span key={i}>{line}{i < hero.subline.length - 1 && <br />}</span>)
+                : hero.subline
+              }
             </p>
           </div>
         </section>
