@@ -7,6 +7,7 @@ import ActivityTracker from "@/components/portal/ActivityTracker"
 /* ─── Status helpers ─── */
 
 const statusLabels: Record<string, string> = {
+  active: "In Progress",
   kickoff_upcoming: "Kickoff Upcoming",
   awaiting_approval: "Awaiting Feedback",
   in_progress: "In Progress",
@@ -33,13 +34,13 @@ function projectStatus(project: any): string {
 
 function statusColor(status: string) {
   if (status === "awaiting_approval") return "var(--amber)"
-  if (status === "in_progress") return "var(--sage)"
+  if (status === "in_progress" || status === "active") return "var(--sage)"
   return "rgba(15,15,14,0.34)"
 }
 
 function deliverableDotColor(status: string) {
   if (status === "awaiting_approval") return "var(--amber)"
-  if (status === "in_progress") return "var(--sage)"
+  if (status === "in_progress" || status === "active") return "var(--sage)"
   if (status === "complete" || status === "approved") return "rgba(15,15,14,0.24)"
   return "rgba(15,15,14,0.08)"
 }
@@ -116,7 +117,7 @@ export default async function DashboardPage() {
 
   const activeProjects = projects.filter((p) => {
     const s = projectStatus(p)
-    return s === "in_progress" || s === "awaiting_approval" || s === "kickoff_upcoming"
+    return s === "in_progress" || s === "awaiting_approval" || s === "kickoff_upcoming" || s === "active"
   })
   const completedProjects = projects.filter((p) => projectStatus(p) === "complete")
 
