@@ -102,15 +102,15 @@ export default async function AdminClientPreviewPage({ params }: { params: { id:
   const approvedScope = proposalItems.filter((i: any) => i.accepted && i.phase === "now")
   const laterPhase = proposalItems.filter((i: any) => i.accepted && i.phase === "later")
 
-  const currentProject =
-    projects.find((p) => {
-      const s = projectStatus(p)
-      return s === "in_progress" || s === "awaiting_approval" || s === "kickoff_upcoming"
-    }) ?? projects[0] ?? null
+  const activeProjects = projects.filter((p) => {
+    const s = projectStatus(p)
+    return s === "in_progress" || s === "awaiting_approval" || s === "kickoff_upcoming"
+  })
+  const completedProjects = projects.filter((p) => projectStatus(p) === "complete")
 
+  const currentProject = activeProjects[0] ?? projects[0] ?? null
   const currentStatus = currentProject ? projectStatus(currentProject) : "not_started"
-  const deliverables = (currentProject?.deliverables ?? []).sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-  const completedCount = deliverables.filter((d: any) => d.status === "complete" || d.status === "approved").length
+  const hasAnyAwaitingApproval = activeProjects.some(p => projectStatus(p) === "awaiting_approval")
 
   const dueInvoices = allInvoices.filter((inv) => inv.status === "sent" || inv.status === "overdue")
   const paidTotal = allInvoices.filter((inv) => inv.status === "paid").reduce((s, inv) => s + (inv.amount ?? 0), 0)
@@ -119,11 +119,12 @@ export default async function AdminClientPreviewPage({ params }: { params: { id:
   const paidPct = totalContract > 0 ? Math.round((paidTotal / totalContract) * 100) : 100
 
   const nextSteps: NextStep[] = []
-  if (currentProject) {
-    const awaitingFeedback = deliverables.filter((d: any) => d.status === "awaiting_approval")
+  for (const proj of activeProjects) {
+    const projDeliverables = (proj.deliverables ?? [])
+    const awaitingFeedback = projDeliverables.filter((d: any) => d.status === "awaiting_approval")
     if (awaitingFeedback.length > 0) {
       nextSteps.push({
-        label: "Review the latest deliverable",
+        label: `Review deliverable${awaitingFeedback.length > 1 ? "s" : ""} — ${proj.title}`,
         body: "Your feedback is needed before we move into the next stage.",
         href: "#",
         accent: "var(--amber)",
@@ -146,7 +147,10 @@ export default async function AdminClientPreviewPage({ params }: { params: { id:
   const typefaces = portalLibrary.typefaces ?? []
   const showLibrary = portalLibrary.isUnlocked && filesCount > 0
   const hasActionableSteps = nextSteps.length > 0
-  const hero = heroContent(currentStatus, firstName, !!currentProject, currentStatus === "complete")
+
+  const heroStatus = hasAnyAwaitingApproval ? "awaiting_approval" : currentStatus
+  const isAllComplete = projects.length > 0 && activeProjects.length === 0 && completedProjects.length === projects.length
+  const hero = heroContent(heroStatus, firstName, !!currentProject, isAllComplete)
 
   return (
     <>
@@ -255,141 +259,154 @@ export default async function AdminClientPreviewPage({ params }: { params: { id:
           </div>
         </section>
 
-        {/* Project Card */}
-        {currentProject ? (
+        {/* Active Project Cards */}
+        {activeProjects.length > 0 ? (
           <section style={{ marginBottom: 40 }}>
-            <div style={sectionLabelStyle}>Current Project</div>
+            <div style={sectionLabelStyle}>
+              {activeProjects.length === 1 ? "Current Project" : "Active Projects"}
+            </div>
 
-            <div
-              className="portal-card-hover"
-              style={{
-                display: "block",
-                background: "rgba(255,255,255,0.28)",
-                border: "0.5px solid rgba(15,15,14,0.08)",
-                padding: "clamp(22px, 3vw, 32px)",
-                marginTop: 14,
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, marginBottom: 6 }}>
-                <div>
-                  <div style={{
-                    fontFamily: "var(--font-sans)",
-                    fontSize: "clamp(18px, 2.8vw, 24px)",
-                    lineHeight: 1.08,
-                    letterSpacing: "-0.025em",
-                    color: "var(--ink)",
-                    opacity: 0.88,
-                  }}>
-                    {currentProject.title}
-                  </div>
-                  {currentProject.scope && (
-                    <div style={{
-                      fontFamily: "var(--font-sans)",
-                      fontSize: "var(--text-body)",
-                      color: "var(--ink)",
-                      opacity: 0.46,
-                      letterSpacing: "-0.01em",
-                      marginTop: 6,
-                    }}>
-                      {currentProject.scope}
-                    </div>
-                  )}
-                </div>
-                <span style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: "var(--text-eyebrow)",
-                  letterSpacing: "0.14em",
-                  textTransform: "uppercase",
-                  color: statusColor(currentStatus),
-                  flexShrink: 0,
-                  marginTop: 6,
-                }}>
-                  {statusLabels[currentStatus] ?? currentStatus}
-                </span>
-              </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14, marginTop: 14 }}>
+              {activeProjects.map((proj) => {
+                const projStatus = projectStatus(proj)
+                const projDeliverables = (proj.deliverables ?? []).sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+                const projCompletedCount = projDeliverables.filter((d: any) => d.status === "complete" || d.status === "approved").length
 
-              {/* Deliverable progress dots */}
-              {deliverables.length > 0 && (
-                <div style={{ margin: "24px 0 22px", overflowX: "auto" }}>
-                  <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 14, minHeight: 20 }}>
-                    <div style={{
-                      position: "absolute",
-                      top: "50%", left: 3, right: 3,
-                      height: 1,
-                      background: "rgba(15,15,14,0.06)",
-                      transform: "translateY(-50%)",
-                    }} />
-                    {deliverables.length > 1 && (
-                      <div style={{
-                        position: "absolute",
-                        top: "50%", left: 3,
-                        height: 1,
-                        width: `${(completedCount / (deliverables.length - 1)) * 100}%`,
-                        maxWidth: "calc(100% - 6px)",
-                        background: "rgba(15,15,14,0.14)",
-                        transform: "translateY(-50%)",
-                      }} />
-                    )}
-                    {deliverables.map((d: any) => (
-                      <div key={d.id} style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", minWidth: 0 }}>
+                return (
+                  <div
+                    key={proj.id}
+                    className="portal-card-hover"
+                    style={{
+                      display: "block",
+                      background: "rgba(255,255,255,0.28)",
+                      border: "0.5px solid rgba(15,15,14,0.08)",
+                      padding: "clamp(22px, 3vw, 32px)",
+                      cursor: "default",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, marginBottom: 6 }}>
+                      <div>
                         <div style={{
-                          width: 7, height: 7, borderRadius: "50%",
-                          background: deliverableDotColor(d.status),
-                          flexShrink: 0,
-                        }} />
+                          fontFamily: "var(--font-sans)",
+                          fontSize: "clamp(18px, 2.8vw, 24px)",
+                          lineHeight: 1.08,
+                          letterSpacing: "-0.025em",
+                          color: "var(--ink)",
+                          opacity: 0.88,
+                        }}>
+                          {proj.title}
+                        </div>
+                        {proj.scope && (
+                          <div style={{
+                            fontFamily: "var(--font-sans)",
+                            fontSize: "var(--text-body)",
+                            color: "var(--ink)",
+                            opacity: 0.46,
+                            letterSpacing: "-0.01em",
+                            marginTop: 6,
+                          }}>
+                            {proj.scope}
+                          </div>
+                        )}
                       </div>
-                    ))}
-                  </div>
-                  <div style={{ display: "flex", gap: 14, marginTop: 8 }}>
-                    {deliverables.map((d: any) => (
-                      <div key={d.id} style={{
+                      <span style={{
                         fontFamily: "var(--font-mono)",
-                        fontSize: 8,
-                        letterSpacing: "0.08em",
+                        fontSize: "var(--text-eyebrow)",
+                        letterSpacing: "0.14em",
+                        textTransform: "uppercase",
+                        color: statusColor(projStatus),
+                        flexShrink: 0,
+                        marginTop: 6,
+                      }}>
+                        {statusLabels[projStatus] ?? projStatus}
+                      </span>
+                    </div>
+
+                    {/* Deliverable progress dots */}
+                    {projDeliverables.length > 0 && (
+                      <div style={{ margin: "24px 0 22px", overflowX: "auto" }}>
+                        <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 14, minHeight: 20 }}>
+                          <div style={{
+                            position: "absolute",
+                            top: "50%", left: 3, right: 3,
+                            height: 1,
+                            background: "rgba(15,15,14,0.06)",
+                            transform: "translateY(-50%)",
+                          }} />
+                          {projDeliverables.length > 1 && (
+                            <div style={{
+                              position: "absolute",
+                              top: "50%", left: 3,
+                              height: 1,
+                              width: `${(projCompletedCount / (projDeliverables.length - 1)) * 100}%`,
+                              maxWidth: "calc(100% - 6px)",
+                              background: "rgba(15,15,14,0.14)",
+                              transform: "translateY(-50%)",
+                            }} />
+                          )}
+                          {projDeliverables.map((d: any) => (
+                            <div key={d.id} style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", minWidth: 0 }}>
+                              <div style={{
+                                width: 7, height: 7, borderRadius: "50%",
+                                background: deliverableDotColor(d.status),
+                                flexShrink: 0,
+                              }} />
+                            </div>
+                          ))}
+                        </div>
+                        <div style={{ display: "flex", gap: 14, marginTop: 8 }}>
+                          {projDeliverables.map((d: any) => (
+                            <div key={d.id} style={{
+                              fontFamily: "var(--font-mono)",
+                              fontSize: 8,
+                              letterSpacing: "0.08em",
+                              textTransform: "uppercase",
+                              color: "var(--ink)",
+                              opacity: d.status === "awaiting_approval" ? 0.52 : 0.26,
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              minWidth: 0,
+                              maxWidth: 100,
+                            }}>
+                              {d.name}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Footer */}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div style={{
+                        fontFamily: "var(--font-mono)",
+                        fontSize: "var(--text-eyebrow)",
+                        letterSpacing: "0.12em",
                         textTransform: "uppercase",
                         color: "var(--ink)",
-                        opacity: d.status === "awaiting_approval" ? 0.52 : 0.26,
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        minWidth: 0,
-                        maxWidth: 100,
+                        opacity: 0.3,
                       }}>
-                        {d.name}
+                        {proj.total_weeks && proj.current_week
+                          ? `Week ${proj.current_week} of ${proj.total_weeks}`
+                          : projDeliverables.length > 0
+                            ? `${projDeliverables.length} deliverable${projDeliverables.length !== 1 ? "s" : ""}`
+                            : ""
+                        }
                       </div>
-                    ))}
+                      <span style={{
+                        fontFamily: "var(--font-mono)",
+                        fontSize: "var(--text-eyebrow)",
+                        letterSpacing: "0.14em",
+                        textTransform: "uppercase",
+                        color: "var(--ink)",
+                        opacity: 0.36,
+                      }}>
+                        View Project &rarr;
+                      </span>
+                    </div>
                   </div>
-                </div>
-              )}
-
-              {/* Footer */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: "var(--text-eyebrow)",
-                  letterSpacing: "0.12em",
-                  textTransform: "uppercase",
-                  color: "var(--ink)",
-                  opacity: 0.3,
-                }}>
-                  {currentProject.total_weeks && currentProject.current_week
-                    ? `Week ${currentProject.current_week} of ${currentProject.total_weeks}`
-                    : deliverables.length > 0
-                      ? `${deliverables.length} deliverable${deliverables.length !== 1 ? "s" : ""}`
-                      : ""
-                  }
-                </div>
-                <span style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: "var(--text-eyebrow)",
-                  letterSpacing: "0.14em",
-                  textTransform: "uppercase",
-                  color: "var(--ink)",
-                  opacity: 0.36,
-                }}>
-                  View Project &rarr;
-                </span>
-              </div>
+                )
+              })}
             </div>
           </section>
         ) : (
