@@ -32,6 +32,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
   const [invoices, setInvoices]               = useState<any[]>([])
   const [messages, setMessages]               = useState<any[]>([])
   const [proposals, setProposals]             = useState<any[]>([])
+  // Legacy single-project states used by Presentation/Brand Library tabs
   const [decisionLog, setDecisionLog]         = useState<any[]>([])
   const [slides, setSlides]                   = useState<any[]>([])
   const [timeEntries, setTimeEntries]         = useState<any[]>([])
@@ -41,7 +42,18 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
   const [timerStart, setTimerStart]           = useState<Date | null>(null)
   const [timerSeconds, setTimerSeconds]       = useState(0)
   const [timerNote, setTimerNote]             = useState("")
+  const [timerProjectId, setTimerProjectId]   = useState<string>("")
   const [logInput, setLogInput]               = useState("")
+  const [logInputByProject, setLogInputByProject] = useState<Record<string, string>>({})
+  const [collapsedProjects, setCollapsedProjects] = useState<Set<string>>(new Set())
+  const [showPastProjects, setShowPastProjects]   = useState(false)
+  // Per-project data maps
+  const [decisionLogMap, setDecisionLogMap]       = useState<Record<string, any[]>>({})
+  const [timeEntriesMap, setTimeEntriesMap]       = useState<Record<string, any[]>>({})
+  const [slidesMap, setSlidesMap]                 = useState<Record<string, any[]>>({})
+  const [brandAssetsMap, setBrandAssetsMap]       = useState<Record<string, any[]>>({})
+  const [colorSwatchesMap, setColorSwatchesMap]   = useState<Record<string, any[]>>({})
+  const [typefaceEntriesMap, setTypefaceEntriesMap] = useState<Record<string, any[]>>({})
   const [replyText, setReplyText]             = useState("")
   const [replyProjectId, setReplyProjectId]   = useState<string>("")
   const [sendingReply, setSendingReply]       = useState(false)
@@ -67,20 +79,37 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
 
   useEffect(() => { loadAll(); loadContacts() }, [params.id])
 
+  // Load per-project data for ALL projects at once
+  useEffect(() => {
+    if (projects.length === 0) return
+    projects.forEach(proj => {
+      Promise.all([
+        supabase.from("decision_log").select("*").eq("project_id", proj.id).order("logged_at", { ascending: false }),
+        supabase.from("time_entries").select("*").eq("project_id", proj.id).order("started_at", { ascending: false }),
+      ]).then(([logRes, timeRes]) => {
+        setDecisionLogMap(prev => ({ ...prev, [proj.id]: logRes.data ?? [] }))
+        setTimeEntriesMap(prev => ({ ...prev, [proj.id]: timeRes.data ?? [] }))
+      })
+    })
+    // Set timer project to first active project
+    const firstActive = projects.find(p => p.status === "active")
+    if (firstActive) setTimerProjectId(firstActive.id)
+    if (projects.length > 0 && !selectedProject) {
+      setSelectedProject(projects[0])
+      setReplyProjectId(projects[0].id)
+    }
+  }, [projects.length])
+
+  // Load presentation/brand data only for selectedProject (used by those tabs)
   useEffect(() => {
     if (selectedProject) {
-      // Load all project-specific data in parallel
       Promise.all([
-        supabase.from("decision_log").select("*").eq("project_id", selectedProject.id).order("logged_at", { ascending: false }),
         supabase.from("presentation_slides").select("*").eq("project_id", selectedProject.id).order("sort_order"),
-        supabase.from("time_entries").select("*").eq("project_id", selectedProject.id).order("started_at", { ascending: false }),
         supabase.from("brand_assets").select("*").eq("project_id", selectedProject.id).order("sort_order"),
         supabase.from("color_swatches").select("*").eq("project_id", selectedProject.id).order("sort_order"),
         supabase.from("typeface_entries").select("*").eq("project_id", selectedProject.id).order("sort_order"),
-      ]).then(([logRes, slidesRes, timeRes, assetsRes, colorsRes, typesRes]) => {
-        setDecisionLog(logRes.data ?? [])
+      ]).then(([slidesRes, assetsRes, colorsRes, typesRes]) => {
         setSlides(slidesRes.data ?? [])
-        setTimeEntries(timeRes.data ?? [])
         setBrandAssets(assetsRes.data ?? [])
         setColorSwatches(colorsRes.data ?? [])
         setTypefaceEntries(typesRes.data ?? [])
@@ -113,7 +142,6 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
 
     const ps = projRes.data ?? []
     setProjects(ps)
-    if (ps.length > 0) setSelectedProject(ps[0])
     setInvoices(invRes.data ?? [])
     setProposals(propsRes.data ?? [])
     setEvents(evtsRes.data ?? [])
@@ -129,41 +157,6 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
     setLoading(false)
   }
 
-  async function loadDecisionLog(projectId: string) {
-    const { data } = await supabase.from("decision_log").select("*")
-      .eq("project_id", projectId).order("logged_at", { ascending: false })
-    setDecisionLog(data ?? [])
-  }
-
-  async function loadSlides(projectId: string) {
-    const { data } = await supabase.from("presentation_slides").select("*")
-      .eq("project_id", projectId).order("sort_order")
-    setSlides(data ?? [])
-  }
-
-  async function loadTimeEntries(projectId: string) {
-    const { data } = await supabase.from("time_entries").select("*")
-      .eq("project_id", projectId).order("started_at", { ascending: false })
-    setTimeEntries(data ?? [])
-  }
-
-  async function loadBrandAssets(projectId: string) {
-    const { data } = await supabase.from("brand_assets").select("*")
-      .eq("project_id", projectId).order("sort_order")
-    setBrandAssets(data ?? [])
-  }
-
-  async function loadColorSwatches(projectId: string) {
-    const { data } = await supabase.from("color_swatches").select("*")
-      .eq("project_id", projectId).order("sort_order")
-    setColorSwatches(data ?? [])
-  }
-
-  async function loadTypefaceEntries(projectId: string) {
-    const { data } = await supabase.from("typeface_entries").select("*")
-      .eq("project_id", projectId).order("sort_order")
-    setTypefaceEntries(data ?? [])
-  }
 
   async function updateDeliverableStatus(deliverableId: string, status: string) {
     await supabase.from("deliverables").update({ status }).eq("id", deliverableId)
@@ -184,18 +177,19 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
     showToast("Deliverable deleted")
   }
 
-  async function addLogEntry() {
-    if (!logInput.trim() || !selectedProject) return
+  async function addLogEntryForProject(projectId: string) {
+    const input = logInputByProject[projectId]?.trim()
+    if (!input) return
     const { data } = await supabase.from("decision_log")
-      .insert({ project_id: selectedProject.id, entry: logInput.trim() }).select().single()
-    if (data) setDecisionLog(prev => [data, ...prev])
-    setLogInput("")
+      .insert({ project_id: projectId, entry: input }).select().single()
+    if (data) setDecisionLogMap(prev => ({ ...prev, [projectId]: [data, ...(prev[projectId] ?? [])] }))
+    setLogInputByProject(prev => ({ ...prev, [projectId]: "" }))
     showToast("Decision logged")
   }
 
-  async function deleteLogEntry(id: string) {
+  async function deleteLogEntryForProject(projectId: string, id: string) {
     await supabase.from("decision_log").delete().eq("id", id)
-    setDecisionLog(prev => prev.filter(e => e.id !== id))
+    setDecisionLogMap(prev => ({ ...prev, [projectId]: (prev[projectId] ?? []).filter(e => e.id !== id) }))
     showToast("Entry removed", "info")
   }
 
@@ -429,18 +423,18 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
   }
 
   async function stopTimer() {
-    if (!timerStart || !selectedProject) return
+    if (!timerStart || !timerProjectId) return
     setTimerRunning(false)
     const stopped = new Date()
     const durationMinutes = Math.round((stopped.getTime() - timerStart.getTime()) / 60000)
     const { data } = await supabase.from("time_entries").insert({
-      project_id: selectedProject.id,
+      project_id: timerProjectId,
       started_at: timerStart.toISOString(),
       stopped_at: stopped.toISOString(),
       duration_minutes: durationMinutes,
       note: timerNote.trim() || null,
     }).select().single()
-    if (data) setTimeEntries(prev => [data, ...prev])
+    if (data) setTimeEntriesMap(prev => ({ ...prev, [timerProjectId]: [data, ...(prev[timerProjectId] ?? [])] }))
     setTimerStart(null)
     setTimerSeconds(0)
     setTimerNote("")
@@ -471,7 +465,8 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
   const contractVal = collected + outstanding + onDelivery
   const deliverables  = (selectedProject?.deliverables ?? []).sort((a: any, b: any) => a.sort_order - b.sort_order)
   const latestProposal = proposals[0]
-  const totalMinutes   = timeEntries.reduce((s, e) => s + (e.duration_minutes ?? 0), 0)
+  const activeProjects = projects.filter(p => p.status === "active")
+  const pastProjects   = projects.filter(p => p.status !== "active")
 
   return (
     <>
@@ -570,7 +565,8 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
         {/* Left */}
         <div className="admin-studio-left" style={{ padding: "32px 40px 60px", borderRight: "0.5px solid rgba(15,15,14,0.08)" }}>
 
-          {projects.length > 1 && (
+          {/* Project selector for Presentation / Brand Library tabs */}
+          {[1, 5].includes(activeTab) && projects.length > 1 && (
             <div style={{ marginBottom: 24 }}>
               <select value={selectedProject?.id ?? ""} onChange={e => setSelectedProject(projects.find(p => p.id === e.target.value))} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", background: "transparent", border: "0.5px solid rgba(15,15,14,0.15)", padding: "7px 12px", color: "var(--ink)", outline: "none", cursor: "pointer" }}>
                 {projects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
@@ -578,136 +574,188 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
             </div>
           )}
 
-          {/* ── Tab 0: Project ── */}
+          {/* ── Tab 0: Project — Stacked multi-project view ── */}
           {activeTab === 0 && (
             <div>
-              {!selectedProject ? (
+              {projects.length === 0 ? (
                 <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.4, paddingTop: 32 }}>
                   No projects yet. <Link href={`/admin/projects/new?client=${params.id}`} style={{ opacity: 0.6 }}>Create one →</Link>
                 </div>
               ) : (
                 <>
-                  <div style={{ marginBottom: 32 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
-                      <div style={{ fontFamily: "var(--font-sans)", fontSize: 18, opacity: "var(--op-full)" as any, letterSpacing: "-0.01em" }}>{selectedProject.title}</div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                        <Link href={`/admin/projects/${selectedProject.id}/edit`} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.35, textDecoration: "none" }}>Edit</Link>
-                        <ProjectStatusBadge status={selectedProject.status} />
-                      </div>
-                    </div>
-                    {selectedProject.scope && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-muted)" as any, lineHeight: 1.6 }}>{selectedProject.scope}</div>}
-                    {/* Contact assignment */}
-                    {contacts.length > 0 && (
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
-                        <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.35 }}>Contact:</span>
-                        <select
-                          value={selectedProject.contact_id ?? ""}
-                          onChange={e => assignContactToProject(selectedProject.id, e.target.value || null)}
-                          style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", background: "transparent", border: "0.5px solid rgba(15,15,14,0.12)", padding: "4px 8px", color: "var(--ink)", outline: "none", cursor: "pointer" }}
-                        >
-                          <option value="">All contacts (shared)</option>
-                          {contacts.map(c => <option key={c.id} value={c.id}>{c.name}{c.role ? ` · ${c.role}` : ""}</option>)}
-                        </select>
-                      </div>
-                    )}
-                    {selectedProject.total_weeks && (
-                      <div style={{ marginTop: 12 }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-                          <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.4 }}>Week {selectedProject.current_week ?? 0} of {selectedProject.total_weeks}</span>
-                          <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.4 }}>{Math.round(((selectedProject.current_week ?? 0) / selectedProject.total_weeks) * 100)}%</span>
-                        </div>
-                        <div style={{ height: 1.5, background: "rgba(15,15,14,0.1)" }}>
-                          <div style={{ height: 1.5, width: `${Math.round(((selectedProject.current_week ?? 0) / selectedProject.total_weeks) * 100)}%`, background: "var(--ink)", opacity: 0.4 }} />
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  {/* Active projects — always visible */}
+                  {activeProjects.length === 0 && (
+                    <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.4, padding: "16px 0 32px" }}>No active projects.</div>
+                  )}
+                  {activeProjects.map((proj) => {
+                    const projDeliverables = (proj.deliverables ?? []).sort((a: any, b: any) => a.sort_order - b.sort_order)
+                    const projLog = decisionLogMap[proj.id] ?? []
+                    const projTime = timeEntriesMap[proj.id] ?? []
+                    const projTotalMin = projTime.reduce((s: number, e: any) => s + (e.duration_minutes ?? 0), 0)
+                    const isCollapsed = collapsedProjects.has(proj.id)
 
-                  {/* Deliverables */}
-                  <div style={{ marginBottom: 40 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 }}>
-                      <SectionHeader label="Deliverables" />
-                      <button onClick={() => {
-                        const name = window.prompt("Deliverable name:")
-                        if (!name?.trim() || !selectedProject) return
-                        supabase.from("deliverables").insert({ project_id: selectedProject.id, name: name.trim(), status: "not_started", sort_order: deliverables.length }).select().single().then(({ data }) => {
-                          if (data) setProjects(ps => ps.map(p => p.id === selectedProject.id ? { ...p, deliverables: [...(p.deliverables ?? []), data] } : p))
-                        })
-                      }} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.45, background: "none", border: "0.5px solid rgba(15,15,14,0.2)", padding: "5px 10px", cursor: "pointer", color: "var(--ink)" }}>
-                        + Add
-                      </button>
-                    </div>
-                    {deliverables.length === 0 ? (
-                      <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.35, padding: "16px 0" }}>No deliverables yet.</div>
-                    ) : deliverables.map((del: any) => (
-                      <div key={del.id} style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)", padding: "14px 0" }}>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-full)" as any, marginBottom: 4 }}>{del.name}</div>
-                            {del.description && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: "var(--op-muted)" as any, lineHeight: 1.6 }}>{del.description}</div>}
+                    return (
+                      <div key={proj.id} style={{ marginBottom: 40, border: "0.5px solid rgba(15,15,14,0.08)", background: "rgba(255,255,255,0.25)", padding: "24px 28px" }}>
+                        {/* Project header — always visible */}
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: isCollapsed ? 0 : 6, cursor: "pointer" }} onClick={() => setCollapsedProjects(prev => { const next = new Set(prev); next.has(proj.id) ? next.delete(proj.id) : next.add(proj.id); return next })}>
+                          <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
+                            <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.35 }}>{isCollapsed ? "▸" : "▾"}</span>
+                            <div style={{ fontFamily: "var(--font-sans)", fontSize: 18, opacity: "var(--op-full)" as any, letterSpacing: "-0.01em" }}>{proj.title}</div>
                           </div>
-                          <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
-                            <div style={{ display: "flex", gap: 3 }}>
-                              {Array.from({ length: del.revision_max ?? 3 }).map((_: any, i: number) => (
-                                <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: i < (del.revision_used ?? 0) ? "var(--ink)" : "transparent", border: "0.5px solid rgba(15,15,14,0.3)", opacity: i < (del.revision_used ?? 0) ? 0.7 : 0.3 }} />
+                          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                            {projTotalMin > 0 && <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.35 }}>{formatMinutes(projTotalMin)}</span>}
+                            <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.4 }}>
+                              {projDeliverables.filter((d: any) => d.status === "complete" || d.status === "approved").length}/{projDeliverables.length} done
+                            </span>
+                            <Link href={`/admin/projects/${proj.id}/edit`} onClick={e => e.stopPropagation()} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.35, textDecoration: "none" }}>Edit</Link>
+                            <ProjectStatusBadge status={proj.status} />
+                          </div>
+                        </div>
+
+                        {/* Expanded content */}
+                        {!isCollapsed && (
+                          <>
+                            {proj.scope && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-muted)" as any, lineHeight: 1.6, marginBottom: 8 }}>{proj.scope}</div>}
+                            {contacts.length > 0 && (
+                              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                                <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.35 }}>Contact:</span>
+                                <select
+                                  value={proj.contact_id ?? ""}
+                                  onChange={e => assignContactToProject(proj.id, e.target.value || null)}
+                                  style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", background: "transparent", border: "0.5px solid rgba(15,15,14,0.12)", padding: "4px 8px", color: "var(--ink)", outline: "none", cursor: "pointer" }}
+                                >
+                                  <option value="">All contacts (shared)</option>
+                                  {contacts.map(c => <option key={c.id} value={c.id}>{c.name}{c.role ? ` · ${c.role}` : ""}</option>)}
+                                </select>
+                              </div>
+                            )}
+                            {proj.total_weeks && (
+                              <div style={{ marginBottom: 16 }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+                                  <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.4 }}>Week {proj.current_week ?? 0} of {proj.total_weeks}</span>
+                                  <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.4 }}>{Math.round(((proj.current_week ?? 0) / proj.total_weeks) * 100)}%</span>
+                                </div>
+                                <div style={{ height: 1.5, background: "rgba(15,15,14,0.1)" }}>
+                                  <div style={{ height: 1.5, width: `${Math.round(((proj.current_week ?? 0) / proj.total_weeks) * 100)}%`, background: "var(--ink)", opacity: 0.4 }} />
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Deliverables */}
+                            <div style={{ marginBottom: 24 }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
+                                <SectionHeader label="Deliverables" />
+                                <button onClick={() => {
+                                  const name = window.prompt("Deliverable name:")
+                                  if (!name?.trim()) return
+                                  supabase.from("deliverables").insert({ project_id: proj.id, name: name.trim(), status: "not_started", sort_order: projDeliverables.length }).select().single().then(({ data }) => {
+                                    if (data) setProjects(ps => ps.map(p => p.id === proj.id ? { ...p, deliverables: [...(p.deliverables ?? []), data] } : p))
+                                  })
+                                }} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.45, background: "none", border: "0.5px solid rgba(15,15,14,0.2)", padding: "5px 10px", cursor: "pointer", color: "var(--ink)" }}>
+                                  + Add
+                                </button>
+                              </div>
+                              {projDeliverables.length === 0 ? (
+                                <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.35, padding: "8px 0" }}>No deliverables yet.</div>
+                              ) : projDeliverables.map((del: any) => (
+                                <div key={del.id} style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)", padding: "12px 0" }}>
+                                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+                                    <div style={{ flex: 1 }}>
+                                      <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-full)" as any, marginBottom: 3 }}>{del.name}</div>
+                                      {del.description && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: "var(--op-muted)" as any, lineHeight: 1.6 }}>{del.description}</div>}
+                                    </div>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+                                      <div style={{ display: "flex", gap: 3 }}>
+                                        {Array.from({ length: del.revision_max ?? 3 }).map((_: any, i: number) => (
+                                          <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: i < (del.revision_used ?? 0) ? "var(--ink)" : "transparent", border: "0.5px solid rgba(15,15,14,0.3)", opacity: i < (del.revision_used ?? 0) ? 0.7 : 0.3 }} />
+                                        ))}
+                                      </div>
+                                      <select value={del.status} onChange={e => updateDeliverableStatus(del.id, e.target.value)} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.08em", textTransform: "uppercase", background: "transparent", border: "0.5px solid rgba(15,15,14,0.15)", padding: "5px 8px", color: statusColors[del.status] ?? "var(--ink)", outline: "none", cursor: "pointer" }}>
+                                        {Object.entries(statusLabels).map(([val, label]) => <option key={val} value={val}>{label}</option>)}
+                                      </select>
+                                      <button onClick={() => deleteDeliverable(del.id, del.name)} style={{ fontFamily: "var(--font-mono)", fontSize: 10, background: "none", border: "none", cursor: "pointer", color: "var(--ink)", opacity: 0.25, padding: "4px" }}>✕</button>
+                                    </div>
+                                  </div>
+                                </div>
                               ))}
+                              <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)" }} />
                             </div>
-                            <select value={del.status} onChange={e => updateDeliverableStatus(del.id, e.target.value)} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.08em", textTransform: "uppercase", background: "transparent", border: "0.5px solid rgba(15,15,14,0.15)", padding: "5px 8px", color: statusColors[del.status] ?? "var(--ink)", outline: "none", cursor: "pointer" }}>
-                              {Object.entries(statusLabels).map(([val, label]) => <option key={val} value={val}>{label}</option>)}
-                            </select>
-                            <button onClick={() => deleteDeliverable(del.id, del.name)} style={{ fontFamily: "var(--font-mono)", fontSize: 10, background: "none", border: "none", cursor: "pointer", color: "var(--ink)", opacity: 0.25, padding: "4px" }}>✕</button>
+
+                            {/* Decision log */}
+                            <div style={{ marginBottom: 24 }}>
+                              <SectionHeader label="Decision log" />
+                              <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                                <input value={logInputByProject[proj.id] ?? ""} onChange={e => setLogInputByProject(prev => ({ ...prev, [proj.id]: e.target.value }))} onKeyDown={e => e.key === "Enter" && addLogEntryForProject(proj.id)} placeholder="Log a decision or note…" style={{ flex: 1, fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", background: "rgba(255,255,255,0.4)", border: "0.5px solid rgba(15,15,14,0.12)", padding: "9px 12px", color: "var(--ink)", outline: "none" }} />
+                                <button onClick={() => addLogEntryForProject(proj.id)} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", background: "var(--ink)", color: "var(--cream)", border: "none", padding: "0 16px", cursor: "pointer", whiteSpace: "nowrap" }}>Add</button>
+                              </div>
+                              {projLog.map((entry: any) => (
+                                <div key={entry.id} style={{ display: "flex", gap: 16, padding: "8px 0", borderBottom: "0.5px solid rgba(15,15,14,0.06)" }}>
+                                  <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.4, minWidth: 52, paddingTop: 1 }}>{new Date(entry.logged_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
+                                  <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-muted)" as any, lineHeight: 1.55, flex: 1 }}>{entry.entry}</div>
+                                  <button onClick={() => deleteLogEntryForProject(proj.id, entry.id)} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.3, background: "none", border: "none", cursor: "pointer", color: "var(--ink)", flexShrink: 0, paddingTop: 1 }}>×</button>
+                                </div>
+                              ))}
+                              {projLog.length === 0 && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.4, padding: "8px 0", lineHeight: 1.7 }}>No decisions logged yet.</div>}
+                            </div>
+
+                            {/* Time entries for this project */}
+                            {projTime.length > 0 && (
+                              <div>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
+                                  <SectionHeader label="Time log" />
+                                  <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: "var(--op-muted)" as any }}>Total: {formatMinutes(projTotalMin)}</div>
+                                </div>
+                                {projTime.map((entry: any) => (
+                                  <div key={entry.id} style={{ display: "flex", gap: 16, padding: "8px 0", borderBottom: "0.5px solid rgba(15,15,14,0.06)", alignItems: "baseline" }}>
+                                    <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.4, minWidth: 52 }}>{new Date(entry.started_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
+                                    <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-sm)", opacity: 0.7, minWidth: 48 }}>{formatMinutes(entry.duration_minutes ?? 0)}</div>
+                                    <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-muted)" as any, flex: 1 }}>{entry.note ?? "—"}</div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    )
+                  })}
+
+                  {/* Past projects — collapsed by default */}
+                  {pastProjects.length > 0 && (
+                    <div style={{ marginTop: 16 }}>
+                      <button
+                        onClick={() => setShowPastProjects(!showPastProjects)}
+                        style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.14em", textTransform: "uppercase", background: "none", border: "none", cursor: "pointer", color: "var(--ink)", opacity: 0.4, padding: "8px 0", display: "flex", alignItems: "baseline", gap: 8 }}
+                      >
+                        <span>{showPastProjects ? "▾" : "▸"}</span>
+                        Past projects ({pastProjects.length})
+                      </button>
+                      {showPastProjects && pastProjects.map(proj => {
+                        const projDeliverables = (proj.deliverables ?? []).sort((a: any, b: any) => a.sort_order - b.sort_order)
+                        return (
+                          <div key={proj.id} style={{ marginTop: 12, padding: "16px 20px", border: "0.5px solid rgba(15,15,14,0.06)", opacity: 0.65 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                              <div style={{ fontFamily: "var(--font-sans)", fontSize: 16, opacity: "var(--op-full)" as any }}>{proj.title}</div>
+                              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                                <Link href={`/admin/projects/${proj.id}/edit`} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.35, textDecoration: "none" }}>Edit</Link>
+                                <ProjectStatusBadge status={proj.status} />
+                              </div>
+                            </div>
+                            {projDeliverables.length > 0 && (
+                              <div style={{ marginTop: 10 }}>
+                                {projDeliverables.map((del: any) => (
+                                  <div key={del.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", borderTop: "0.5px solid rgba(15,15,14,0.06)" }}>
+                                    <div style={{ width: 6, height: 6, borderRadius: "50%", background: statusColors[del.status] ?? "rgba(15,15,14,0.3)", flexShrink: 0 }} />
+                                    <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.6 }}>{del.name}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      </div>
-                    ))}
-                    <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)" }} />
-                  </div>
-
-                  {/* Decision log */}
-                  <div style={{ marginBottom: 40 }}>
-                    <SectionHeader label="Decision log" />
-                    <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-                      <input value={logInput} onChange={e => setLogInput(e.target.value)} onKeyDown={e => e.key === "Enter" && addLogEntry()} placeholder="Log an approved direction, decision, or note…" style={{ flex: 1, fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", background: "rgba(255,255,255,0.4)", border: "0.5px solid rgba(15,15,14,0.12)", padding: "9px 12px", color: "var(--ink)", outline: "none" }} />
-                      <button onClick={addLogEntry} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", background: "var(--ink)", color: "var(--cream)", border: "none", padding: "0 16px", cursor: "pointer", whiteSpace: "nowrap" }}>Add</button>
+                        )
+                      })}
                     </div>
-                    {decisionLog.map(entry => (
-                      <div key={entry.id} style={{ display: "flex", gap: 16, padding: "10px 0", borderBottom: "0.5px solid rgba(15,15,14,0.06)" }}>
-                        <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.4, minWidth: 52, paddingTop: 1 }}>{new Date(entry.logged_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
-                        <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-muted)" as any, lineHeight: 1.55, flex: 1 }}>{entry.entry}</div>
-                        <button onClick={() => deleteLogEntry(entry.id)} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.3, background: "none", border: "none", cursor: "pointer", color: "var(--ink)", flexShrink: 0, paddingTop: 1 }}>×</button>
-                      </div>
-                    ))}
-                    {decisionLog.length === 0 && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.4, padding: "12px 0", lineHeight: 1.7 }}>No decisions logged yet — add notes here as you and the client align on direction.</div>}
-                  </div>
-
-                  {/* Time tracking */}
-                  <div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 }}>
-                      <SectionHeader label="Time tracking" />
-                      {totalMinutes > 0 && <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: "var(--op-muted)" as any }}>Total: {formatMinutes(totalMinutes)}</div>}
-                    </div>
-                    <div style={{ border: "0.5px solid rgba(15,15,14,0.12)", padding: "16px 20px", background: timerRunning ? "rgba(143,167,181,0.06)" : "rgba(255,255,255,0.35)", marginBottom: 16, transition: "background 0.3s" }}>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: timerRunning ? 12 : 0 }}>
-                        <div style={{ fontFamily: "var(--font-mono)", fontSize: timerRunning ? 22 : "var(--text-body)", opacity: timerRunning ? 0.9 : 0.45 }}>
-                          {timerRunning ? formatDuration(timerSeconds) : "Ready to track"}
-                        </div>
-                        <button onClick={timerRunning ? stopTimer : startTimer} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.14em", textTransform: "uppercase", background: timerRunning ? "var(--danger)" : "var(--ink)", color: "var(--cream)", border: "none", padding: "8px 16px", cursor: "pointer", transition: "background 0.2s" }}>
-                          {timerRunning ? "Stop" : "Start timer"}
-                        </button>
-                      </div>
-                      {timerRunning && (
-                        <input value={timerNote} onChange={e => setTimerNote(e.target.value)} placeholder="What are you working on? (optional)" style={{ width: "100%", boxSizing: "border-box", fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", background: "transparent", border: "none", borderBottom: "0.5px solid rgba(15,15,14,0.15)", padding: "6px 0", color: "var(--ink)", outline: "none" }} />
-                      )}
-                    </div>
-                    {timeEntries.map(entry => (
-                      <div key={entry.id} style={{ display: "flex", gap: 16, padding: "10px 0", borderBottom: "0.5px solid rgba(15,15,14,0.06)", alignItems: "baseline" }}>
-                        <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.4, minWidth: 52 }}>{new Date(entry.started_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
-                        <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-sm)", opacity: 0.7, minWidth: 48 }}>{formatMinutes(entry.duration_minutes ?? 0)}</div>
-                        <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-muted)" as any, flex: 1 }}>{entry.note ?? "—"}</div>
-                      </div>
-                    ))}
-                    {timeEntries.length === 0 && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.4, padding: "8px 0" }}>No time tracked yet. Start the timer above when you begin working.</div>}
-                  </div>
+                  )}
                 </>
               )}
             </div>
@@ -1226,6 +1274,62 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
           )}
         </div>
         <div className="admin-studio-right" style={{ padding: "32px 28px", borderLeft: "0.5px solid rgba(15,15,14,0.08)" }}>
+          {/* Compact timer widget */}
+          {projects.length > 0 && (
+            <div style={{ marginBottom: 28, position: "sticky", top: 20, zIndex: 10 }}>
+              <div style={{
+                border: timerRunning ? "0.5px solid rgba(143,167,181,0.35)" : "0.5px solid rgba(15,15,14,0.1)",
+                background: timerRunning ? "rgba(143,167,181,0.06)" : "rgba(255,255,255,0.3)",
+                padding: timerRunning ? "12px 14px" : "10px 14px",
+                transition: "all 0.3s",
+              }}>
+                {!timerRunning ? (
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    {projects.length > 1 ? (
+                      <select value={timerProjectId} onChange={e => setTimerProjectId(e.target.value)} style={{ fontFamily: "var(--font-mono)", fontSize: 9, background: "transparent", border: "none", color: "var(--ink)", outline: "none", cursor: "pointer", opacity: 0.45, maxWidth: 130, padding: 0 }}>
+                        {projects.filter(p => p.status === "active").map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
+                      </select>
+                    ) : (
+                      <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, opacity: 0.4 }}>Timer</span>
+                    )}
+                    <button onClick={startTimer} style={{
+                      fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase",
+                      background: "var(--ink)", color: "var(--cream)", border: "none",
+                      padding: "5px 10px", cursor: "pointer",
+                    }}>
+                      ▶ Start
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                      <div style={{ fontFamily: "var(--font-mono)", fontSize: 16, opacity: 0.9, letterSpacing: "-0.01em" }}>
+                        {formatDuration(timerSeconds)}
+                      </div>
+                      <button onClick={stopTimer} style={{
+                        fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase",
+                        background: "var(--danger)", color: "var(--cream)", border: "none",
+                        padding: "5px 10px", cursor: "pointer",
+                      }}>
+                        ■ Stop
+                      </button>
+                    </div>
+                    <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, opacity: 0.4, marginBottom: 6 }}>
+                      {projects.find(p => p.id === timerProjectId)?.title ?? ""}
+                    </div>
+                    <input value={timerNote} onChange={e => setTimerNote(e.target.value)} placeholder="Note (optional)" style={{
+                      width: "100%", boxSizing: "border-box",
+                      fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)",
+                      background: "transparent", border: "none",
+                      borderBottom: "0.5px solid rgba(15,15,14,0.12)",
+                      padding: "4px 0", color: "var(--ink)", outline: "none",
+                    }} />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Contacts section */}
           <div style={{ marginBottom: 28 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12 }}>
