@@ -36,6 +36,8 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
   const [error, setError]         = useState<string | null>(null)
   const [saved, setSaved]         = useState(false)
   const [originalStatus, setOriginalStatus] = useState("")
+  const [sending, setSending]     = useState(false)
+  const [emailSent, setEmailSent] = useState(false)
 
   const [form, setForm] = useState({
     client_id:      "",
@@ -221,6 +223,25 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
     )
   }
 
+  async function handleSendEmail() {
+    setSending(true)
+    setEmailSent(false)
+    try {
+      const res = await fetch("/api/admin/send-invoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ invoiceId: params.id }),
+      })
+      if (!res.ok) throw new Error("Send failed")
+      setEmailSent(true)
+      setTimeout(() => setEmailSent(false), 4000)
+    } catch (err) {
+      console.error("[send-invoice]", err)
+      setError("Failed to send email.")
+    }
+    setSending(false)
+  }
+
   const statusChanged = form.status !== originalStatus
   const willResend    = form.status === "sent" && originalStatus !== "sent"
 
@@ -346,7 +367,7 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
 
           {/* Notes */}
           <div>
-            <label style={labelStyle}>Notes <span style={{ opacity: 0.5 }}>(optional — visible on PDF)</span></label>
+            <label style={labelStyle}>Notes <span style={{ opacity: 0.5 }}>(optional — included in email &amp; invoice page)</span></label>
             <textarea value={form.notes} onChange={e => set("notes", e.target.value)} placeholder="Payment terms, additional context, etc." rows={3} style={{ ...inputStyle, resize: "none", lineHeight: 1.7 }} />
           </div>
 
@@ -449,6 +470,22 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
               }}
             >
               {saved ? "Saved ✓" : saving ? "Saving…" : "Save changes"}
+            </button>
+            <button
+              onClick={handleSendEmail}
+              disabled={sending || emailSent}
+              style={{
+                ...mono,
+                fontSize: "var(--text-eyebrow)", letterSpacing: "0.14em", textTransform: "uppercase",
+                background: "transparent", color: emailSent ? "var(--sage)" : "var(--ink)",
+                border: `0.5px solid ${emailSent ? "var(--sage)" : "rgba(15,15,14,0.2)"}`,
+                padding: "13px 22px",
+                cursor: sending || emailSent ? "default" : "pointer",
+                opacity: sending ? 0.4 : emailSent ? 0.8 : 1,
+                transition: "all 0.3s",
+              }}
+            >
+              {emailSent ? "Email sent ✓" : sending ? "Sending…" : "Send email"}
             </button>
             <button
               onClick={() => router.push("/admin/invoices")}
