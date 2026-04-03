@@ -313,6 +313,7 @@ interface InvoiceSentPayload {
   invoiceUrl: string
   paymentMethods?: string[]
   ccEmails?: string[]
+  notes?: string
 }
 
 export async function sendInvoiceEmail(p: InvoiceSentPayload) {
@@ -341,9 +342,14 @@ export async function sendInvoiceEmail(p: InvoiceSentPayload) {
     </div>
   ` : ""
 
+  const notesBlock = p.notes?.trim()
+    ? `<div style="margin-top:20px;padding:16px 18px;background:#FAF8F5;border-left:2px solid #DDD6CC;font-size:14px;line-height:1.7;color:#333;white-space:pre-line">${p.notes.trim()}</div>`
+    : ""
+
   const html = emailShell(`
     <div class="body">
       <p>Hi ${p.contactName} — you have a new invoice from Studio Cinq.</p>
+      ${notesBlock}
       <div class="meta">
         <p><strong>Invoice</strong> &nbsp;#${p.invoiceNumber}</p>
         <p><strong>Description</strong> &nbsp;${p.description}</p>

@@ -33,6 +33,9 @@ export async function POST(req: Request) {
       contactName:   client.contact_name,
       contactEmail:  client.contact_email,
       invoiceUrl:    `${portalUrl}/invoice/${invoice.id}`,
+      paymentMethods: invoice.payment_methods ?? ["stripe"],
+      ccEmails:      invoice.cc_emails ?? [],
+      notes:         invoice.notes ?? undefined,
     })
 
     return NextResponse.json({ ok: true })
