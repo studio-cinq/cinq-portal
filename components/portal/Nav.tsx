@@ -41,22 +41,23 @@ export default function PortalNav({ clientName, isAdmin }: NavProps) {
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "0 24px",
+        padding: "0 48px",
         height: "var(--nav-h)",
         borderBottom: "0.5px solid rgba(15,15,14,0.1)",
         background: "rgba(244,241,236,0.95)",
-        backdropFilter: "blur(8px)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
         position: "sticky",
         top: 0,
         zIndex: 100,
         boxSizing: "border-box",
       }}>
         <Link href={isAdmin ? "/admin/studio" : "/dashboard"} aria-label="Go to home" style={{ display: "flex" }}>
-          <CinqLogo width={20} />
+          <CinqLogo width={33} />
         </Link>
 
         {/* Desktop nav links */}
-        <div style={{ display: "flex", alignItems: "center", gap: 28 }} className="nav-links-desktop">
+        <div style={{ display: "flex", alignItems: "center", gap: 36 }} className="nav-links-desktop">
           {links.map(link => {
             const active = pathname === link.href || pathname.startsWith(link.href + "/")
             return (
@@ -65,15 +66,16 @@ export default function PortalNav({ clientName, isAdmin }: NavProps) {
                 href={link.href}
                 style={{
                   fontFamily: "var(--font-mono)",
-                  fontSize: "var(--text-eyebrow)",
-                  letterSpacing: "0.14em",
+                  fontSize: 10,
+                  fontWeight: 400,
+                  letterSpacing: "0.07em",
                   textTransform: "uppercase",
-                  color: "var(--ink)",
-                  opacity: active ? 0.75 : "var(--op-faint)",
+                  color: active ? "var(--ink)" : "#444444",
+                  opacity: active ? 1 : 0.6,
                   textDecoration: "none",
                   borderBottom: active ? "0.5px solid rgba(15,15,14,0.45)" : "0.5px solid transparent",
                   paddingBottom: 1,
-                  transition: "opacity 0.2s",
+                  transition: "opacity 0.18s",
                 }}
               >
                 {link.label}
@@ -87,8 +89,8 @@ export default function PortalNav({ clientName, isAdmin }: NavProps) {
           {isAdmin && (
             <span style={{
               fontFamily: "var(--font-mono)",
-              fontSize: "var(--text-eyebrow)",
-              letterSpacing: "0.12em",
+              fontSize: 10,
+              letterSpacing: "0.07em",
               textTransform: "uppercase",
               color: "var(--ink)",
               opacity: 0.35,
@@ -101,11 +103,11 @@ export default function PortalNav({ clientName, isAdmin }: NavProps) {
           {clientName && (
             <span style={{
               fontFamily: "var(--font-mono)",
-              fontSize: "var(--text-eyebrow)",
-              letterSpacing: "0.1em",
+              fontSize: 10,
+              letterSpacing: "0.07em",
               textTransform: "uppercase",
-              color: "var(--ink)",
-              opacity: 0.35,
+              color: "#444444",
+              opacity: 0.6,
             }}>
               {clientName}
             </span>
@@ -115,11 +117,11 @@ export default function PortalNav({ clientName, isAdmin }: NavProps) {
             aria-label="Sign out"
             style={{
               fontFamily: "var(--font-mono)",
-              fontSize: "var(--text-eyebrow)",
-              letterSpacing: "0.1em",
+              fontSize: 10,
+              letterSpacing: "0.07em",
               textTransform: "uppercase",
-              color: "var(--ink)",
-              opacity: "var(--op-ghost)" as any,
+              color: "#444444",
+              opacity: 0.6,
               background: "none",
               border: "none",
               cursor: "pointer",
@@ -175,9 +177,9 @@ export default function PortalNav({ clientName, isAdmin }: NavProps) {
                 style={{
                   fontFamily: "var(--font-mono)",
                   display: "block",
-                  padding: "14px 24px",
+                  padding: "14px 48px",
                   fontSize: "var(--text-sm)",
-                  letterSpacing: "0.14em",
+                  letterSpacing: "0.07em",
                   textTransform: "uppercase",
                   color: "var(--ink)",
                   opacity: active ? 0.88 : "var(--op-faint)" as any,
@@ -196,9 +198,9 @@ export default function PortalNav({ clientName, isAdmin }: NavProps) {
               display: "block",
               width: "100%",
               textAlign: "left",
-              padding: "14px 24px",
+              padding: "14px 48px",
               fontSize: "var(--text-sm)",
-              letterSpacing: "0.14em",
+              letterSpacing: "0.07em",
               textTransform: "uppercase",
               color: "var(--ink)",
               opacity: 0.32,

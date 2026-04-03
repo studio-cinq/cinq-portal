@@ -84,7 +84,7 @@
   --op-ghost:  0.45;  /* very subtle */
 
   /* Spacing */
-  --nav-h:      56px;
+  --nav-h:      72px;
   --page-pad:   clamp(32px, 5vw, 48px);
 }
 
