@@ -36,6 +36,7 @@ export interface Client {
   contact_email: string
   logo_url?: string
   notes?: string
+  library_share_token?: string | null
 }
 
 export interface ClientContact {

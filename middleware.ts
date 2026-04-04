@@ -8,6 +8,7 @@ const PUBLIC_PAGE_PREFIXES = [
   "/invoice/",
   "/review/",
   "/update-password",
+  "/library/share/",
 ] as const
 
 const PUBLIC_API_ROUTES = new Set([

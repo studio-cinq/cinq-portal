@@ -71,6 +71,8 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
   const [colorForm, setColorForm]               = useState({ name: "", hex: "#" })
   const [typefaceForm, setTypefaceForm]         = useState({ name: "", weight: "", role: "" })
   const [savingEvent, setSavingEvent]         = useState(false)
+  const [shareLinkLabel, setShareLinkLabel]   = useState("Share library link")
+  const [shareLink, setShareLink]             = useState<string | null>(null)
   const [eventForm, setEventForm]             = useState({
     title: "", event_date: "", event_time: "", duration_minutes: "",
     type: "meeting", project_id: "", notes: "",
@@ -136,9 +138,12 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
       supabase.from("events").select("*, projects(title)").eq("client_id", params.id).order("event_date"),
     ])
 
-    const c = clientRes.data
+    const c = clientRes.data as any
     if (!c) { setLoading(false); return }
     setClient(c)
+    if (c.library_share_token) {
+      setShareLink(`${window.location.origin}/library/share/${c.library_share_token}`)
+    }
 
     const ps = projRes.data ?? []
     setProjects(ps)
@@ -285,6 +290,24 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
         messageBody,
       }),
     }).catch(err => console.error("[notify-reply]", err))
+  }
+
+  async function generateShareLink() {
+    try {
+      const res = await fetch("/api/admin/library-share-token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientId: params.id }),
+      })
+      const { token } = await res.json()
+      const link = `${window.location.origin}/library/share/${token}`
+      setShareLink(link)
+      await navigator.clipboard.writeText(link)
+      setShareLinkLabel("Copied!")
+      setTimeout(() => setShareLinkLabel("Share library link"), 2500)
+    } catch (err) {
+      console.error("[share-link]", err)
+    }
   }
 
   async function loadContacts() {
@@ -1374,9 +1397,14 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
               </div>
             ))}
             {client.notes && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: "var(--op-muted)" as any, lineHeight: 1.6, marginTop: 10 }}>{client.notes}</div>}
-            <Link href={`/admin/library/${params.id}`} target="_blank" style={{ fontFamily: "var(--font-mono)", display: "inline-block", marginTop: 14, fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--ink)", opacity: "var(--op-muted)" as any, textDecoration: "none", border: "0.5px solid rgba(15,15,14,0.2)", padding: "7px 14px" }}>
-              Preview brand library ↗
-            </Link>
+            <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
+              <Link href={`/admin/library/${params.id}`} target="_blank" style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--ink)", opacity: "var(--op-muted)" as any, textDecoration: "none", border: "0.5px solid rgba(15,15,14,0.2)", padding: "7px 14px" }}>
+                Preview brand library ↗
+              </Link>
+              <button onClick={generateShareLink} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", color: shareLinkLabel === "Copied!" ? "var(--sage)" : "var(--ink)", opacity: shareLinkLabel === "Copied!" ? 0.8 : 0.5, background: "none", border: `0.5px solid ${shareLinkLabel === "Copied!" ? "var(--sage)" : "rgba(15,15,14,0.2)"}`, padding: "7px 14px", cursor: "pointer", transition: "all 0.2s" }}>
+                {shareLinkLabel}
+              </button>
+            </div>
           </div>
 
           <div style={{ marginBottom: 28 }}>

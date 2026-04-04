@@ -67,6 +67,27 @@ export async function getPortalLibrarySnapshotByClientId(clientId: string): Prom
   }
 }
 
+export async function getPortalLibrarySnapshotByShareToken(token: string): Promise<PortalLibrarySnapshot> {
+  const empty: PortalLibrarySnapshot = {
+    client: null, contact: null, projectIds: [],
+    hasGateInvoice: false, gateIsPaid: false, isUnlocked: true,
+    assets: [], colors: [], typefaces: [],
+  }
+  if (!token) return empty
+
+  const { data: client } = await supabaseAdmin
+    .from("clients")
+    .select("id")
+    .eq("library_share_token" as any, token)
+    .maybeSingle()
+
+  if (!client) return empty
+
+  // Admin is intentionally sharing — bypass gate/unlock logic
+  const snapshot = await getPortalLibrarySnapshotByClientId((client as any).id)
+  return { ...snapshot, isUnlocked: true }
+}
+
 export async function getPortalLibrarySnapshotByEmail(email: string): Promise<PortalLibrarySnapshot> {
   const empty: PortalLibrarySnapshot = {
     client: null, contact: null, projectIds: [],
