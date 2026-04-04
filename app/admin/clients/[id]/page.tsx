@@ -302,9 +302,13 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
       const { token } = await res.json()
       const link = `${window.location.origin}/library/share/${token}`
       setShareLink(link)
-      await navigator.clipboard.writeText(link)
-      setShareLinkLabel("Copied!")
-      setTimeout(() => setShareLinkLabel("Share library link"), 2500)
+      try {
+        await navigator.clipboard.writeText(link)
+        setShareLinkLabel("Copied!")
+      } catch {
+        setShareLinkLabel("Link ready ↓")
+      }
+      setTimeout(() => setShareLinkLabel("Share library link"), 3000)
     } catch (err) {
       console.error("[share-link]", err)
     }
@@ -1405,6 +1409,11 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                 {shareLinkLabel}
               </button>
             </div>
+            {shareLink && (
+              <div style={{ marginTop: 8, fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.04em", color: "var(--ink)", opacity: 0.35, wordBreak: "break-all", lineHeight: 1.6 }}>
+                {shareLink}
+              </div>
+            )}
           </div>
 
           <div style={{ marginBottom: 28 }}>
