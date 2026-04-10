@@ -283,6 +283,7 @@ export default function EditProposalPage({ params }: { params: { id: string } })
             <Field label="Payment schedule">
               <select value={form.payment_schedule} onChange={e => setField("payment_schedule", e.target.value)} style={inputStyle}>
                 <option value="50/50">50% deposit · 50% on completion</option>
+                <option value="40/30/30">40% deposit · 30% midpoint · 30% completion</option>
                 <option value="50/25/25">50% deposit · 25% midpoint · 25% completion</option>
                 <option value="100">100% upfront</option>
                 <option value="33/33/34">33% · 33% · 34% (three equal payments)</option>
