@@ -198,6 +198,16 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
     showToast("Entry removed", "info")
   }
 
+  async function deleteProject(projectId: string, projectTitle: string) {
+    if (!confirm(`Delete "${projectTitle}"? This will also remove its deliverables, time entries, and decision log. This cannot be undone.`)) return
+    await supabase.from("deliverables").delete().eq("project_id", projectId)
+    await supabase.from("time_entries").delete().eq("project_id", projectId)
+    await supabase.from("decision_log").delete().eq("project_id", projectId)
+    await supabase.from("projects").delete().eq("id", projectId)
+    setProjects(prev => prev.filter(p => p.id !== projectId))
+    showToast("Project deleted", "info")
+  }
+
   async function uploadBrandAssets(files: FileList, category: string) {
     if (!selectedProject) return
     let uploaded = 0
@@ -635,6 +645,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                               {projDeliverables.filter((d: any) => d.status === "complete" || d.status === "approved").length}/{projDeliverables.length} done
                             </span>
                             <Link href={`/admin/projects/${proj.id}/edit`} onClick={e => e.stopPropagation()} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.35, textDecoration: "none" }}>Edit</Link>
+                            <button onClick={e => { e.stopPropagation(); deleteProject(proj.id, proj.title) }} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.25, background: "none", border: "none", cursor: "pointer", color: "var(--ink)", padding: 0 }}>Delete</button>
                             <ProjectStatusBadge status={proj.status} />
                           </div>
                         </div>
