@@ -198,9 +198,11 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
         if (phaseLabel && !renderedPhaseLabels.has(phaseLabel)) {
           checkSpace(110)
           y += renderedPhaseLabels.size > 0 ? 20 : 8
+          doc.setFont("helvetica", "bold")
           doc.setFontSize(13)
           setColor(doc, INK, 0.78)
           doc.text(phaseLabel, marginL, y)
+          doc.setFont("helvetica", "normal")
           y += 4
           doc.setLineWidth(0.3)
           doc.setDrawColor(200, 196, 190)

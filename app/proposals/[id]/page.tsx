@@ -414,7 +414,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
       if (label && label !== lastPhaseLabel) {
         result.push(
           <div key={`phase-${label}`} style={{
-            ...serif, fontSize: isMobile ? 17 : 19, fontWeight: 400,
+            ...serif, fontSize: isMobile ? 17 : 19, fontWeight: 500,
             opacity: 0.78, letterSpacing: "-0.01em",
             paddingTop: lastPhaseLabel !== null ? 32 : 16, paddingBottom: 4,
             borderTop: lastPhaseLabel !== null ? "0.5px solid rgba(15,15,14,0.1)" : "none",
