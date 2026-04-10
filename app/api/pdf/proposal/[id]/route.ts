@@ -179,16 +179,16 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
           doc.setFontSize(11)
           setColor(doc, INK, 0.72)
           doc.text(phaseLabel, marginL, y)
-          y += 2
+          y += 6
           renderedPhaseLabels.add(phaseLabel)
         }
 
-        checkSpace(44)
+        checkSpace(60)
         doc.setLineWidth(0.2)
         setColor(doc, INK, 0.08)
         doc.setDrawColor(200, 196, 190)
         doc.line(marginL, y, W - marginR, y)
-        y += 12
+        y += 14
 
         // Name + timeline inline + price
         doc.setFontSize(12)
@@ -197,33 +197,35 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
         doc.text(item.name, marginL, y)
 
         // Timeline inline after name
-        doc.setFontSize(7.5)
-        setColor(doc, INK, 0.3)
-        let timelineLabel: string
-        if (item.timeline_weeks_min === 0 && item.timeline_weeks_max === 0) {
-          timelineLabel = "Ongoing"
-        } else if (item.timeline_weeks_min === item.timeline_weeks_max) {
-          timelineLabel = item.timeline_weeks_min === 1 ? "1 week" : `${item.timeline_weeks_min} weeks`
-        } else {
-          timelineLabel = `${item.timeline_weeks_min}–${item.timeline_weeks_max} weeks`
+        if (item.timeline_weeks_min != null && item.timeline_weeks_max != null) {
+          doc.setFontSize(7.5)
+          setColor(doc, INK, 0.3)
+          let timelineLabel: string
+          if (item.timeline_weeks_min === 0 && item.timeline_weeks_max === 0) {
+            timelineLabel = "Ongoing"
+          } else if (item.timeline_weeks_min === item.timeline_weeks_max) {
+            timelineLabel = item.timeline_weeks_min === 1 ? "1 week" : `${item.timeline_weeks_min} weeks`
+          } else {
+            timelineLabel = `${item.timeline_weeks_min}–${item.timeline_weeks_max} weeks`
+          }
+          doc.text(`·  ${timelineLabel}`, marginL + nameWidth + 8, y)
         }
-        doc.text(timelineLabel, marginL + nameWidth + 10, y)
 
         doc.setFontSize(11)
         setColor(doc, INK, 0.75)
         doc.text(`$${(item.price / 100).toLocaleString()}`, W - marginR, y, { align: "right" })
+        y += 15
 
         // Badges
         if (item.is_recommended) {
-          y += 11
           doc.setFontSize(6.5)
           setColor(doc, GOLD, 0.9)
           doc.text("RECOMMENDED", marginL, y)
+          y += 10
         }
 
         // Description
         if (item.description) {
-          y += 3
           doc.setFontSize(9)
           setColor(doc, INK, 0.55)
           const descLines = doc.splitTextToSize(item.description, contentW)
@@ -232,7 +234,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
             doc.text(line, marginL, y)
             y += 11
           }
-          y += 2
+          y += 4
         } else {
           y += 2
         }
