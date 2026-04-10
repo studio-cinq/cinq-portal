@@ -440,9 +440,11 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
               <div style={{ ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.38 }}>
                 Included in your project
               </div>
-              <div style={{ ...mono, fontSize: "var(--text-eyebrow)", opacity: 0.38 }}>
-                ${(requiredTotal / 100).toLocaleString()}
-              </div>
+              {!isMobile && (
+                <div style={{ ...mono, fontSize: "var(--text-eyebrow)", opacity: 0.38 }}>
+                  ${(requiredTotal / 100).toLocaleString()}
+                </div>
+              )}
             </div>
             {renderItemsWithPhaseHeaders(requiredItems, renderRequiredItem)}
             <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)" }} />
