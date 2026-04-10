@@ -153,7 +153,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
         doc.text(line, marginL, y)
         y += 14
       }
-      y += 20
+      y += 12
     }
 
     // ── Scope ──
@@ -169,7 +169,21 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       doc.text(`Est. $${(subtotal / 100).toLocaleString()}`, W - marginR, y, { align: "right" })
       y += 18
 
+      let lastPhaseLabel: string | null = null
+
       for (const item of itemList) {
+        // Phase header
+        const phaseLabel = item.phase_label?.trim() || null
+        if (phaseLabel && phaseLabel !== lastPhaseLabel) {
+          checkSpace(40)
+          y += lastPhaseLabel !== null ? 16 : 6
+          doc.setFontSize(11)
+          setColor(doc, INK, 0.72)
+          doc.text(phaseLabel, marginL, y)
+          y += 8
+          lastPhaseLabel = phaseLabel
+        }
+
         checkSpace(60)
         doc.setLineWidth(0.2)
         setColor(doc, INK, 0.08)
@@ -177,22 +191,29 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
         doc.line(marginL, y, W - marginR, y)
         y += 16
 
-        // Name + price row
+        // Name + timeline inline + price
         doc.setFontSize(12)
         setColor(doc, INK, 0.85)
+        const nameWidth = doc.getTextWidth(item.name)
         doc.text(item.name, marginL, y)
+
+        // Timeline inline after name
+        doc.setFontSize(7.5)
+        setColor(doc, INK, 0.3)
+        let timelineLabel: string
+        if (item.timeline_weeks_min === 0 && item.timeline_weeks_max === 0) {
+          timelineLabel = "Ongoing"
+        } else if (item.timeline_weeks_min === item.timeline_weeks_max) {
+          timelineLabel = item.timeline_weeks_min === 1 ? "1 week" : `${item.timeline_weeks_min} weeks`
+        } else {
+          timelineLabel = `${item.timeline_weeks_min}–${item.timeline_weeks_max} weeks`
+        }
+        doc.text(timelineLabel, marginL + nameWidth + 10, y)
 
         doc.setFontSize(11)
         setColor(doc, INK, 0.75)
         doc.text(`$${(item.price / 100).toLocaleString()}`, W - marginR, y, { align: "right" })
         y += 14
-
-        // Timeline
-        doc.setFontSize(7)
-        setColor(doc, INK, 0.35)
-        const timelineLabel = (item.timeline_weeks_min === 0 && item.timeline_weeks_max === 0) ? "Ongoing" : `${item.timeline_weeks_min}–${item.timeline_weeks_max} weeks`
-        doc.text(timelineLabel, W - marginR, y, { align: "right" })
-        y += 12
 
         // Badges
         if (item.is_recommended) {
@@ -212,8 +233,10 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
             doc.text(line, marginL, y)
             y += 12
           }
+          y += 8
+        } else {
+          y += 4
         }
-        y += 10
       }
     }
 
