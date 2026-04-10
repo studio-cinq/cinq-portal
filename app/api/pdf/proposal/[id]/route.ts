@@ -2,6 +2,8 @@ import { NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase-server"
 import { jsPDF } from "jspdf"
 
+export const dynamic = "force-dynamic"
+
 const INK = [15, 15, 14] as const
 const CREAM = [244, 241, 236] as const
 const SAGE = [143, 167, 181] as const
@@ -357,6 +359,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="${filename}"`,
+        "Cache-Control": "no-store, no-cache, must-revalidate",
       },
     })
   } catch (err) {
