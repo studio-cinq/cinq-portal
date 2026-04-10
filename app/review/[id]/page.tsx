@@ -156,7 +156,7 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
   // Post-submit
   if (session.status === "revising") return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "var(--cream)", padding: 40, textAlign: "center" }}>
-      <CinqLogo width={20} />
+      <CinqLogo width={33} />
       <div style={{ marginTop: 32 }}>
         <h1 style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-title)", fontWeight: 400, opacity: 0.85, margin: "0 0 12px" }}>Feedback received</h1>
         <p style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.5, maxWidth: 400, lineHeight: 1.7 }}>
@@ -172,7 +172,7 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
   // Approved
   if (session.status === "approved") return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "var(--cream)", padding: 40, textAlign: "center" }}>
-      <CinqLogo width={20} />
+      <CinqLogo width={33} />
       <div style={{ marginTop: 32 }}>
         <h1 style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-title)", fontWeight: 400, opacity: 0.85, margin: "0 0 12px" }}>Site approved</h1>
         <p style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.5, maxWidth: 400, lineHeight: 1.7 }}>
@@ -195,7 +195,7 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
         backdropFilter: "blur(8px)", gap: 8,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0, flex: 1 }}>
-          <CinqLogo width={16} />
+          <CinqLogo width={33} />
           {!isMobile && <span style={{ width: 0.5, height: 16, background: "rgba(15,15,14,0.12)", flexShrink: 0 }} />}
           <span style={{
             fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.4,

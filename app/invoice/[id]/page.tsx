@@ -126,7 +126,7 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
         background: "rgba(244,241,236,0.95)",
         backdropFilter: "blur(8px)",
       }}>
-        <CinqLogo width={18} />
+        <CinqLogo width={33} />
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           {isPaid && (
             <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--sage)", opacity: 0.85 }}>

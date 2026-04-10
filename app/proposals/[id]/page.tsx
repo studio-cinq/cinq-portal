@@ -499,7 +499,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
         position: "sticky", top: 0, zIndex: 10,
         backdropFilter: "blur(8px)",
       }}>
-        <CinqLogo width={18} />
+        <CinqLogo width={33} />
         <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 10 : 20 }}>
           <DownloadPDFButton type="proposal" id={params.id} label={isMobile ? "↓ PDF" : "↓ Download PDF"} />
           {proposal.expires_at && !isExpired && (
