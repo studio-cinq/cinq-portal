@@ -101,11 +101,10 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     }
 
     // Prepared for
-    y += 4
     doc.setFontSize(9)
     setColor(doc, INK, 0.4)
     doc.text(`Prepared for ${client?.contact_name ?? ""}`, marginL, y)
-    y += 32
+    y += 22
 
     // ── Meta row ──
     doc.setDrawColor(INK[0], INK[1], INK[2])
@@ -134,7 +133,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
     y += 32
     doc.line(marginL, y, W - marginR, y)
-    y += 32
+    y += 22
 
     // ── Overview ──
     if (proposal.overview) {
@@ -142,18 +141,18 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       doc.setFontSize(7)
       setColor(doc, INK, 0.38)
       doc.text("OVERVIEW", marginL, y)
-      y += 16
+      y += 14
 
       doc.setFont("helvetica", "normal")
       doc.setFontSize(10)
       setColor(doc, INK, 0.7)
       const overviewLines = doc.splitTextToSize(proposal.overview, contentW)
       for (const line of overviewLines) {
-        checkSpace(16)
+        checkSpace(14)
         doc.text(line, marginL, y)
-        y += 14
+        y += 13
       }
-      y += 12
+      y += 8
     }
 
     // ── Scope ──
@@ -167,29 +166,29 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       setColor(doc, INK, 0.38)
       doc.text(sectionLabel, marginL, y)
       doc.text(`Est. $${(subtotal / 100).toLocaleString()}`, W - marginR, y, { align: "right" })
-      y += 18
+      y += 10
 
-      let lastPhaseLabel: string | null = null
+      const renderedPhaseLabels = new Set<string>()
 
       for (const item of itemList) {
-        // Phase header
+        // Phase header — only render each unique label once, require space for header + item
         const phaseLabel = item.phase_label?.trim() || null
-        if (phaseLabel && phaseLabel !== lastPhaseLabel) {
-          checkSpace(40)
-          y += lastPhaseLabel !== null ? 16 : 6
+        if (phaseLabel && !renderedPhaseLabels.has(phaseLabel)) {
+          checkSpace(110)
+          y += renderedPhaseLabels.size > 0 ? 10 : 2
           doc.setFontSize(11)
           setColor(doc, INK, 0.72)
           doc.text(phaseLabel, marginL, y)
-          y += 8
-          lastPhaseLabel = phaseLabel
+          y += 2
+          renderedPhaseLabels.add(phaseLabel)
         }
 
-        checkSpace(60)
+        checkSpace(44)
         doc.setLineWidth(0.2)
         setColor(doc, INK, 0.08)
         doc.setDrawColor(200, 196, 190)
         doc.line(marginL, y, W - marginR, y)
-        y += 16
+        y += 12
 
         // Name + timeline inline + price
         doc.setFontSize(12)
@@ -213,29 +212,29 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
         doc.setFontSize(11)
         setColor(doc, INK, 0.75)
         doc.text(`$${(item.price / 100).toLocaleString()}`, W - marginR, y, { align: "right" })
-        y += 14
 
         // Badges
         if (item.is_recommended) {
+          y += 11
           doc.setFontSize(6.5)
           setColor(doc, GOLD, 0.9)
           doc.text("RECOMMENDED", marginL, y)
-          y += 10
         }
 
         // Description
         if (item.description) {
+          y += 3
           doc.setFontSize(9)
           setColor(doc, INK, 0.55)
           const descLines = doc.splitTextToSize(item.description, contentW)
           for (const line of descLines) {
-            checkSpace(14)
+            checkSpace(11)
             doc.text(line, marginL, y)
-            y += 12
+            y += 11
           }
-          y += 8
+          y += 2
         } else {
-          y += 4
+          y += 2
         }
       }
     }
@@ -245,23 +244,23 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     }
 
     if (selectableItems.length > 0) {
-      if (requiredItems.length > 0) y += 10
+      if (requiredItems.length > 0) y += 6
       renderItems(requiredItems.length > 0 ? "CUSTOMIZE YOUR SCOPE" : "SCOPE", selectableItems, selectableTotal)
     }
 
     if (optionalItems.length > 0) {
-      y += 10
+      y += 6
       renderItems("ADDITIONAL ADD-ONS", optionalItems, optionalTotal)
     }
 
     // ── Closing ──
     if (proposal.closing) {
-      y += 10
+      y += 6
       checkSpace(80)
       doc.setLineWidth(0.3)
       doc.setDrawColor(200, 196, 190)
       doc.line(marginL, y, W - marginR, y)
-      y += 24
+      y += 18
 
       doc.setFont("helvetica", "normal")
       doc.setFontSize(10)
@@ -272,21 +271,21 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
         doc.text(line, marginL, y)
         y += 14
       }
-      y += 16
+      y += 12
 
       doc.setFontSize(9)
       setColor(doc, INK, 0.4)
       doc.text("Kacie Yates · Studio Cinq", marginL, y)
-      y += 24
+      y += 18
     }
 
     // ── Summary box ──
-    checkSpace(120)
-    y += 10
+    checkSpace(100)
+    y += 6
     doc.setLineWidth(0.3)
     doc.setDrawColor(200, 196, 190)
     doc.line(marginL, y, W - marginR, y)
-    y += 24
+    y += 18
 
     doc.setFontSize(7)
     setColor(doc, INK, 0.38)
