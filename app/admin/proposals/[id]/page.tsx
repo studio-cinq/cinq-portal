@@ -5,6 +5,7 @@ import PortalNav from "@/components/portal/Nav"
 import CopyLinkButton from "@/components/portal/CopyLinkButton"
 import DownloadPDFButton from "@/components/portal/DownloadPDFButton"
 import ResendProposalButton from "@/components/portal/ResendProposalButton"
+import ProposalPdfUpload from "@/components/portal/ProposalPdfUpload"
 
 export default async function AdminProposalDetailPage({ params }: { params: { id: string } }) {
   const supabase = await createServerComponentClient()
@@ -100,6 +101,14 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
               Client view ↗
             </Link>
           </div>
+        </div>
+
+        {/* PDF upload */}
+        <div style={{ marginBottom: 24, display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.35 }}>
+            Downloadable PDF
+          </div>
+          <ProposalPdfUpload proposalId={proposal.id} initialUrl={proposal.custom_pdf_url} />
         </div>
 
         {/* Meta grid */}

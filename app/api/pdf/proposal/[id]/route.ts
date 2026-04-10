@@ -27,6 +27,25 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
     if (!proposal) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
+    // If a custom PDF was uploaded, serve that instead
+    if (proposal.custom_pdf_url) {
+      try {
+        const pdfRes = await fetch(proposal.custom_pdf_url)
+        if (pdfRes.ok) {
+          const pdfBuffer = Buffer.from(await pdfRes.arrayBuffer())
+          const filename = `${(proposal.title ?? "Proposal").replace(/[^a-zA-Z0-9 ]/g, "").replace(/\s+/g, "-")}.pdf`
+          return new NextResponse(pdfBuffer, {
+            headers: {
+              "Content-Type": "application/pdf",
+              "Content-Disposition": `attachment; filename="${filename}"`,
+            },
+          })
+        }
+      } catch (e) {
+        console.error("[pdf/proposal] custom PDF fetch failed, falling back to generated:", e)
+      }
+    }
+
     const { data: items } = await (supabaseAdmin.from("proposal_items") as any)
       .select("*")
       .eq("proposal_id", params.id)
@@ -170,36 +189,41 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
       const renderedPhaseLabels = new Set<string>()
 
-      for (const item of itemList) {
+      for (let idx = 0; idx < itemList.length; idx++) {
+        const item = itemList[idx]
         // Phase header — only render each unique label once, require space for header + item
         const phaseLabel = item.phase_label?.trim() || null
         if (phaseLabel && !renderedPhaseLabels.has(phaseLabel)) {
           checkSpace(110)
-          y += renderedPhaseLabels.size > 0 ? 10 : 2
-          doc.setFontSize(11)
-          setColor(doc, INK, 0.72)
+          y += renderedPhaseLabels.size > 0 ? 20 : 8
+          doc.setFontSize(13)
+          setColor(doc, INK, 0.78)
           doc.text(phaseLabel, marginL, y)
+          y += 4
+          doc.setLineWidth(0.3)
+          doc.setDrawColor(200, 196, 190)
+          doc.line(marginL, y, W - marginR, y)
           y += 6
           renderedPhaseLabels.add(phaseLabel)
         }
 
-        checkSpace(60)
-        doc.setLineWidth(0.2)
-        setColor(doc, INK, 0.08)
-        doc.setDrawColor(200, 196, 190)
-        doc.line(marginL, y, W - marginR, y)
-        y += 14
+        checkSpace(50)
+        y += 10
 
-        // Name + timeline inline + price
-        doc.setFontSize(12)
+        // Name + price
+        doc.setFontSize(10.5)
         setColor(doc, INK, 0.85)
-        const nameWidth = doc.getTextWidth(item.name)
         doc.text(item.name, marginL, y)
 
-        // Timeline inline after name
+        doc.setFontSize(10)
+        setColor(doc, INK, 0.7)
+        doc.text(`$${(item.price / 100).toLocaleString()}`, W - marginR, y, { align: "right" })
+        y += 12
+
+        // Timeline below name
         if (item.timeline_weeks_min != null && item.timeline_weeks_max != null) {
           doc.setFontSize(7.5)
-          setColor(doc, INK, 0.3)
+          setColor(doc, INK, 0.35)
           let timelineLabel: string
           if (item.timeline_weeks_min === 0 && item.timeline_weeks_max === 0) {
             timelineLabel = "Ongoing"
@@ -208,13 +232,9 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
           } else {
             timelineLabel = `${item.timeline_weeks_min}–${item.timeline_weeks_max} weeks`
           }
-          doc.text(`·  ${timelineLabel}`, marginL + nameWidth + 8, y)
+          doc.text(timelineLabel, marginL, y)
+          y += 10
         }
-
-        doc.setFontSize(11)
-        setColor(doc, INK, 0.75)
-        doc.text(`$${(item.price / 100).toLocaleString()}`, W - marginR, y, { align: "right" })
-        y += 15
 
         // Badges
         if (item.is_recommended) {
@@ -226,16 +246,14 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
         // Description
         if (item.description) {
-          doc.setFontSize(9)
-          setColor(doc, INK, 0.55)
+          doc.setFontSize(8.5)
+          setColor(doc, INK, 0.5)
           const descLines = doc.splitTextToSize(item.description, contentW)
           for (const line of descLines) {
             checkSpace(11)
             doc.text(line, marginL, y)
             y += 11
           }
-          y += 4
-        } else {
           y += 2
         }
       }
