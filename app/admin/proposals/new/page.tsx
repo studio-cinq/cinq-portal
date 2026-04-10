@@ -43,6 +43,8 @@ export default function NewProposalPage() {
   })
 
   const [items, setItems] = useState<LineItem[]>([emptyItem()])
+  const [dragIndex, setDragIndex] = useState<number | null>(null)
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
 
   useEffect(() => {
     supabase.from("clients").select("id, name").order("name").then(({ data }) => {
@@ -60,6 +62,20 @@ export default function NewProposalPage() {
 
   function addItem() { setItems(items => [...items, emptyItem()]) }
   function removeItem(index: number) { setItems(items => items.filter((_, i) => i !== index)) }
+
+  function handleDragStart(index: number) { setDragIndex(index) }
+  function handleDragOver(e: React.DragEvent, index: number) { e.preventDefault(); setDragOverIndex(index) }
+  function handleDragEnd() { setDragIndex(null); setDragOverIndex(null) }
+  function handleDrop(targetIndex: number) {
+    if (dragIndex === null || dragIndex === targetIndex) { handleDragEnd(); return }
+    setItems(prev => {
+      const next = [...prev]
+      const [moved] = next.splice(dragIndex, 1)
+      next.splice(targetIndex, 0, moved)
+      return next
+    })
+    handleDragEnd()
+  }
 
   async function handleSave(status: "draft" | "sent") {
     if (!form.client_id || !form.title) return
@@ -192,9 +208,28 @@ export default function NewProposalPage() {
         <Section label="Scope">
           <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
             {items.map((item, i) => (
-              <div key={i} style={{ borderTop: "0.5px solid rgba(15,15,14,0.1)", padding: "24px 0" }}>
+              <div
+                key={i}
+                draggable
+                onDragStart={() => handleDragStart(i)}
+                onDragOver={e => handleDragOver(e, i)}
+                onDragEnd={handleDragEnd}
+                onDrop={() => handleDrop(i)}
+                style={{
+                  borderTop: dragOverIndex === i && dragIndex !== null && dragIndex !== i
+                    ? "2px solid rgba(143,167,181,0.6)"
+                    : "0.5px solid rgba(15,15,14,0.1)",
+                  padding: "24px 0",
+                  opacity: dragIndex === i ? 0.4 : 1,
+                  transition: "opacity 0.15s",
+                }}
+              >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <span
+                      style={{ cursor: "grab", fontSize: 14, opacity: 0.25, userSelect: "none", lineHeight: 1 }}
+                      title="Drag to reorder"
+                    >⠿</span>
                     <span style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.4 }}>Item {i + 1}</span>
                     {item.is_required && <span style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink)", border: "0.5px solid rgba(15,15,14,0.2)", padding: "2px 7px" }}>Required</span>}
                     {item.is_optional && <span style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "#c95a3b", border: "0.5px solid rgba(201,90,59,0.3)", padding: "2px 7px" }}>Optional</span>}

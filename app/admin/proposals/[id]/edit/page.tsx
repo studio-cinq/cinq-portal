@@ -48,6 +48,23 @@ export default function EditProposalPage({ params }: { params: { id: string } })
   })
 
   const [items, setItems] = useState<LineItem[]>([emptyItem()])
+  const [dragIndex, setDragIndex] = useState<number | null>(null)
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
+
+  function handleDragStart(index: number) { setDragIndex(index) }
+  function handleDragOver(e: React.DragEvent, index: number) { e.preventDefault(); setDragOverIndex(index) }
+  function handleDragEnd() { setDragIndex(null); setDragOverIndex(null) }
+  function handleDrop(targetIndex: number) {
+    if (dragIndex === null || dragIndex === targetIndex) { handleDragEnd(); return }
+    setItems(prev => {
+      const next = [...prev]
+      const [moved] = next.splice(dragIndex, 1)
+      next.splice(targetIndex, 0, moved)
+      return next
+    })
+    setSaved(false)
+    handleDragEnd()
+  }
 
   useEffect(() => {
     Promise.all([
@@ -301,9 +318,28 @@ export default function EditProposalPage({ params }: { params: { id: string } })
             {items.map((item, i) => {
               if (item._deleted) return null
               return (
-                <div key={item.id ?? `new-${i}`} style={{ borderTop: "0.5px solid rgba(15,15,14,0.1)", padding: "24px 0" }}>
+                <div
+                  key={item.id ?? `new-${i}`}
+                  draggable
+                  onDragStart={() => handleDragStart(i)}
+                  onDragOver={e => handleDragOver(e, i)}
+                  onDragEnd={handleDragEnd}
+                  onDrop={() => handleDrop(i)}
+                  style={{
+                    borderTop: dragOverIndex === i && dragIndex !== null && dragIndex !== i
+                      ? "2px solid rgba(143,167,181,0.6)"
+                      : "0.5px solid rgba(15,15,14,0.1)",
+                    padding: "24px 0",
+                    opacity: dragIndex === i ? 0.4 : 1,
+                    transition: "opacity 0.15s",
+                  }}
+                >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <span
+                        style={{ cursor: "grab", fontSize: 14, opacity: 0.25, userSelect: "none", lineHeight: 1 }}
+                        title="Drag to reorder"
+                      >⠿</span>
                       <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.4 }}>
                         {item.id ? "Existing item" : "New item"}
                       </span>
