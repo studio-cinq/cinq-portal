@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase-server"
+import { createClient } from "@supabase/supabase-js"
 import { jsPDF } from "jspdf"
 
 export const dynamic = "force-dynamic"
+export const fetchCache = "force-no-store"
 
 const INK = [15, 15, 14] as const
 const CREAM = [244, 241, 236] as const
@@ -22,6 +23,13 @@ function setColor(doc: jsPDF, rgb: readonly number[], opacity: number = 1) {
 
 export async function GET(req: Request, { params }: { params: { id: string } }) {
   try {
+    // Create a fresh client per request to avoid any caching
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { global: { fetch: (url, init) => fetch(url, { ...init, cache: "no-store" }) } }
+    )
+
     const { data: proposal } = await (supabaseAdmin.from("proposals") as any)
       .select("*, clients(name, contact_name, contact_email)")
       .eq("id", params.id)
