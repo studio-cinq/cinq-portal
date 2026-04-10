@@ -404,6 +404,31 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
     </div>
   )
 
+  // ── Render items with phase header grouping ──
+  function renderItemsWithPhaseHeaders(itemList: any[], renderFn: (item: any) => React.ReactNode) {
+    const result: React.ReactNode[] = []
+    let lastPhaseLabel: string | null = null
+
+    for (const item of itemList) {
+      const label = item.phase_label?.trim() || null
+      if (label && label !== lastPhaseLabel) {
+        result.push(
+          <div key={`phase-${label}`} style={{
+            ...serif, fontSize: isMobile ? 17 : 19, fontWeight: 400,
+            opacity: 0.78, letterSpacing: "-0.01em",
+            paddingTop: lastPhaseLabel !== null ? 32 : 16, paddingBottom: 4,
+            borderTop: lastPhaseLabel !== null ? "0.5px solid rgba(15,15,14,0.1)" : "none",
+          }}>
+            {label}
+          </div>
+        )
+        lastPhaseLabel = label
+      }
+      result.push(renderFn(item))
+    }
+    return result
+  }
+
   // ── Scope sections (shared between mobile and desktop) ──
   function renderScopeSections() {
     return (
@@ -419,7 +444,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
                 ${(requiredTotal / 100).toLocaleString()}
               </div>
             </div>
-            {requiredItems.map(item => renderRequiredItem(item))}
+            {renderItemsWithPhaseHeaders(requiredItems, renderRequiredItem)}
             <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)" }} />
           </div>
         )}
@@ -440,7 +465,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
                 Select any additional phases you'd like to include in the project, then indicate whether each should be prioritized for launch or scheduled for the second phase.
               </div>
             )}
-            {selectableItems.map(item => renderSelectableItem(item))}
+            {renderItemsWithPhaseHeaders(selectableItems, renderSelectableItem)}
             <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)" }} />
           </div>
         )}
@@ -452,7 +477,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
               <div style={{ ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.38 }}>Additional add-ons</div>
               <div style={{ ...mono, fontSize: "var(--text-eyebrow)", opacity: 0.38 }}>+${(optionalTotal / 100).toLocaleString()}{isMobile ? "" : " if added"}</div>
             </div>
-            {optionalItems.map(item => renderSelectableItem(item))}
+            {renderItemsWithPhaseHeaders(optionalItems, renderSelectableItem)}
             <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)" }} />
           </div>
         )}

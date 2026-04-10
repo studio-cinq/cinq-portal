@@ -14,6 +14,7 @@ interface LineItem {
   timeline_max: string
   is_ongoing: boolean
   phase: "now" | "later"
+  phase_label: string
   is_recommended: boolean
   is_optional: boolean
   is_required: boolean
@@ -22,7 +23,7 @@ interface LineItem {
 const emptyItem = (): LineItem => ({
   name: "", description: "", price: "",
   timeline_min: "2", timeline_max: "4", is_ongoing: false,
-  phase: "now", is_recommended: false, is_optional: false, is_required: false,
+  phase: "now", phase_label: "", is_recommended: false, is_optional: false, is_required: false,
 })
 
 export default function NewProposalPage() {
@@ -94,6 +95,7 @@ export default function NewProposalPage() {
         timeline_weeks_min: item.is_ongoing ? 0 : (parseInt(item.timeline_min) || 2),
         timeline_weeks_max: item.is_ongoing ? 0 : (parseInt(item.timeline_max) || 4),
         phase:              item.phase,
+        phase_label:        item.phase_label || null,
         is_recommended:     item.is_recommended,
         is_optional:        item.is_optional,
         is_required:        item.is_required,
@@ -206,6 +208,9 @@ export default function NewProposalPage() {
                 </div>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  <Field label="Phase header (optional — groups items under a heading)">
+                    <input type="text" value={item.phase_label} onChange={e => setItem(i, "phase_label", e.target.value)} placeholder="e.g. Phase 1 — Brand Foundation" style={inputStyle} />
+                  </Field>
                   <div className="form-grid-2col" style={{ display: "grid", gridTemplateColumns: "1fr 160px", gap: 12 }}>
                     <Field label="Name">
                       <input type="text" value={item.name} onChange={e => setItem(i, "name", e.target.value)} placeholder="Brand Identity" style={inputStyle} />
