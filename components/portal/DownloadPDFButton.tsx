@@ -16,7 +16,7 @@ export default function DownloadPDFButton({ type, id, label }: DownloadPDFButton
     e.stopPropagation()
     setLoading(true)
     try {
-      const res = await fetch(`/api/pdf/${type}/${id}`)
+      const res = await fetch(`/api/pdf/${type}/${id}?t=${Date.now()}`)
       if (!res.ok) throw new Error("Failed")
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
