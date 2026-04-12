@@ -7,6 +7,7 @@ const PUBLIC_PAGE_PREFIXES = [
   "/proposals/",
   "/invoice/",
   "/review/",
+  "/foundations/",
   "/update-password",
   "/library/share/",
 ] as const
@@ -23,6 +24,8 @@ const PUBLIC_API_ROUTES = new Set([
   "/api/review/submit-round",
   "/api/review/track-view",
   "/api/track-invoice-view",
+  "/api/notify/foundations-viewed",
+  "/api/notify/foundations-approved",
   "/api/webhook",
 ])
 
