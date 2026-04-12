@@ -58,12 +58,12 @@ const GRID_AREAS: Record<string, string[]> = {
 function CoverSection({ content, isDark, isMobile }: { content: any; isDark: boolean; isMobile: boolean }) {
   const fade = useFadeIn()
   return (
-    <section style={{ minHeight: "100vh", background: bg(isDark), color: fg(isDark), display: "flex", flexDirection: "column", justifyContent: "space-between", padding: isMobile ? "48px 28px" : "56px 64px", scrollSnapAlign: "start" }}>
-      <div ref={fade.ref} style={fade.style}>
-        <div style={{ ...sans, fontSize: isMobile ? 28 : 38, fontWeight: 400, letterSpacing: "-0.02em", lineHeight: 1.2 }}>
+    <section style={{ minHeight: "100vh", background: bg(isDark), color: fg(isDark), display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: isMobile ? "48px 28px" : "56px 64px", scrollSnapAlign: "start" }}>
+      <div ref={fade.ref} style={{ ...fade.style, marginBottom: "auto", marginTop: "35vh" }}>
+        <div style={{ ...sans, fontSize: isMobile ? 34 : 48, fontWeight: 400, letterSpacing: "-0.025em", lineHeight: 1.15 }}>
           {content.client_name}
         </div>
-        <div style={{ ...sans, fontSize: isMobile ? 22 : 30, fontWeight: 300, letterSpacing: "-0.01em", opacity: 0.7, marginTop: -2 }}>
+        <div style={{ ...sans, fontSize: isMobile ? 26 : 36, fontWeight: 300, letterSpacing: "-0.015em", opacity: 0.6, marginTop: 2 }}>
           {content.subtitle}
         </div>
       </div>
