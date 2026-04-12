@@ -13,6 +13,7 @@ export async function POST(req: Request) {
 
     if (!invoices || invoices.length === 0) return NextResponse.json({ ok: true })
 
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? req.headers.get("x-real-ip") ?? "Unknown"
     const now = new Date().toISOString()
 
     // Mark first view + update last_viewed_at every time
@@ -52,7 +53,8 @@ export async function POST(req: Request) {
           <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:28px">
             <tr><td style="padding:8px 0;border-bottom:1px solid #eee;opacity:0.5;width:120px">Invoice</td><td style="padding:8px 0;border-bottom:1px solid #eee">${invoiceList}</td></tr>
             <tr><td style="padding:8px 0;border-bottom:1px solid #eee;opacity:0.5">Client</td><td style="padding:8px 0;border-bottom:1px solid #eee">${client?.name ?? "—"}</td></tr>
-            <tr><td style="padding:8px 0;opacity:0.5">Viewed</td><td style="padding:8px 0">${viewedAt}</td></tr>
+            <tr><td style="padding:8px 0;border-bottom:1px solid #eee;opacity:0.5">Viewed</td><td style="padding:8px 0;border-bottom:1px solid #eee">${viewedAt}</td></tr>
+            <tr><td style="padding:8px 0;opacity:0.5">IP</td><td style="padding:8px 0;opacity:0.4;font-family:monospace;font-size:12px">${ip}</td></tr>
           </table>
         </div>
       `,
