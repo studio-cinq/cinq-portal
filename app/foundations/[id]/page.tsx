@@ -34,7 +34,8 @@ function useFadeIn() {
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setVisible(true) }, { threshold: 0.15 })
+    const root = document.getElementById("foundations-scroll")
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setVisible(true) }, { threshold: 0.1, root: root ?? undefined })
     obs.observe(el)
     return () => obs.disconnect()
   }, [])
@@ -62,12 +63,15 @@ function CoverSection({ content, isDark, isMobile }: { content: any; isDark: boo
         <div style={{ ...sans, fontSize: isMobile ? 28 : 38, fontWeight: 400, letterSpacing: "-0.02em", lineHeight: 1.2 }}>
           {content.client_name}
         </div>
-        <div style={{ ...sans, fontSize: isMobile ? 22 : 30, fontWeight: 300, letterSpacing: "-0.01em", opacity: 0.7, marginTop: 4 }}>
+        <div style={{ ...sans, fontSize: isMobile ? 22 : 30, fontWeight: 300, letterSpacing: "-0.01em", opacity: 0.7, marginTop: -2 }}>
           {content.subtitle}
         </div>
       </div>
-      <div style={{ ...mono, fontSize: 11, letterSpacing: "0.08em", opacity: 0.3 }}>
-        {content.date}{content.version ? ` / ${content.version}` : ""}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+        <div style={{ ...mono, fontSize: 11, letterSpacing: "0.08em", opacity: 0.3 }}>
+          {content.date}{content.version ? ` / ${content.version}` : ""}
+        </div>
+        <CinqLogo width={28} color={fg(isDark)} />
       </div>
     </section>
   )
@@ -187,17 +191,17 @@ function SummarySection({ content, isDark, isMobile, traits }: { content: any; i
       {/* Recap */}
       <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 40 : 64, alignItems: isMobile ? "flex-start" : "center", marginBottom: 48 }}>
         {/* Circle + text */}
-        <div style={{ flex: "0 0 auto", width: isMobile ? "100%" : 280 }}>
+        <div style={{ flex: "0 0 auto", width: isMobile ? "100%" : 300 }}>
           <div style={{
-            width: isMobile ? 160 : 200, height: isMobile ? 160 : 200,
+            width: isMobile ? 220 : 260, height: isMobile ? 220 : 260,
             borderRadius: "50%", border: `0.5px solid ${isDark ? "rgba(232,229,224,0.15)" : "rgba(28,25,22,0.12)"}`,
-            display: "flex", alignItems: "center", justifyContent: "center", padding: 28, marginBottom: 0,
+            display: "flex", alignItems: "center", justifyContent: "center", padding: isMobile ? 28 : 36, marginBottom: 0,
           }}>
-            <div>
-              <div style={{ ...sans, fontSize: isMobile ? 14 : 16, fontWeight: 600, lineHeight: 1.4, marginBottom: 12 }}>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ ...sans, fontSize: isMobile ? 15 : 17, fontWeight: 600, lineHeight: 1.35, marginBottom: 14 }}>
                 {content.recap_title}
               </div>
-              <div style={{ ...sans, fontSize: isMobile ? 11 : 12, lineHeight: 1.6, opacity: 0.6 }}>
+              <div style={{ ...sans, fontSize: isMobile ? 11 : 12, lineHeight: 1.6, opacity: 0.55 }}>
                 {content.recap_body}
               </div>
             </div>
@@ -232,7 +236,7 @@ function NextStepsSection({ content, isDark, isMobile }: { content: any; isDark:
       <div style={{ width: "100%", height: 0.5, background: fg(isDark), opacity: 0.1, marginBottom: 48 }} />
       <div ref={fade.ref} style={fade.style}>
         <div style={{ ...sans, fontSize: isMobile ? 18 : 20, fontWeight: 600, letterSpacing: "-0.01em", marginBottom: 24 }}>
-          Next Steps &#9654; Bringing the Brand to Life
+          Next Steps <span style={{ fontSize: "0.6em", verticalAlign: "middle", opacity: 0.5 }}>&#9654;</span> Bringing the Brand to Life
         </div>
         <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 32 : 48, marginBottom: 48 }}>
           {/* Intro */}
@@ -245,8 +249,8 @@ function NextStepsSection({ content, isDark, isMobile }: { content: any; isDark:
               <div key={i}>
                 <div style={{ ...sans, fontSize: 13, fontWeight: 600, marginBottom: 12 }}>{step.title}</div>
                 {step.bullets.map((b: string, j: number) => (
-                  <div key={j} style={{ ...sans, fontSize: 12, lineHeight: 1.65, opacity: 0.6, marginBottom: 6, paddingLeft: 12, position: "relative" }}>
-                    <span style={{ position: "absolute", left: 0 }}>&#9654;</span> {b}
+                  <div key={j} style={{ ...sans, fontSize: 12, lineHeight: 1.65, opacity: 0.6, marginBottom: 6, paddingLeft: 14, position: "relative" }}>
+                    <span style={{ position: "absolute", left: 0, fontSize: 7, top: 4, opacity: 0.7 }}>&#9654;</span> {b}
                   </div>
                 ))}
               </div>
@@ -291,7 +295,7 @@ function ApprovalSection({ foundation, isDark, isMobile, onApprove }: {
   return (
     <section style={{ background: bg(isDark), color: fg(isDark), padding: isMobile ? "64px 28px 80px" : "80px 64px 120px" }}>
       <div ref={fade.ref} style={{ ...fade.style, maxWidth: 480, margin: "0 auto", textAlign: "center" }}>
-        <CinqLogo width={24} color={fg(isDark)} />
+        <div style={{ display: "flex", justifyContent: "center" }}><CinqLogo width={24} color={fg(isDark)} /></div>
         <div style={{ ...sans, fontSize: isMobile ? 18 : 22, fontWeight: 400, marginTop: 32, marginBottom: 8, letterSpacing: "-0.01em" }}>
           Ready to approve this direction?
         </div>
@@ -432,13 +436,15 @@ export default function BrandFoundationsPage({ params }: { params: { id: string 
   const approvalDark = lastSection?.background === "dark"
 
   return (
-    <div style={{ background: DARK_BG, height: "100vh", overflowY: "auto", scrollSnapType: "y proximity" }}>
-      {/* Floating logo */}
+    <div id="foundations-scroll" style={{ background: DARK_BG, height: "100vh", overflowY: "auto", scrollSnapType: "y proximity" }}>
+      {/* Back to portal — top-left, subtle */}
       <div style={{
         position: "fixed", top: isMobile ? 16 : 24, left: isMobile ? 20 : 32,
         zIndex: 50, mixBlendMode: "difference",
       }}>
-        <CinqLogo width={22} color="#F0EDE6" />
+        <a href="/login" style={{ ...mono, fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#F0EDE6", textDecoration: "none", opacity: 0.4 }}>
+          ← Portal
+        </a>
       </div>
 
       {/* Sections */}
