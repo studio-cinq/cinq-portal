@@ -45,12 +45,12 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
         setInvoice(data)
         setLoading(false)
 
-        // Track view
-        if (data && !data.viewed_at) {
+        // Track view — notify every time
+        if (data) {
           fetch("/api/track-invoice-view", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ invoiceIds: [params.id] }),
+            body: JSON.stringify({ invoiceIds: [params.id], isReturnView: !!data.viewed_at }),
           }).catch(() => {})
         }
       })

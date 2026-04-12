@@ -44,30 +44,16 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
       if (!prop) { setLoading(false); return }
       setProposal(prop)
 
-      if (!prop.viewed_at) {
-        await supabase.from("proposals").update({
-          viewed_at: new Date().toISOString(),
-          last_viewed_at: new Date().toISOString(),
-        } as any).eq("id", params.id)
-        fetch("/api/notify/proposal-viewed", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ proposalId: params.id }),
-        }).catch((err) => console.error("[notify] proposal-viewed:", err))
-      } else {
-        const now = new Date()
-        await supabase.from("proposals").update({
-          last_viewed_at: now.toISOString(),
-        } as any).eq("id", params.id)
-
-        const lastView = prop.last_viewed_at ? new Date(prop.last_viewed_at) : new Date(prop.viewed_at)
-        const hoursSince = (now.getTime() - lastView.getTime()) / (1000 * 60 * 60)
-        if (hoursSince >= 24) {
-          fetch("/api/notify/proposal-viewed", {
-            method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ proposalId: params.id, isReturnView: true }),
-          }).catch((err) => console.error("[notify] proposal-revisit:", err))
-        }
-      }
+      const isFirstView = !prop.viewed_at
+      const now = new Date().toISOString()
+      await supabase.from("proposals").update({
+        ...(isFirstView ? { viewed_at: now } : {}),
+        last_viewed_at: now,
+      } as any).eq("id", params.id)
+      fetch("/api/notify/proposal-viewed", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ proposalId: params.id, isReturnView: !isFirstView }),
+      }).catch((err) => console.error("[notify] proposal-viewed:", err))
 
       const { data: propItems } = await supabase
         .from("proposal_items").select("*")
