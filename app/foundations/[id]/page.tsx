@@ -57,7 +57,7 @@ const GRID_AREAS: Record<string, string[]> = {
 function CoverSection({ content, isDark, isMobile }: { content: any; isDark: boolean; isMobile: boolean }) {
   const fade = useFadeIn()
   return (
-    <section style={{ minHeight: "100vh", background: bg(isDark), color: fg(isDark), display: "flex", flexDirection: "column", justifyContent: "space-between", padding: isMobile ? "48px 28px" : "56px 64px" }}>
+    <section style={{ minHeight: "100vh", background: bg(isDark), color: fg(isDark), display: "flex", flexDirection: "column", justifyContent: "space-between", padding: isMobile ? "48px 28px" : "56px 64px", scrollSnapAlign: "start" }}>
       <div ref={fade.ref} style={fade.style}>
         <div style={{ ...sans, fontSize: isMobile ? 28 : 38, fontWeight: 400, letterSpacing: "-0.02em", lineHeight: 1.2 }}>
           {content.client_name}
@@ -76,7 +76,7 @@ function CoverSection({ content, isDark, isMobile }: { content: any; isDark: boo
 function PurposeSection({ content, isDark, isMobile }: { content: any; isDark: boolean; isMobile: boolean }) {
   const fade = useFadeIn()
   return (
-    <section style={{ minHeight: "100vh", background: bg(isDark), color: fg(isDark), display: "flex", flexDirection: "column", justifyContent: "space-between", padding: isMobile ? "48px 28px" : "56px 64px" }}>
+    <section style={{ minHeight: "100vh", background: bg(isDark), color: fg(isDark), display: "flex", flexDirection: "column", justifyContent: "space-between", padding: isMobile ? "48px 28px" : "56px 64px", scrollSnapAlign: "start" }}>
       <div style={{ ...sans, fontSize: isMobile ? 13 : 15, fontWeight: 600, letterSpacing: "0.01em" }}>
         {content.label}
       </div>
@@ -93,7 +93,7 @@ function PhilosophySection({ content, isDark, isMobile }: { content: any; isDark
   const fade = useFadeIn()
   const traits: string[] = content.traits ?? []
   return (
-    <section style={{ minHeight: "100vh", background: bg(isDark), color: fg(isDark), display: "flex", flexDirection: isMobile ? "column" : "row" }}>
+    <section style={{ minHeight: "100vh", background: bg(isDark), color: fg(isDark), display: "flex", flexDirection: isMobile ? "column" : "row", scrollSnapAlign: "start" }}>
       {/* Left — text */}
       <div ref={fade.ref} style={{ ...fade.style, flex: 1, padding: isMobile ? "48px 28px" : "56px 64px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
         <div style={{ ...sans, fontSize: isMobile ? 22 : 26, fontWeight: 600, letterSpacing: "-0.015em", marginBottom: 20 }}>
@@ -135,7 +135,7 @@ function MoodboardSection({ content, isDark, isMobile }: { content: any; isDark:
   const images: string[] = content.images ?? []
 
   return (
-    <section style={{ background: bg(isDark), color: fg(isDark), padding: isMobile ? "32px 0 0" : "40px 0 0" }}>
+    <section style={{ background: bg(isDark), color: fg(isDark), padding: isMobile ? "32px 0 0" : "40px 0 0", scrollSnapAlign: "start" }}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: isMobile ? "0 28px 16px" : "0 64px 20px", flexWrap: "wrap", gap: 8 }}>
         <div style={{ ...sans, fontSize: isMobile ? 16 : 18, fontWeight: 600, letterSpacing: "-0.01em" }}>
@@ -176,7 +176,7 @@ function MoodboardSection({ content, isDark, isMobile }: { content: any; isDark:
 function SummarySection({ content, isDark, isMobile, traits }: { content: any; isDark: boolean; isMobile: boolean; traits: { name: string }[] }) {
   const fade = useFadeIn()
   return (
-    <section style={{ background: bg(isDark), color: fg(isDark), padding: isMobile ? "64px 28px" : "80px 64px" }}>
+    <section style={{ background: bg(isDark), color: fg(isDark), padding: isMobile ? "64px 28px" : "80px 64px", scrollSnapAlign: "start" }}>
       {/* Closing statement */}
       <div ref={fade.ref} style={{ ...fade.style, ...sans, fontSize: isMobile ? 15 : 16, lineHeight: 1.75, fontWeight: 500, maxWidth: 800, marginBottom: 64 }}>
         {content.closing_statement}
@@ -228,7 +228,7 @@ function NextStepsSection({ content, isDark, isMobile }: { content: any; isDark:
   const fade = useFadeIn()
   const steps: { title: string; bullets: string[] }[] = content.steps ?? []
   return (
-    <section style={{ background: bg(isDark), color: fg(isDark), padding: isMobile ? "64px 28px" : "80px 64px" }}>
+    <section style={{ background: bg(isDark), color: fg(isDark), padding: isMobile ? "64px 28px" : "80px 64px", scrollSnapAlign: "start" }}>
       <div style={{ width: "100%", height: 0.5, background: fg(isDark), opacity: 0.1, marginBottom: 48 }} />
       <div ref={fade.ref} style={fade.style}>
         <div style={{ ...sans, fontSize: isMobile ? 18 : 20, fontWeight: 600, letterSpacing: "-0.01em", marginBottom: 24 }}>
@@ -272,7 +272,7 @@ function ApprovalSection({ foundation, isDark, isMobile, onApprove }: {
 
   if (foundation.status === "approved") {
     return (
-      <section style={{ background: bg(isDark), color: fg(isDark), padding: isMobile ? "64px 28px 80px" : "80px 64px 120px", textAlign: "center" }}>
+      <section style={{ background: bg(isDark), color: fg(isDark), padding: isMobile ? "64px 28px 80px" : "80px 64px 120px", textAlign: "center", scrollSnapAlign: "start" }}>
         <div style={{ maxWidth: 480, margin: "0 auto" }}>
           <div style={{ ...mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.35, marginBottom: 16 }}>Direction Approved</div>
           <div style={{ ...sans, fontSize: 14, opacity: 0.5 }}>
@@ -432,7 +432,7 @@ export default function BrandFoundationsPage({ params }: { params: { id: string 
   const approvalDark = lastSection?.background === "dark"
 
   return (
-    <div style={{ background: DARK_BG }}>
+    <div style={{ background: DARK_BG, height: "100vh", overflowY: "auto", scrollSnapType: "y proximity" }}>
       {/* Floating logo */}
       <div style={{
         position: "fixed", top: isMobile ? 16 : 24, left: isMobile ? 20 : 32,
