@@ -36,24 +36,29 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
       window.history.replaceState({}, "", url.pathname)
     }
 
-    supabase
-      .from("invoices")
-      .select("*, clients(name, contact_name, contact_email), projects(title)")
-      .eq("id", params.id)
-      .single()
-      .then(({ data }) => {
-        setInvoice(data)
-        setLoading(false)
+    async function loadInvoice() {
+      const { data } = await supabase
+        .from("invoices")
+        .select("*, clients(name, contact_name, contact_email), projects(title)")
+        .eq("id", params.id)
+        .single()
 
-        // Track view — notify every time
-        if (data) {
+      setInvoice(data)
+      setLoading(false)
+
+      // Skip tracking + notification if viewer is logged-in admin
+      if (data) {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) {
           fetch("/api/track-invoice-view", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ invoiceIds: [params.id], isReturnView: !!data.viewed_at }),
           }).catch(() => {})
         }
-      })
+      }
+    }
+    loadInvoice()
   }, [params.id])
 
   useEffect(() => {

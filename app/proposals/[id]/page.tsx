@@ -44,16 +44,20 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
       if (!prop) { setLoading(false); return }
       setProposal(prop)
 
-      const isFirstView = !prop.viewed_at
-      const now = new Date().toISOString()
-      await supabase.from("proposals").update({
-        ...(isFirstView ? { viewed_at: now } : {}),
-        last_viewed_at: now,
-      } as any).eq("id", params.id)
-      fetch("/api/notify/proposal-viewed", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ proposalId: params.id, isReturnView: !isFirstView }),
-      }).catch((err) => console.error("[notify] proposal-viewed:", err))
+      // Skip tracking + notification if viewer is logged-in admin
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        const isFirstView = !prop.viewed_at
+        const now = new Date().toISOString()
+        await supabase.from("proposals").update({
+          ...(isFirstView ? { viewed_at: now } : {}),
+          last_viewed_at: now,
+        } as any).eq("id", params.id)
+        fetch("/api/notify/proposal-viewed", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ proposalId: params.id, isReturnView: !isFirstView }),
+        }).catch((err) => console.error("[notify] proposal-viewed:", err))
+      }
 
       const { data: propItems } = await supabase
         .from("proposal_items").select("*")
