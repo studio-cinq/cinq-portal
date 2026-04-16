@@ -32,6 +32,14 @@ function fmtTime(time: string | null) {
   return `${hour === 0 ? 12 : hour > 12 ? hour - 12 : hour}:${m} ${hour >= 12 ? "PM" : "AM"}`
 }
 
+function fmtDuration(minutes: number) {
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  if (h > 0 && m > 0) return `${h}h ${m}m`
+  if (h > 0) return h === 1 ? "1 hr" : `${h} hrs`
+  return `${m}m`
+}
+
 function fmtHourLabel(hour: number) {
   if (hour === 0) return "12 AM"
   if (hour < 12) return `${hour} AM`
@@ -820,7 +828,7 @@ function EventChip({ evt, compact, timed, onEdit, onDelete, draggable, onDragSta
     >
       {evt.event_time && !compact && (
         <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, opacity: 0.45, marginBottom: 1 }}>
-          {fmtTime(evt.event_time)}{evt.duration_minutes ? ` · ${evt.duration_minutes}m` : ""}
+          {fmtTime(evt.event_time)}{evt.duration_minutes ? ` · ${fmtDuration(evt.duration_minutes)}` : ""}
         </div>
       )}
       <div style={{

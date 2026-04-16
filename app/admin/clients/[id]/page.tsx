@@ -8,7 +8,7 @@ import Calendar from "@/components/portal/Calendar"
 import { useToast } from "@/components/portal/Toast"
 import Link from "next/link"
 
-const TABS = ["Project", "Presentation", "Invoices", "Proposal", "Calendar", "Brand Library"]
+const TABS = ["Project", "Presentation", "Invoices", "Proposal", "Calendar", "Brand Library", "Foundations"]
 
 const statusColors: Record<string, string> = {
   not_started:       "rgba(15,15,14,0.3)",
@@ -73,6 +73,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
   const [savingEvent, setSavingEvent]         = useState(false)
   const [shareLinkLabel, setShareLinkLabel]   = useState("Share library link")
   const [shareLink, setShareLink]             = useState<string | null>(null)
+  const [foundations, setFoundations]         = useState<any[]>([])
   const [eventForm, setEventForm]             = useState({
     title: "", event_date: "", event_time: "", duration_minutes: "",
     type: "meeting", project_id: "", notes: "",
@@ -130,12 +131,13 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
     setLoading(true)
 
     // Fetch everything in parallel — client, projects, invoices, proposals, events
-    const [clientRes, projRes, invRes, propsRes, evtsRes] = await Promise.all([
+    const [clientRes, projRes, invRes, propsRes, evtsRes, foundRes] = await Promise.all([
       supabase.from("clients").select("*").eq("id", params.id).single(),
       supabase.from("projects").select("*, deliverables(*)").eq("client_id", params.id).order("created_at", { ascending: false }),
       supabase.from("invoices").select("*").eq("client_id", params.id).order("created_at", { ascending: false }),
       supabase.from("proposals").select("*, proposal_items(*)").eq("client_id", params.id).order("created_at", { ascending: false }),
       supabase.from("events").select("*, projects(title)").eq("client_id", params.id).order("event_date"),
+      supabase.from("brand_foundations").select("*").eq("client_id", params.id).order("created_at", { ascending: false }),
     ])
 
     const c = clientRes.data as any
@@ -150,6 +152,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
     setInvoices(invRes.data ?? [])
     setProposals(propsRes.data ?? [])
     setEvents(evtsRes.data ?? [])
+    setFoundations(foundRes.data ?? [])
 
     // Messages need project IDs — fire after projects resolve
     const projectIds = ps.map((p: any) => p.id)
@@ -1308,6 +1311,85 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
               <Link href={`/admin/library/${params.id}`} target="_blank" style={actionBtn}>
                 Preview client view ↗
               </Link>
+            </div>
+          )}
+
+          {/* ── Tab 6: Foundations ── */}
+          {activeTab === 6 && (
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 24 }}>
+                <SectionHeader label="Brand Foundations" />
+                <Link href={`/admin/foundations/new?client=${params.id}`} style={{ ...actionBtn, background: "var(--ink)", color: "var(--cream)", opacity: 1 }}>
+                  + New Foundation
+                </Link>
+              </div>
+
+              {foundations.length === 0 ? (
+                <div style={{
+                  border: "1px dashed rgba(15,15,14,0.12)", padding: "48px 24px",
+                  textAlign: "center", background: "rgba(255,255,255,0.2)",
+                }}>
+                  <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.4, marginBottom: 8, lineHeight: 1.7 }}>
+                    No brand foundations yet.
+                  </div>
+                  <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: 0.38, lineHeight: 1.7 }}>
+                    Create a brand direction presentation to share with this client.
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {foundations.map((f: any) => {
+                    const isApproved = f.status === "approved"
+                    const isPublished = f.status === "published" || f.status === "in_review"
+                    return (
+                      <div key={f.id} style={{
+                        border: "0.5px solid rgba(15,15,14,0.1)", padding: "16px 20px",
+                        background: "rgba(255,255,255,0.25)", display: "flex", justifyContent: "space-between", alignItems: "center",
+                      }}>
+                        <div>
+                          <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", marginBottom: 4 }}>
+                            {f.title || "Untitled"}
+                          </div>
+                          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                            <span style={{
+                              fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
+                              letterSpacing: "0.08em", textTransform: "uppercase",
+                              color: isApproved ? "var(--sage)" : isPublished ? "var(--amber)" : "rgba(15,15,14,0.35)",
+                            }}>
+                              {isApproved ? "Approved" : isPublished ? "In review" : f.status ?? "Draft"}
+                            </span>
+                            {f.viewed_at && (
+                              <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, opacity: 0.35 }}>
+                                Viewed {new Date(f.viewed_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                              </span>
+                            )}
+                            {f.approved_at && (
+                              <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, opacity: 0.35 }}>
+                                Approved {new Date(f.approved_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                          <Link href={`/foundations/${f.id}`} target="_blank" style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink)", opacity: 0.45, textDecoration: "none" }}>
+                            Preview ↗
+                          </Link>
+                          <Link href={`/admin/foundations/${f.id}/edit`} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink)", opacity: 0.45, textDecoration: "none" }}>
+                            Edit
+                          </Link>
+                          <button onClick={async () => {
+                            const url = `${window.location.origin}/foundations/${f.id}`
+                            await navigator.clipboard.writeText(url)
+                            showToast("Link copied")
+                          }} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", background: "none", border: "none", color: "var(--ink)", opacity: 0.45, cursor: "pointer", padding: 0 }}>
+                            Copy link
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>

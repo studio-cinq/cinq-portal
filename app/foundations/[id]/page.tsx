@@ -1,8 +1,12 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, createContext, useContext, useCallback } from "react"
 import { supabase } from "@/lib/supabase"
 import CinqLogo from "@/components/CinqLogo"
+
+/* ─── Lightbox context — lets any section open a full-size image overlay ─── */
+const LightboxContext = createContext<(src: string) => void>(() => {})
+function useLightbox() { return useContext(LightboxContext) }
 
 /* ─── Typography ─── */
 const serif: React.CSSProperties = { fontFamily: "'Newsreader', 'Times New Roman', Georgia, serif" }
@@ -17,6 +21,71 @@ const LIGHT_TEXT = "#1C1916"
 
 function bg(isDark: boolean) { return isDark ? DARK_BG : LIGHT_BG }
 function fg(isDark: boolean) { return isDark ? DARK_TEXT : LIGHT_TEXT }
+
+/* Focal point → object-position CSS. Defaults to center. */
+function focalToObjectPosition(focal?: { x?: number; y?: number } | null): string {
+  const x = typeof focal?.x === "number" ? focal.x : 50
+  const y = typeof focal?.y === "number" ? focal.y : 50
+  return `${x}% ${y}%`
+}
+
+/* ─── Lightbox overlay: click image → full view, ESC or click outside closes ─── */
+function Lightbox({ src, onClose }: { src: string | null; onClose: () => void }) {
+  useEffect(() => {
+    if (!src) return
+    function onKey(e: KeyboardEvent) { if (e.key === "Escape") onClose() }
+    document.addEventListener("keydown", onKey)
+    // Lock body scroll while open
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.removeEventListener("keydown", onKey)
+      document.body.style.overflow = prevOverflow
+    }
+  }, [src, onClose])
+
+  if (!src) return null
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed", inset: 0, zIndex: 200,
+        background: "rgba(8,8,8,0.94)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: "48px 32px",
+        cursor: "zoom-out",
+        animation: "lightbox-fade 0.18s ease-out",
+      }}
+    >
+      <img
+        src={src}
+        alt=""
+        onClick={e => e.stopPropagation()}
+        style={{
+          maxWidth: "100%", maxHeight: "100%",
+          objectFit: "contain", display: "block",
+          boxShadow: "0 24px 80px rgba(0,0,0,0.5)",
+          cursor: "default",
+        }}
+      />
+      <button
+        onClick={onClose}
+        aria-label="Close"
+        style={{
+          position: "fixed", top: 20, right: 24,
+          background: "transparent", border: "none", cursor: "pointer",
+          color: "#F0EDE6", opacity: 0.7,
+          fontFamily: "'Matter SemiMono', 'SF Mono', monospace",
+          fontSize: 20, lineHeight: 1, padding: 8,
+        }}
+      >
+        ✕
+      </button>
+      <style>{`@keyframes lightbox-fade { from { opacity: 0 } to { opacity: 1 } }`}</style>
+    </div>
+  )
+}
 
 /* ─── Emphasis parser: *word* → serif italic ─── */
 function renderEmphasis(text: string) {
@@ -79,13 +148,14 @@ function CoverSection({ content, isDark, isMobile }: { content: any; isDark: boo
 
 function PurposeSection({ content, isDark, isMobile }: { content: any; isDark: boolean; isMobile: boolean }) {
   const fade = useFadeIn()
+  const eyebrowColor = isDark ? "rgba(232,229,224,0.5)" : "rgba(28,25,22,0.45)"
   return (
-    <section style={{ minHeight: "100vh", background: bg(isDark), color: fg(isDark), display: "flex", flexDirection: "column", justifyContent: "space-between", padding: isMobile ? "48px 28px" : "56px 64px", scrollSnapAlign: "start" }}>
-      <div style={{ ...sans, fontSize: isMobile ? 13 : 15, fontWeight: 600, letterSpacing: "0.01em" }}>
-        {content.label}
-      </div>
+    <section style={{ minHeight: "100vh", background: bg(isDark), color: fg(isDark), display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: isMobile ? "48px 28px" : "56px 64px", scrollSnapAlign: "start" }}>
       <div ref={fade.ref} style={{ ...fade.style, maxWidth: 800 }}>
-        <div style={{ ...sans, fontSize: isMobile ? 22 : 30, fontWeight: 300, lineHeight: 1.45, letterSpacing: "-0.01em" }}>
+        <div style={{ ...mono, fontSize: isMobile ? 10 : 11, letterSpacing: "0.14em", textTransform: "uppercase", color: eyebrowColor, marginBottom: isMobile ? 18 : 22 }}>
+          {content.label}
+        </div>
+        <div style={{ ...sans, fontSize: isMobile ? 22 : 30, fontWeight: 300, lineHeight: 1.45, letterSpacing: "-0.01em", whiteSpace: "pre-wrap" }}>
           {renderEmphasis(content.statement)}
         </div>
       </div>
@@ -93,37 +163,89 @@ function PurposeSection({ content, isDark, isMobile }: { content: any; isDark: b
   )
 }
 
-function PhilosophySection({ content, isDark, isMobile }: { content: any; isDark: boolean; isMobile: boolean }) {
+function PhilosophySection({ content, isDark, isMobile, traitMeta = [] }: {
+  content: any; isDark: boolean; isMobile: boolean
+  traitMeta?: { name: string; descriptor?: string }[]
+}) {
   const fade = useFadeIn()
   const traits: string[] = content.traits ?? []
+  const openLightbox = useLightbox()
+
+  // Map each trait to its descriptor (from moodboard), matched by name (case-insensitive)
+  const descriptorFor = (trait: string) => {
+    const match = traitMeta.find(m => m.name?.trim().toLowerCase() === trait.trim().toLowerCase())
+    return match?.descriptor ?? ""
+  }
+
+  const dividerColor = isDark ? "rgba(232,229,224,0.14)" : "rgba(28,25,22,0.12)"
+  const numberColor = isDark ? "rgba(232,229,224,0.4)" : "rgba(28,25,22,0.35)"
+
   return (
     <section style={{ minHeight: "100vh", background: bg(isDark), color: fg(isDark), display: "flex", flexDirection: isMobile ? "column" : "row", scrollSnapAlign: "start" }}>
       {/* Left — text */}
-      <div ref={fade.ref} style={{ ...fade.style, flex: 1, padding: isMobile ? "48px 28px" : "56px 64px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+      <div ref={fade.ref} style={{ ...fade.style, flex: 1, padding: isMobile ? "48px 28px 72px" : "56px 64px 96px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
         <div style={{ ...sans, fontSize: isMobile ? 22 : 26, fontWeight: 600, letterSpacing: "-0.015em", marginBottom: 20 }}>
           {content.title}
         </div>
         <div style={{ width: 48, height: 1, background: fg(isDark), opacity: 0.2, marginBottom: 24 }} />
-        <div style={{ ...sans, fontSize: isMobile ? 14 : 15, lineHeight: 1.75, opacity: 0.75, maxWidth: 480, marginBottom: 48 }}>
+        <div style={{ ...sans, fontSize: isMobile ? 14 : 15, lineHeight: 1.75, opacity: 0.75, maxWidth: 480, marginBottom: 56, whiteSpace: "pre-wrap" }}>
           {content.body}
         </div>
         {traits.length > 0 && (
           <>
-            <div style={{ ...sans, fontSize: isMobile ? 18 : 22, fontWeight: 600, letterSpacing: "-0.01em", marginBottom: 16 }}>
+            <div style={{ ...sans, fontSize: isMobile ? 16 : 18, fontWeight: 600, letterSpacing: "-0.01em", marginBottom: 20, opacity: 0.85 }}>
               {content.traits_title ?? "Core Brand Traits"}
             </div>
-            {traits.map((t: string, i: number) => (
-              <div key={i} style={{ ...sans, fontSize: isMobile ? 14 : 15, padding: "10px 0", borderBottom: `0.5px solid ${isDark ? "rgba(232,229,224,0.12)" : "rgba(28,25,22,0.1)"}` }}>
-                {t}
-              </div>
-            ))}
+            <div style={{ borderTop: `0.5px solid ${dividerColor}` }}>
+              {traits.map((t: string, i: number) => {
+                const descriptor = descriptorFor(t)
+                return (
+                  <div
+                    key={i}
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: isMobile ? "32px 1fr" : "44px 1fr",
+                      columnGap: isMobile ? 12 : 20,
+                      alignItems: "baseline",
+                      padding: isMobile ? "16px 0" : "20px 0",
+                      borderBottom: `0.5px solid ${dividerColor}`,
+                    }}
+                  >
+                    {/* Numeral */}
+                    <div style={{
+                      ...mono, fontSize: isMobile ? 10 : 11,
+                      letterSpacing: "0.1em", color: numberColor,
+                      paddingTop: 4,
+                    }}>
+                      {String(i + 1).padStart(2, "0")}
+                    </div>
+                    {/* Name + descriptor */}
+                    <div>
+                      <div style={{ ...sans, fontSize: isMobile ? 18 : 22, fontWeight: 500, letterSpacing: "-0.015em", lineHeight: 1.25 }}>
+                        {t}
+                      </div>
+                      {descriptor && (
+                        <div style={{ ...serif, fontStyle: "italic", fontSize: isMobile ? 13 : 14, lineHeight: 1.55, opacity: 0.55, marginTop: 6 }}>
+                          {descriptor}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
           </>
         )}
       </div>
       {/* Right — image */}
       <div style={{ flex: 1, minHeight: isMobile ? 300 : "auto", position: "relative", overflow: "hidden" }}>
         {content.image_url ? (
-          <img src={content.image_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+          <img
+            src={content.image_url}
+            alt=""
+            onClick={() => openLightbox(content.image_url)}
+            style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: focalToObjectPosition(content.image_focal), display: "block", cursor: "zoom-in" }}
+          />
         ) : (
           <div style={{ width: "100%", height: "100%", minHeight: isMobile ? 300 : 600, background: isDark ? "rgba(232,229,224,0.05)" : "rgba(28,25,22,0.04)" }} />
         )}
@@ -137,11 +259,12 @@ function MoodboardSection({ content, isDark, isMobile }: { content: any; isDark:
   const layout = content.layout ?? "tall-left"
   const areas = GRID_AREAS[layout] ?? GRID_AREAS["tall-left"]
   const images: string[] = content.images ?? []
+  const openLightbox = useLightbox()
 
   return (
-    <section style={{ background: bg(isDark), color: fg(isDark), padding: isMobile ? "32px 0 0" : "40px 0 0", scrollSnapAlign: "start" }}>
+    <section style={{ background: bg(isDark), color: fg(isDark), padding: isMobile ? "56px 0 48px" : "96px 0 72px", scrollSnapAlign: "start" }}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: isMobile ? "0 28px 16px" : "0 64px 20px", flexWrap: "wrap", gap: 8 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: isMobile ? "0 28px 24px" : "0 64px 32px", flexWrap: "wrap", gap: 8 }}>
         <div style={{ ...sans, fontSize: isMobile ? 16 : 18, fontWeight: 600, letterSpacing: "-0.01em" }}>
           {content.trait_name}
         </div>
@@ -164,7 +287,12 @@ function MoodboardSection({ content, isDark, isMobile }: { content: any; isDark:
         {areas.map((area, i) => (
           <div key={i} style={{ gridArea: area, overflow: "hidden", position: "relative", background: isDark ? "rgba(232,229,224,0.06)" : "rgba(28,25,22,0.05)" }}>
             {images[i] ? (
-              <img src={images[i]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+              <img
+                src={images[i]}
+                alt=""
+                onClick={() => openLightbox(images[i])}
+                style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: focalToObjectPosition(content.image_focals?.[i]), display: "block", cursor: "zoom-in" }}
+              />
             ) : (
               <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <span style={{ ...mono, fontSize: 10, opacity: 0.15, textTransform: "uppercase", letterSpacing: "0.1em" }}>{i + 1}</span>
@@ -177,41 +305,56 @@ function MoodboardSection({ content, isDark, isMobile }: { content: any; isDark:
   )
 }
 
-function SummarySection({ content, isDark, isMobile, traits }: { content: any; isDark: boolean; isMobile: boolean; traits: { name: string }[] }) {
+function SummarySection({ content, isDark, isMobile, traits }: {
+  content: any; isDark: boolean; isMobile: boolean
+  traits: { name: string; image?: string | null; focal?: { x?: number; y?: number } | null }[]
+}) {
   const fade = useFadeIn()
+  const openLightbox = useLightbox()
   return (
     <section style={{ background: bg(isDark), color: fg(isDark), padding: isMobile ? "64px 28px" : "80px 64px", scrollSnapAlign: "start" }}>
       {/* Closing statement */}
-      <div ref={fade.ref} style={{ ...fade.style, ...sans, fontSize: isMobile ? 15 : 16, lineHeight: 1.75, fontWeight: 500, maxWidth: 800, marginBottom: 64 }}>
+      <div ref={fade.ref} style={{ ...fade.style, ...sans, fontSize: isMobile ? 15 : 16, lineHeight: 1.75, fontWeight: 500, maxWidth: 800, marginBottom: 64, whiteSpace: "pre-wrap" }}>
         {content.closing_statement}
       </div>
 
-      <div style={{ width: "100%", height: 0.5, background: fg(isDark), opacity: 0.1, marginBottom: 64 }} />
+      <div style={{ width: "100%", height: 0.5, background: fg(isDark), opacity: 0.18, marginBottom: 64 }} />
 
-      {/* Recap */}
-      <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 40 : 64, alignItems: isMobile ? "flex-start" : "center", marginBottom: 48 }}>
-        {/* Circle + text */}
-        <div style={{ flex: "0 0 auto", width: isMobile ? "100%" : 300 }}>
+      {/* Recap — circle left, thumbnail grid right */}
+      <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 40 : 48, alignItems: "center", marginBottom: 48 }}>
+        {/* Circle with title + body */}
+        <div style={{ flex: "0 0 auto" }}>
           <div style={{
-            width: isMobile ? 220 : 260, height: isMobile ? 220 : 260,
-            borderRadius: "50%", border: `0.5px solid ${isDark ? "rgba(232,229,224,0.15)" : "rgba(28,25,22,0.12)"}`,
-            display: "flex", alignItems: "center", justifyContent: "center", padding: isMobile ? 28 : 36, marginBottom: 0,
+            width: isMobile ? 200 : 260, height: isMobile ? 200 : 260,
+            borderRadius: "50%", border: `0.5px solid ${isDark ? "rgba(232,229,224,0.25)" : "rgba(28,25,22,0.22)"}`,
+            display: "flex", alignItems: "center", justifyContent: "center", padding: isMobile ? 28 : 38,
           }}>
-            <div style={{ textAlign: "center" }}>
-              <div style={{ ...sans, fontSize: isMobile ? 15 : 17, fontWeight: 600, lineHeight: 1.35, marginBottom: 14 }}>
+            <div>
+              <div style={{ ...sans, fontSize: isMobile ? 12 : 14, fontWeight: 700, lineHeight: 1.35, letterSpacing: "-0.01em", marginBottom: 10 }}>
                 {content.recap_title}
               </div>
-              <div style={{ ...sans, fontSize: isMobile ? 11 : 12, lineHeight: 1.6, opacity: 0.55 }}>
-                {content.recap_body}
-              </div>
+              {content.recap_body && (
+                <div style={{ ...sans, fontSize: isMobile ? 9 : 10.5, lineHeight: 1.6, opacity: 0.5 }}>
+                  {content.recap_body}
+                </div>
+              )}
             </div>
           </div>
         </div>
-        {/* Trait thumbnails */}
-        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(3, 1fr)" : `repeat(${Math.min(traits.length, 5)}, 1fr)`, gap: 16, flex: 1 }}>
+        {/* Trait thumbnails — 2-row grid */}
+        <div style={{ flex: 1, display: "grid", gridTemplateColumns: isMobile ? "repeat(3, 1fr)" : `repeat(${Math.min(Math.ceil(traits.length / 2), 4)}, 1fr)`, gap: isMobile ? 14 : 16 }}>
           {traits.map((t, i) => (
             <div key={i} style={{ textAlign: "center" }}>
-              <div style={{ aspectRatio: "1", background: isDark ? "rgba(232,229,224,0.06)" : "rgba(28,25,22,0.05)", marginBottom: 8, borderRadius: 2, overflow: "hidden" }} />
+              <div style={{ aspectRatio: "1", background: isDark ? "rgba(232,229,224,0.06)" : "rgba(28,25,22,0.05)", marginBottom: 8, borderRadius: 2, overflow: "hidden" }}>
+                {t.image && (
+                  <img
+                    src={t.image}
+                    alt=""
+                    onClick={() => openLightbox(t.image!)}
+                    style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: focalToObjectPosition(t.focal), display: "block", cursor: "zoom-in" }}
+                  />
+                )}
+              </div>
               <div style={{ ...sans, fontSize: 10, opacity: 0.5, lineHeight: 1.4 }}>{t.name}</div>
             </div>
           ))}
@@ -233,14 +376,14 @@ function NextStepsSection({ content, isDark, isMobile }: { content: any; isDark:
   const steps: { title: string; bullets: string[] }[] = content.steps ?? []
   return (
     <section style={{ background: bg(isDark), color: fg(isDark), padding: isMobile ? "64px 28px" : "80px 64px", scrollSnapAlign: "start" }}>
-      <div style={{ width: "100%", height: 0.5, background: fg(isDark), opacity: 0.1, marginBottom: 48 }} />
+      <div style={{ width: "100%", height: 0.5, background: fg(isDark), opacity: 0.18, marginBottom: 48 }} />
       <div ref={fade.ref} style={fade.style}>
         <div style={{ ...sans, fontSize: isMobile ? 18 : 20, fontWeight: 600, letterSpacing: "-0.01em", marginBottom: 24 }}>
           Next Steps <span style={{ fontSize: "0.6em", verticalAlign: "middle", opacity: 0.5 }}>&#9654;</span> Bringing the Brand to Life
         </div>
         <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 32 : 48, marginBottom: 48 }}>
           {/* Intro */}
-          <div style={{ ...sans, fontSize: isMobile ? 13 : 14, lineHeight: 1.7, opacity: 0.65, flex: isMobile ? "auto" : "0 0 280px", maxWidth: 320 }}>
+          <div style={{ ...sans, fontSize: isMobile ? 13 : 14, lineHeight: 1.7, opacity: 0.65, flex: isMobile ? "auto" : "0 0 280px", maxWidth: 320, whiteSpace: "pre-wrap" }}>
             {content.intro}
           </div>
           {/* Steps */}
@@ -344,7 +487,25 @@ export default function BrandFoundationsPage({ params }: { params: { id: string 
   const [foundation, setFoundation] = useState<any>(null)
   const [sections, setSections] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [minTimeElapsed, setMinTimeElapsed] = useState(false)
+  const [cardDismissed, setCardDismissed] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+
+  // Hold the title card on screen long enough for its full sequence (~2.6s).
+  // Without this, fast Supabase responses unmount the loader before the logo + tagline animate in.
+  useEffect(() => {
+    const t = setTimeout(() => setMinTimeElapsed(true), 2600)
+    return () => clearTimeout(t)
+  }, [])
+
+  // Once both data is ready AND the title sequence has played, fade the card out
+  // over 900ms, then unmount it so it stops intercepting interaction.
+  const cardReadyToFade = !loading && minTimeElapsed
+  useEffect(() => {
+    if (!cardReadyToFade) return
+    const t = setTimeout(() => setCardDismissed(true), 950)
+    return () => clearTimeout(t)
+  }, [cardReadyToFade])
 
   useEffect(() => {
     function check() { setIsMobile(window.innerWidth < 768) }
@@ -386,6 +547,10 @@ export default function BrandFoundationsPage({ params }: { params: { id: string 
     load()
   }, [params.id])
 
+  // Lightbox state (declared above early returns to keep hook order stable)
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null)
+  const openLightbox = useCallback((src: string) => setLightboxSrc(src), [])
+
   async function handleApprove(note: string) {
     const now = new Date().toISOString()
     await supabase.from("brand_foundations").update({
@@ -410,12 +575,64 @@ export default function BrandFoundationsPage({ params }: { params: { id: string 
     }).catch(() => {})
   }
 
-  if (loading) {
-    return (
-      <div style={{ minHeight: "100vh", background: DARK_BG, display: "flex", alignItems: "center", justifyContent: "center" }}>
+  const titleCard = !cardDismissed ? (
+    <div
+      style={{
+        position: "fixed", inset: 0, zIndex: 100,
+        background: DARK_BG, color: DARK_TEXT,
+        display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center",
+        opacity: cardReadyToFade ? 0 : 1,
+        transition: "opacity 900ms cubic-bezier(0.4, 0, 0.2, 1)",
+        pointerEvents: cardReadyToFade ? "none" : "auto",
+      }}
+    >
+      <style>{`
+        @keyframes title-rise {
+          from { opacity: 0; transform: translateY(8px); }
+          to   { opacity: var(--title-opacity, 1); transform: translateY(0); }
+        }
+        @keyframes title-rule {
+          from { transform: scaleX(0); }
+          to   { transform: scaleX(1); }
+        }
+        .title-eyebrow {
+          opacity: 0;
+          animation: title-rise 1100ms cubic-bezier(0.22, 0.61, 0.36, 1) 200ms forwards;
+          --title-opacity: 0.4;
+        }
+        .title-logo {
+          opacity: 0;
+          animation: title-rise 1200ms cubic-bezier(0.22, 0.61, 0.36, 1) 500ms forwards;
+          --title-opacity: 1;
+        }
+        .title-rule {
+          transform: scaleX(0);
+          transform-origin: center;
+          animation: title-rule 900ms cubic-bezier(0.22, 0.61, 0.36, 1) 1100ms forwards;
+        }
+        .title-tagline {
+          opacity: 0;
+          animation: title-rise 1300ms cubic-bezier(0.22, 0.61, 0.36, 1) 1300ms forwards;
+          --title-opacity: 0.45;
+        }
+      `}</style>
+      <div className="title-eyebrow" style={{ ...mono, fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 18 }}>
+        Prepared by
+      </div>
+      <div className="title-logo">
         <CinqLogo width={28} color={DARK_TEXT} />
       </div>
-    )
+      <div className="title-rule" style={{ width: 24, height: 1, background: DARK_TEXT, opacity: 0.25, marginTop: 22 }} />
+      <div className="title-tagline" style={{ ...sans, fontStyle: "italic", fontSize: 12, marginTop: 14, fontFamily: "var(--font-serif)" }}>
+        A studio for thoughtful design.
+      </div>
+    </div>
+  ) : null
+
+  // While data is loading, show only the title card (nothing to render underneath yet).
+  if (loading) {
+    return titleCard
   }
 
   if (!foundation) {
@@ -426,20 +643,34 @@ export default function BrandFoundationsPage({ params }: { params: { id: string 
     )
   }
 
-  // Extract trait names from moodboard sections for summary
+  // Extract trait name + descriptor + thumbnail from each moodboard section.
+  // Powers both the Philosophy "Core Brand Traits" list and the Summary thumbnails.
   const moodboardTraits = sections
     .filter(s => s.section_type === "moodboard")
-    .map(s => ({ name: s.content?.trait_name ?? "" }))
+    .map(s => {
+      const c = s.content ?? {}
+      const images: string[] = c.images ?? []
+      const focals: any[] = c.image_focals ?? []
+      const idx = typeof c.summary_image_index === "number" ? c.summary_image_index : 0
+      return {
+        name: c.trait_name ?? "",
+        descriptor: c.descriptor ?? "",
+        image: images[idx] ?? images.find(Boolean) ?? null,
+        focal: focals[idx] ?? focals.find(Boolean) ?? null,
+      }
+    })
 
   // Determine last section bg for approval
   const lastSection = sections[sections.length - 1]
   const approvalDark = lastSection?.background === "dark"
 
   return (
-    <div id="foundations-scroll" style={{ background: DARK_BG, height: "100vh", overflowY: "auto", scrollSnapType: "y proximity" }}>
-      {/* Back to portal — top-left, subtle */}
+    <LightboxContext.Provider value={openLightbox}>
+    {titleCard}
+    <div id="foundations-scroll" style={{ position: "relative", background: DARK_BG, height: "100vh", overflowY: "auto", scrollSnapType: "y proximity" }}>
+      {/* Back to portal — top-left, scrolls with page */}
       <div style={{
-        position: "fixed", top: isMobile ? 16 : 24, left: isMobile ? 20 : 32,
+        position: "absolute", top: isMobile ? 16 : 24, left: isMobile ? 20 : 32,
         zIndex: 50, mixBlendMode: "difference",
       }}>
         <a href="/login" style={{ ...mono, fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#F0EDE6", textDecoration: "none", opacity: 0.4 }}>
@@ -458,7 +689,7 @@ export default function BrandFoundationsPage({ params }: { params: { id: string 
           case "purpose":
             return <PurposeSection key={section.id} content={content} isDark={isDark} isMobile={isMobile} />
           case "philosophy":
-            return <PhilosophySection key={section.id} content={content} isDark={isDark} isMobile={isMobile} />
+            return <PhilosophySection key={section.id} content={content} isDark={isDark} isMobile={isMobile} traitMeta={moodboardTraits} />
           case "moodboard":
             return <MoodboardSection key={section.id} content={content} isDark={isDark} isMobile={isMobile} />
           case "summary":
@@ -477,6 +708,10 @@ export default function BrandFoundationsPage({ params }: { params: { id: string 
         isMobile={isMobile}
         onApprove={handleApprove}
       />
+
+      {/* Lightbox */}
+      <Lightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
     </div>
+    </LightboxContext.Provider>
   )
 }
