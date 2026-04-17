@@ -195,7 +195,7 @@ function PhilosophySection({ content, isDark, isMobile, traitMeta = [] }: {
           {content.title}
         </div>
         <div style={{ width: 48, height: 1, background: fg(isDark), opacity: 0.2, marginBottom: 24 }} />
-        <div style={{ ...sans, fontSize: isMobile ? 14 : 15, lineHeight: 1.75, opacity: 0.75, maxWidth: 480, marginBottom: 56, whiteSpace: "pre-wrap" }}>
+        <div style={{ ...sans, fontSize: isMobile ? 14 : 14, lineHeight: 1.72, opacity: 0.75, maxWidth: 580, marginBottom: 44, whiteSpace: "pre-wrap" }}>
           {content.body}
         </div>
         {traits.length > 0 && (
@@ -272,12 +272,12 @@ function MoodboardSection({ content, isDark, isMobile }: { content: any; isDark:
   return (
     <section style={{ background: bg(isDark), color: fg(isDark), padding: isMobile ? "56px 0 48px" : "96px 0 72px", scrollSnapAlign: "start" }}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: isMobile ? "0 28px 24px" : "0 64px 32px", flexWrap: "wrap", gap: 8 }}>
+      <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "baseline", padding: isMobile ? "0 28px 24px" : "0 64px 32px", flexWrap: "wrap", gap: isMobile ? 4 : 8 }}>
         <div style={{ ...sans, fontSize: isMobile ? 20 : 24, fontWeight: 600, letterSpacing: "-0.015em" }}>
           {content.trait_name}
         </div>
         {content.descriptor && (
-          <div style={{ ...serif, fontStyle: "italic", fontSize: isMobile ? 13 : 15, opacity: 0.5, maxWidth: 440, textAlign: "right" }}>
+          <div style={{ ...serif, fontStyle: "italic", fontSize: isMobile ? 13 : 15, opacity: 0.5, maxWidth: 440, textAlign: isMobile ? "left" : "right" }}>
             {content.descriptor}
           </div>
         )}
@@ -701,7 +701,7 @@ export default function BrandFoundationsPage({ params }: { params: { id: string 
 
     {/* ─── Page content (renders behind the title card while it's visible) ─── */}
     <LightboxContext.Provider value={openLightbox}>
-    <div id="foundations-scroll" style={{ position: "relative", background: DARK_BG, height: "100vh", overflowY: "auto", scrollSnapType: "y proximity" }}>
+    <div id="foundations-scroll" style={{ position: "relative", background: DARK_BG, height: "100vh", overflowY: "auto", scrollSnapType: isMobile ? "y mandatory" : "y proximity" }}>
       {/* Back to portal — top-left, scrolls with page */}
       <div style={{
         position: "absolute", top: isMobile ? 16 : 24, left: isMobile ? 20 : 32,
