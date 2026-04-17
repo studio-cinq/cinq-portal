@@ -369,7 +369,7 @@ function SummarySection({ content, isDark, isMobile, traits }: {
                 {content.recap_title}
               </div>
               {content.recap_body && (
-                <div style={{ ...sans, fontSize: isMobile ? 9 : 10.5, lineHeight: 1.6, opacity: 0.5 }}>
+                <div style={{ ...sans, fontSize: isMobile ? 10 : 10.5, lineHeight: 1.6, opacity: 0.5 }}>
                   {content.recap_body}
                 </div>
               )}
@@ -390,7 +390,7 @@ function SummarySection({ content, isDark, isMobile, traits }: {
                   />
                 )}
               </div>
-              <div style={{ ...sans, fontSize: 10, opacity: 0.5, lineHeight: 1.4 }}>{t.name}</div>
+              <div style={{ ...sans, fontSize: isMobile ? 11 : 10, opacity: 0.5, lineHeight: 1.4 }}>{t.name}</div>
             </div>
           ))}
         </div>
@@ -428,7 +428,7 @@ function NextStepsSection({ content, isDark, isMobile }: { content: any; isDark:
                 <div style={{ ...sans, fontSize: 13, fontWeight: 600, marginBottom: 12 }}>{step.title}</div>
                 {step.bullets.map((b: string, j: number) => (
                   <div key={j} style={{ ...sans, fontSize: 12, lineHeight: 1.65, opacity: 0.6, marginBottom: 6, paddingLeft: 14, position: "relative" }}>
-                    <span style={{ position: "absolute", left: 0, fontSize: 7, top: 4, opacity: 0.7 }}>&#9654;</span> {b}
+                    <span style={{ position: "absolute", left: 0, fontSize: 8, top: 4, opacity: 0.7 }}>&#9654;</span> {b}
                   </div>
                 ))}
               </div>
@@ -454,7 +454,7 @@ function ApprovalSection({ foundation, isDark, isMobile, onApprove }: {
 
   if (foundation.status === "approved") {
     return (
-      <section style={{ background: bg(isDark), color: fg(isDark), padding: isMobile ? "64px 28px 80px" : "80px 64px 120px", textAlign: "center", scrollSnapAlign: "start" }}>
+      <section style={{ background: bg(isDark), color: fg(isDark), padding: isMobile ? "64px 28px 80px" : "80px 64px 120px", textAlign: "center", scrollSnapAlign: "end" }}>
         <div style={{ maxWidth: 480, margin: "0 auto" }}>
           <div style={{ ...mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.35, marginBottom: 16 }}>Direction Approved</div>
           <div style={{ ...sans, fontSize: 14, opacity: 0.5 }}>
@@ -471,7 +471,7 @@ function ApprovalSection({ foundation, isDark, isMobile, onApprove }: {
   }
 
   return (
-    <section style={{ background: bg(isDark), color: fg(isDark), padding: isMobile ? "64px 28px 80px" : "80px 64px 120px" }}>
+    <section style={{ background: bg(isDark), color: fg(isDark), padding: isMobile ? "64px 28px 80px" : "80px 64px 120px", scrollSnapAlign: "end" }}>
       <div ref={fade.ref} style={{ ...fade.style, maxWidth: 480, margin: "0 auto", textAlign: "center" }}>
         <div style={{ display: "flex", justifyContent: "center" }}><CinqLogo width={24} color={fg(isDark)} /></div>
         <div style={{ ...sans, fontSize: isMobile ? 18 : 22, fontWeight: 400, marginTop: 32, marginBottom: 8, letterSpacing: "-0.01em" }}>
@@ -503,7 +503,7 @@ function ApprovalSection({ foundation, isDark, isMobile, onApprove }: {
           style={{
             ...mono, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase",
             background: fg(isDark), color: bg(isDark),
-            border: "none", padding: "14px 36px", cursor: "pointer",
+            border: "none", padding: isMobile ? "16px 36px" : "14px 36px", cursor: "pointer",
             opacity: submitting ? 0.5 : 1,
           }}
         >
@@ -704,10 +704,10 @@ export default function BrandFoundationsPage({ params }: { params: { id: string 
     <div id="foundations-scroll" style={{ position: "relative", background: DARK_BG, height: isMobile ? "100dvh" : "100vh", overflowY: "auto", scrollSnapType: isMobile ? "y mandatory" : "y proximity" }}>
       {/* Back to portal — top-left, scrolls with page */}
       <div style={{
-        position: "absolute", top: isMobile ? 16 : 24, left: isMobile ? 20 : 32,
+        position: "absolute", top: isMobile ? 8 : 24, left: isMobile ? 12 : 32,
         zIndex: 50, mixBlendMode: "difference",
       }}>
-        <a href="/login" style={{ ...mono, fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#F0EDE6", textDecoration: "none", opacity: 0.4 }}>
+        <a href="/login" style={{ ...mono, fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#F0EDE6", textDecoration: "none", opacity: 0.4, padding: isMobile ? "12px 16px" : undefined, display: "block" }}>
           ← Portal
         </a>
       </div>
