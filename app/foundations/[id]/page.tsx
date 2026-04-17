@@ -112,12 +112,15 @@ function useFadeIn() {
 }
 
 /* ─── Grid layouts for moodboards ─── */
-const GRID_AREAS: Record<string, string[]> = {
-  "tall-sides":          ["1/1/3/2", "1/2/2/3", "2/2/3/3", "1/3/3/4"],
-  "tall-left":           ["1/1/3/2", "1/2/2/3", "1/3/2/4", "2/2/3/3", "2/3/3/4"],
-  "tall-center":         ["1/1/2/2", "2/1/3/2", "1/2/3/3", "1/3/2/4", "2/3/3/4"],
-  "grid-2x3":           ["1/1/2/2", "1/2/2/3", "1/3/2/4", "2/1/3/2", "2/2/3/3", "2/3/3/4"],
-  "tall-left-bottom-span": ["1/1/3/2", "1/2/2/3", "1/3/2/4", "2/2/3/4"],
+const GRID_CONFIGS: Record<string, { areas: string[]; rows: string; cols: string; aspectDesktop?: string; aspectMobile?: string }> = {
+  "tall-sides":            { areas: ["1/1/3/2", "1/2/2/3", "2/2/3/3", "1/3/3/4"], rows: "1fr 1fr", cols: "1fr 1fr 1fr" },
+  "tall-left":             { areas: ["1/1/3/2", "1/2/2/3", "1/3/2/4", "2/2/3/3", "2/3/3/4"], rows: "1fr 1fr", cols: "1fr 1fr 1fr" },
+  "tall-center":           { areas: ["1/1/2/2", "2/1/3/2", "1/2/3/3", "1/3/2/4", "2/3/3/4"], rows: "1fr 1fr", cols: "1fr 1fr 1fr" },
+  "grid-2x3":             { areas: ["1/1/2/2", "1/2/2/3", "1/3/2/4", "2/1/3/2", "2/2/3/3", "2/3/3/4"], rows: "1fr 1fr", cols: "1fr 1fr 1fr" },
+  "tall-left-bottom-span": { areas: ["1/1/3/2", "1/2/2/3", "1/3/2/4", "2/2/3/4"], rows: "1fr 1fr", cols: "1fr 1fr 1fr" },
+  "grid-2x4":             { areas: ["1/1/2/2", "1/2/2/3", "1/3/2/4", "1/4/2/5", "2/1/3/2", "2/2/3/3", "2/3/3/4", "2/4/3/5"], rows: "1fr 1fr", cols: "1fr 1fr 1fr 1fr" },
+  "grid-3x3":             { areas: ["1/1/2/2", "1/2/2/3", "1/3/2/4", "2/1/3/2", "2/2/3/3", "2/3/3/4", "3/1/4/2", "3/2/4/3", "3/3/4/4"], rows: "1fr 1fr 1fr", cols: "1fr 1fr 1fr", aspectDesktop: "4/3", aspectMobile: "3/4" },
+  "tall-left-lg":          { areas: ["1/1/4/2", "1/2/2/3", "1/3/2/4", "2/2/3/3", "2/3/3/4", "3/2/4/3", "3/3/4/4"], rows: "1fr 1fr 1fr", cols: "1fr 1fr 1fr", aspectDesktop: "4/3", aspectMobile: "3/4" },
 }
 
 /* ═══════════════════════════════════════════
@@ -257,7 +260,7 @@ function PhilosophySection({ content, isDark, isMobile, traitMeta = [] }: {
 function MoodboardSection({ content, isDark, isMobile }: { content: any; isDark: boolean; isMobile: boolean }) {
   const fade = useFadeIn()
   const layout = content.layout ?? "tall-left"
-  const areas = GRID_AREAS[layout] ?? GRID_AREAS["tall-left"]
+  const config = GRID_CONFIGS[layout] ?? GRID_CONFIGS["tall-left"]
   const images: string[] = content.images ?? []
   const openLightbox = useLightbox()
 
@@ -278,13 +281,13 @@ function MoodboardSection({ content, isDark, isMobile }: { content: any; isDark:
       <div ref={fade.ref} style={{
         ...fade.style,
         display: "grid",
-        gridTemplateRows: "1fr 1fr",
-        gridTemplateColumns: "1fr 1fr 1fr",
+        gridTemplateRows: config.rows,
+        gridTemplateColumns: config.cols,
         gap: 4,
-        aspectRatio: isMobile ? "4/5" : "16/9",
+        aspectRatio: isMobile ? (config.aspectMobile ?? "4/5") : (config.aspectDesktop ?? "16/9"),
         padding: isMobile ? "0" : "0",
       }}>
-        {areas.map((area, i) => (
+        {config.areas.map((area, i) => (
           <div key={i} style={{ gridArea: area, overflow: "hidden", position: "relative", background: isDark ? "rgba(232,229,224,0.06)" : "rgba(28,25,22,0.05)" }}>
             {images[i] ? (
               <img

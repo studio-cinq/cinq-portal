@@ -16,11 +16,14 @@ const SECTION_TYPES = [
 ] as const
 
 const GRID_LAYOUTS = [
-  { value: "tall-sides", label: "Tall sides", desc: "2 tall panels on sides, 2 smaller center" },
-  { value: "tall-left", label: "Tall left", desc: "1 tall left, 4 smaller right" },
-  { value: "tall-center", label: "Tall center", desc: "1 tall center, 4 corners" },
-  { value: "grid-2x3", label: "Grid 2×3", desc: "Even 2 rows × 3 columns" },
-  { value: "tall-left-bottom-span", label: "Tall left + span", desc: "1 tall left, 3 right with bottom span" },
+  { value: "tall-sides", label: "Tall sides", desc: "2 tall panels on sides, 2 smaller center (4)" },
+  { value: "tall-left", label: "Tall left", desc: "1 tall left, 4 smaller right (5)" },
+  { value: "tall-center", label: "Tall center", desc: "1 tall center, 4 corners (5)" },
+  { value: "grid-2x3", label: "Grid 2×3", desc: "Even 2 rows × 3 columns (6)" },
+  { value: "tall-left-bottom-span", label: "Tall left + span", desc: "1 tall left, 3 right with bottom span (4)" },
+  { value: "tall-left-lg", label: "Tall left + 6", desc: "1 tall left spanning 3 rows, 6 smaller right (7)" },
+  { value: "grid-2x4", label: "Grid 2×4", desc: "Even 2 rows × 4 columns (8)" },
+  { value: "grid-3x3", label: "Grid 3×3", desc: "Even 3 rows × 3 columns (9)" },
 ]
 
 type SectionType = typeof SECTION_TYPES[number]["value"]
@@ -554,6 +557,7 @@ function MoodboardEditor({ content, index, updateContent, uploadImage }: {
 
   const GRID_AREAS: Record<string, number> = {
     "tall-sides": 4, "tall-left": 5, "tall-center": 5, "grid-2x3": 6, "tall-left-bottom-span": 4,
+    "tall-left-lg": 7, "grid-2x4": 8, "grid-3x3": 9,
   }
   const slotCount = GRID_AREAS[layout] ?? 5
 
