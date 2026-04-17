@@ -167,6 +167,7 @@ export default async function AdminStudioPage() {
     { data: invoiceViewsRaw },
     { data: approvedReviewsRaw },
     { data: submittedReviewsRaw },
+    { data: approvedFoundationsRaw },
     { data: recentLoginsRaw },
   ] = await Promise.all([
     supabase.from("invoices").select("id, amount, paid_at, client_id, clients(name)").eq("status", "paid").not("paid_at", "is", null).order("paid_at", { ascending: false }).limit(10),
@@ -175,6 +176,7 @@ export default async function AdminStudioPage() {
     supabase.from("invoices").select("id, client_id, viewed_at, clients(name)").not("viewed_at", "is", null).order("viewed_at", { ascending: false }).limit(10),
     supabase.from("review_sessions").select("id, approved_at, projects(title, client_id, clients(name))").not("approved_at", "is", null).order("approved_at", { ascending: false }).limit(10),
     supabase.from("review_sessions").select("id, submitted_at, projects(title, client_id, clients(name))").not("submitted_at", "is", null).order("submitted_at", { ascending: false }).limit(10),
+    supabase.from("brand_foundations").select("id, title, approved_at, client_id, clients(name)").eq("status", "approved").not("approved_at", "is", null).order("approved_at", { ascending: false }).limit(10),
     supabase.from("clients").select("id, name, last_seen_at").not("last_seen_at", "is", null).order("last_seen_at", { ascending: false }).limit(10),
   ])
 
@@ -197,6 +199,9 @@ export default async function AdminStudioPage() {
   }
   for (const session of (submittedReviewsRaw ?? []) as any[]) {
     if (session.submitted_at) { const proj = session.projects as any; activity.push({ id: `revfeedback-${session.id}`, client: proj?.clients?.name ?? "", clientId: proj?.client_id ?? "", label: `Submitted feedback on ${proj?.title ?? "review"}`, timestamp: new Date(session.submitted_at), icon: "feedback" }) }
+  }
+  for (const f of (approvedFoundationsRaw ?? []) as any[]) {
+    if (f.approved_at) activity.push({ id: `foundapprove-${f.id}`, client: f.clients?.name ?? "", clientId: f.client_id, label: `Approved brand direction${f.title ? ` — ${f.title}` : ""}`, timestamp: new Date(f.approved_at), icon: "approved" })
   }
   for (const c of (recentLoginsRaw ?? []) as any[]) {
     if (c.last_seen_at) activity.push({ id: `login-${c.id}`, client: c.name ?? "", clientId: c.id, label: "Logged into portal", timestamp: new Date(c.last_seen_at), icon: "login" })
