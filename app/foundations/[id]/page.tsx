@@ -134,8 +134,8 @@ const GRID_CONFIGS: Record<string, { areas: string[]; rows: string; cols: string
 function CoverSection({ content, isDark, isMobile }: { content: any; isDark: boolean; isMobile: boolean }) {
   const fade = useFadeIn()
   return (
-    <section style={{ minHeight: "100vh", background: bg(isDark), color: fg(isDark), display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: isMobile ? "48px 28px" : "56px 64px", scrollSnapAlign: "start" }}>
-      <div ref={fade.ref} style={{ ...fade.style, marginBottom: "auto", marginTop: "35vh" }}>
+    <section style={{ minHeight: isMobile ? "100dvh" : "100vh", background: bg(isDark), color: fg(isDark), display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: isMobile ? "48px 28px" : "56px 64px", scrollSnapAlign: "start" }}>
+      <div ref={fade.ref} style={{ ...fade.style, marginBottom: "auto", marginTop: isMobile ? "30dvh" : "35vh" }}>
         <div style={{ ...sans, fontSize: isMobile ? 34 : 48, fontWeight: 400, letterSpacing: "-0.025em", lineHeight: 1.15 }}>
           {content.client_name}
         </div>
@@ -157,7 +157,7 @@ function PurposeSection({ content, isDark, isMobile }: { content: any; isDark: b
   const fade = useFadeIn()
   const eyebrowColor = isDark ? "rgba(232,229,224,0.5)" : "rgba(28,25,22,0.45)"
   return (
-    <section style={{ minHeight: "100vh", background: bg(isDark), color: fg(isDark), display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: isMobile ? "48px 28px" : "56px 64px", scrollSnapAlign: "start" }}>
+    <section style={{ minHeight: isMobile ? "100dvh" : "100vh", background: bg(isDark), color: fg(isDark), display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: isMobile ? "48px 28px" : "56px 64px", scrollSnapAlign: "start" }}>
       <div ref={fade.ref} style={{ ...fade.style, maxWidth: 800 }}>
         <div style={{ ...mono, fontSize: isMobile ? 10 : 11, letterSpacing: "0.14em", textTransform: "uppercase", color: eyebrowColor, marginBottom: isMobile ? 18 : 22 }}>
           {content.label}
@@ -188,7 +188,7 @@ function PhilosophySection({ content, isDark, isMobile, traitMeta = [] }: {
   const numberColor = isDark ? "rgba(232,229,224,0.4)" : "rgba(28,25,22,0.35)"
 
   return (
-    <section style={{ minHeight: "100vh", background: bg(isDark), color: fg(isDark), display: "flex", flexDirection: isMobile ? "column" : "row", scrollSnapAlign: "start" }}>
+    <section style={{ minHeight: isMobile ? "100dvh" : "100vh", background: bg(isDark), color: fg(isDark), display: "flex", flexDirection: isMobile ? "column" : "row", scrollSnapAlign: "start" }}>
       {/* Left — text */}
       <div ref={fade.ref} style={{ ...fade.style, flex: 1, padding: isMobile ? "48px 28px 72px" : "56px 64px 96px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
         <div style={{ ...sans, fontSize: isMobile ? 22 : 26, fontWeight: 600, letterSpacing: "-0.015em", marginBottom: 20 }}>
@@ -701,7 +701,7 @@ export default function BrandFoundationsPage({ params }: { params: { id: string 
 
     {/* ─── Page content (renders behind the title card while it's visible) ─── */}
     <LightboxContext.Provider value={openLightbox}>
-    <div id="foundations-scroll" style={{ position: "relative", background: DARK_BG, height: "100vh", overflowY: "auto", scrollSnapType: isMobile ? "y mandatory" : "y proximity" }}>
+    <div id="foundations-scroll" style={{ position: "relative", background: DARK_BG, height: isMobile ? "100dvh" : "100vh", overflowY: "auto", scrollSnapType: isMobile ? "y mandatory" : "y proximity" }}>
       {/* Back to portal — top-left, scrolls with page */}
       <div style={{
         position: "absolute", top: isMobile ? 16 : 24, left: isMobile ? 20 : 32,
