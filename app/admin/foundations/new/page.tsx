@@ -24,6 +24,9 @@ const GRID_LAYOUTS = [
   { value: "tall-left-lg", label: "Tall left + 6", desc: "1 tall left spanning 3 rows, 6 smaller right (7)" },
   { value: "grid-2x4", label: "Grid 2×4", desc: "Even 2 rows × 4 columns (8)" },
   { value: "grid-3x3", label: "Grid 3×3", desc: "Even 3 rows × 3 columns (9)" },
+  { value: "portrait-pair", label: "Portraits + wide", desc: "2 tall portraits flanking 4 landscapes (6)" },
+  { value: "hero-mosaic", label: "Hero mosaic", desc: "1 large feature + portraits, landscapes, squares (7)" },
+  { value: "editorial-mix", label: "Editorial mix", desc: "Mixed tall, wide, and square across 3 rows (9)" },
 ]
 
 type SectionType = typeof SECTION_TYPES[number]["value"]
@@ -558,6 +561,7 @@ function MoodboardEditor({ content, index, updateContent, uploadImage }: {
   const GRID_AREAS: Record<string, number> = {
     "tall-sides": 4, "tall-left": 5, "tall-center": 5, "grid-2x3": 6, "tall-left-bottom-span": 4,
     "tall-left-lg": 7, "grid-2x4": 8, "grid-3x3": 9,
+    "portrait-pair": 6, "hero-mosaic": 7, "editorial-mix": 9,
   }
   const slotCount = GRID_AREAS[layout] ?? 5
 

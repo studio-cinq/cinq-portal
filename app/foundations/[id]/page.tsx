@@ -121,6 +121,10 @@ const GRID_CONFIGS: Record<string, { areas: string[]; rows: string; cols: string
   "grid-2x4":             { areas: ["1/1/2/2", "1/2/2/3", "1/3/2/4", "1/4/2/5", "2/1/3/2", "2/2/3/3", "2/3/3/4", "2/4/3/5"], rows: "1fr 1fr", cols: "1fr 1fr 1fr 1fr" },
   "grid-3x3":             { areas: ["1/1/2/2", "1/2/2/3", "1/3/2/4", "2/1/3/2", "2/2/3/3", "2/3/3/4", "3/1/4/2", "3/2/4/3", "3/3/4/4"], rows: "1fr 1fr 1fr", cols: "1fr 1fr 1fr", aspectDesktop: "4/3", aspectMobile: "3/4" },
   "tall-left-lg":          { areas: ["1/1/4/2", "1/2/2/3", "1/3/2/4", "2/2/3/3", "2/3/3/4", "3/2/4/3", "3/3/4/4"], rows: "1fr 1fr 1fr", cols: "1fr 1fr 1fr", aspectDesktop: "4/3", aspectMobile: "3/4" },
+  // Mixed-aspect layouts — uneven grid tracks create natural portrait / landscape / square cells
+  "portrait-pair":         { areas: ["1/1/3/2", "1/2/2/3", "1/3/2/4", "2/2/3/3", "2/3/3/4", "1/4/3/5"], rows: "1fr 1fr", cols: "2fr 3fr 3fr 2fr" },
+  "hero-mosaic":           { areas: ["1/1/2/2", "1/2/2/3", "1/3/2/4", "2/1/3/2", "3/1/4/2", "2/2/4/3", "2/3/4/4"], rows: "3fr 2fr 2fr", cols: "3fr 2fr 2fr", aspectDesktop: "4/3", aspectMobile: "3/4" },
+  "editorial-mix":         { areas: ["1/1/2/3", "1/3/2/4", "1/4/3/5", "2/1/3/2", "2/2/3/3", "2/3/3/4", "3/1/4/2", "3/2/4/4", "3/4/4/5"], rows: "2fr 3fr 2fr", cols: "3fr 2fr 3fr 2fr", aspectDesktop: "4/3", aspectMobile: "3/4" },
 }
 
 /* ═══════════════════════════════════════════
@@ -268,11 +272,11 @@ function MoodboardSection({ content, isDark, isMobile }: { content: any; isDark:
     <section style={{ background: bg(isDark), color: fg(isDark), padding: isMobile ? "56px 0 48px" : "96px 0 72px", scrollSnapAlign: "start" }}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: isMobile ? "0 28px 24px" : "0 64px 32px", flexWrap: "wrap", gap: 8 }}>
-        <div style={{ ...sans, fontSize: isMobile ? 16 : 18, fontWeight: 600, letterSpacing: "-0.01em" }}>
+        <div style={{ ...sans, fontSize: isMobile ? 20 : 24, fontWeight: 600, letterSpacing: "-0.015em" }}>
           {content.trait_name}
         </div>
         {content.descriptor && (
-          <div style={{ ...serif, fontStyle: "italic", fontSize: isMobile ? 12 : 13, opacity: 0.55, maxWidth: 400, textAlign: "right" }}>
+          <div style={{ ...serif, fontStyle: "italic", fontSize: isMobile ? 13 : 15, opacity: 0.5, maxWidth: 440, textAlign: "right" }}>
             {content.descriptor}
           </div>
         )}
