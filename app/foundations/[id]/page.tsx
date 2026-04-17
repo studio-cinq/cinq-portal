@@ -701,7 +701,7 @@ export default function BrandFoundationsPage({ params }: { params: { id: string 
 
     {/* ─── Page content (renders behind the title card while it's visible) ─── */}
     <LightboxContext.Provider value={openLightbox}>
-    <div id="foundations-scroll" style={{ position: "relative", background: DARK_BG, height: isMobile ? "100dvh" : "100vh", overflowY: "auto", scrollSnapType: isMobile ? "y mandatory" : "y proximity" }}>
+    <div id="foundations-scroll" style={{ position: "relative", background: DARK_BG, height: isMobile ? "100dvh" : "100vh", overflowY: "auto", scrollSnapType: "y proximity" }}>
       {/* Back to portal — top-left, scrolls with page */}
       <div style={{
         position: "absolute", top: isMobile ? 8 : 24, left: isMobile ? 12 : 32,
