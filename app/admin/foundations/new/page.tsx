@@ -27,6 +27,7 @@ const GRID_LAYOUTS = [
   { value: "portrait-pair", label: "Portraits + wide", desc: "2 tall portraits flanking 4 landscapes (6)" },
   { value: "hero-mosaic", label: "Hero mosaic", desc: "1 large feature + portraits, landscapes, squares (7)" },
   { value: "editorial-mix", label: "Editorial mix", desc: "Mixed tall, wide, and square across 3 rows (9)" },
+  { value: "masonry", label: "Masonry", desc: "Natural aspect ratios — each photo keeps its own shape" },
 ]
 
 type SectionType = typeof SECTION_TYPES[number]["value"]
@@ -563,7 +564,8 @@ function MoodboardEditor({ content, index, updateContent, uploadImage }: {
     "tall-left-lg": 7, "grid-2x4": 8, "grid-3x3": 9,
     "portrait-pair": 6, "hero-mosaic": 7, "editorial-mix": 9,
   }
-  const slotCount = GRID_AREAS[layout] ?? 5
+  // Masonry is dynamic — show current images + 3 empty upload slots
+  const slotCount = layout === "masonry" ? Math.max(6, images.length + 3) : (GRID_AREAS[layout] ?? 5)
 
   /** Swap two image slots (image + focal + summary index all follow) */
   function swapImages(from: number, to: number) {

@@ -264,9 +264,10 @@ function PhilosophySection({ content, isDark, isMobile, traitMeta = [] }: {
 function MoodboardSection({ content, isDark, isMobile }: { content: any; isDark: boolean; isMobile: boolean }) {
   const fade = useFadeIn()
   const layout = content.layout ?? "tall-left"
-  const config = GRID_CONFIGS[layout] ?? GRID_CONFIGS["tall-left"]
+  const config = GRID_CONFIGS[layout]
   const images: string[] = content.images ?? []
   const openLightbox = useLightbox()
+  const isMasonry = layout === "masonry"
 
   return (
     <section style={{ background: bg(isDark), color: fg(isDark), padding: isMobile ? "56px 0 48px" : "96px 0 72px", scrollSnapAlign: "start" }}>
@@ -281,33 +282,60 @@ function MoodboardSection({ content, isDark, isMobile }: { content: any; isDark:
           </div>
         )}
       </div>
-      {/* Image grid */}
-      <div ref={fade.ref} style={{
-        ...fade.style,
-        display: "grid",
-        gridTemplateRows: config.rows,
-        gridTemplateColumns: config.cols,
-        gap: 4,
-        aspectRatio: isMobile ? (config.aspectMobile ?? "4/5") : (config.aspectDesktop ?? "16/9"),
-        padding: isMobile ? "0" : "0",
-      }}>
-        {config.areas.map((area, i) => (
-          <div key={i} style={{ gridArea: area, overflow: "hidden", position: "relative", background: isDark ? "rgba(232,229,224,0.06)" : "rgba(28,25,22,0.05)" }}>
-            {images[i] ? (
-              <img
-                src={images[i]}
-                alt=""
-                onClick={() => openLightbox(images[i])}
-                style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: focalToObjectPosition(content.image_focals?.[i]), display: "block", cursor: "zoom-in" }}
-              />
-            ) : (
-              <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span style={{ ...mono, fontSize: 10, opacity: 0.15, textTransform: "uppercase", letterSpacing: "0.1em" }}>{i + 1}</span>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
+
+      {isMasonry ? (
+        /* ─── Masonry: CSS columns, natural aspect ratios ─── */
+        <div ref={fade.ref} style={{
+          ...fade.style,
+          columnCount: isMobile ? 2 : 3,
+          columnGap: 4,
+          padding: isMobile ? "0 4px" : "0",
+        }}>
+          {images.filter(Boolean).map((src, i) => (
+            <img
+              key={i}
+              src={src}
+              alt=""
+              onClick={() => openLightbox(src)}
+              style={{
+                width: "100%", display: "block",
+                marginBottom: 4,
+                cursor: "zoom-in",
+                breakInside: "avoid",
+              }}
+            />
+          ))}
+        </div>
+      ) : (
+        /* ─── Fixed grid: predefined cell areas ─── */
+        <div ref={fade.ref} style={{
+          ...fade.style,
+          display: "grid",
+          gridTemplateRows: (config ?? GRID_CONFIGS["tall-left"]).rows,
+          gridTemplateColumns: (config ?? GRID_CONFIGS["tall-left"]).cols,
+          gap: 4,
+          aspectRatio: isMobile
+            ? ((config ?? GRID_CONFIGS["tall-left"]).aspectMobile ?? "4/5")
+            : ((config ?? GRID_CONFIGS["tall-left"]).aspectDesktop ?? "16/9"),
+        }}>
+          {(config ?? GRID_CONFIGS["tall-left"]).areas.map((area, i) => (
+            <div key={i} style={{ gridArea: area, overflow: "hidden", position: "relative", background: isDark ? "rgba(232,229,224,0.06)" : "rgba(28,25,22,0.05)" }}>
+              {images[i] ? (
+                <img
+                  src={images[i]}
+                  alt=""
+                  onClick={() => openLightbox(images[i])}
+                  style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: focalToObjectPosition(content.image_focals?.[i]), display: "block", cursor: "zoom-in" }}
+                />
+              ) : (
+                <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span style={{ ...mono, fontSize: 10, opacity: 0.15, textTransform: "uppercase", letterSpacing: "0.1em" }}>{i + 1}</span>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   )
 }
