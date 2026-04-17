@@ -575,77 +575,9 @@ export default function BrandFoundationsPage({ params }: { params: { id: string 
     }).catch(() => {})
   }
 
-  const titleCard = !cardDismissed ? (
-    <div
-      style={{
-        position: "fixed", inset: 0, zIndex: 100,
-        background: DARK_BG, color: DARK_TEXT,
-        display: "flex", flexDirection: "column",
-        alignItems: "center", justifyContent: "center",
-        opacity: cardReadyToFade ? 0 : 1,
-        transition: "opacity 900ms cubic-bezier(0.4, 0, 0.2, 1)",
-        pointerEvents: cardReadyToFade ? "none" : "auto",
-      }}
-    >
-      <style>{`
-        @keyframes title-rise {
-          from { opacity: 0; transform: translateY(8px); }
-          to   { opacity: var(--title-opacity, 1); transform: translateY(0); }
-        }
-        @keyframes title-rule {
-          from { transform: scaleX(0); }
-          to   { transform: scaleX(1); }
-        }
-        .title-eyebrow {
-          opacity: 0;
-          animation: title-rise 1100ms cubic-bezier(0.22, 0.61, 0.36, 1) 200ms forwards;
-          --title-opacity: 0.4;
-        }
-        .title-logo {
-          opacity: 0;
-          animation: title-rise 1200ms cubic-bezier(0.22, 0.61, 0.36, 1) 500ms forwards;
-          --title-opacity: 1;
-        }
-        .title-rule {
-          transform: scaleX(0);
-          transform-origin: center;
-          animation: title-rule 900ms cubic-bezier(0.22, 0.61, 0.36, 1) 1100ms forwards;
-        }
-        .title-tagline {
-          opacity: 0;
-          animation: title-rise 1300ms cubic-bezier(0.22, 0.61, 0.36, 1) 1300ms forwards;
-          --title-opacity: 0.45;
-        }
-      `}</style>
-      <div className="title-eyebrow" style={{ ...mono, fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 18 }}>
-        Prepared by
-      </div>
-      <div className="title-logo">
-        <CinqLogo width={28} color={DARK_TEXT} />
-      </div>
-      <div className="title-rule" style={{ width: 24, height: 1, background: DARK_TEXT, opacity: 0.25, marginTop: 22 }} />
-      <div className="title-tagline" style={{ ...sans, fontStyle: "italic", fontSize: 12, marginTop: 14, fontFamily: "var(--font-serif)" }}>
-        A studio for thoughtful design.
-      </div>
-    </div>
-  ) : null
-
-  // While data is loading, show only the title card (nothing to render underneath yet).
-  if (loading) {
-    return titleCard
-  }
-
-  if (!foundation) {
-    return (
-      <div style={{ minHeight: "100vh", background: LIGHT_BG, display: "flex", alignItems: "center", justifyContent: "center", ...sans, opacity: 0.4 }}>
-        Not found
-      </div>
-    )
-  }
-
   // Extract trait name + descriptor + thumbnail from each moodboard section.
   // Powers both the Philosophy "Core Brand Traits" list and the Summary thumbnails.
-  const moodboardTraits = sections
+  const moodboardTraits = !loading ? sections
     .filter(s => s.section_type === "moodboard")
     .map(s => {
       const c = s.content ?? {}
@@ -658,15 +590,82 @@ export default function BrandFoundationsPage({ params }: { params: { id: string 
         image: images[idx] ?? images.find(Boolean) ?? null,
         focal: focals[idx] ?? focals.find(Boolean) ?? null,
       }
-    })
+    }) : []
 
   // Determine last section bg for approval
   const lastSection = sections[sections.length - 1]
   const approvalDark = lastSection?.background === "dark"
 
+  // Not-found state (data loaded, no foundation)
+  if (!loading && !foundation) {
+    return (
+      <div style={{ minHeight: "100vh", background: LIGHT_BG, display: "flex", alignItems: "center", justifyContent: "center", ...sans, opacity: 0.4 }}>
+        Not found
+      </div>
+    )
+  }
+
   return (
+    <>
+    {/* ─── Title card overlay ─── Always in the same tree position so React
+        never unmounts/remounts it (which would restart CSS animations). */}
+    {!cardDismissed && (
+      <div
+        style={{
+          position: "fixed", inset: 0, zIndex: 100,
+          background: DARK_BG, color: DARK_TEXT,
+          display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center",
+          opacity: cardReadyToFade ? 0 : 1,
+          transition: "opacity 900ms cubic-bezier(0.4, 0, 0.2, 1)",
+          pointerEvents: cardReadyToFade ? "none" : "auto",
+        }}
+      >
+        <style>{`
+          @keyframes title-rise {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: var(--title-opacity, 1); transform: translateY(0); }
+          }
+          @keyframes title-rule {
+            from { transform: scaleX(0); }
+            to   { transform: scaleX(1); }
+          }
+          .title-eyebrow {
+            opacity: 0;
+            animation: title-rise 1100ms cubic-bezier(0.22, 0.61, 0.36, 1) 200ms forwards;
+            --title-opacity: 0.4;
+          }
+          .title-logo {
+            opacity: 0;
+            animation: title-rise 1200ms cubic-bezier(0.22, 0.61, 0.36, 1) 500ms forwards;
+            --title-opacity: 1;
+          }
+          .title-rule {
+            transform: scaleX(0);
+            transform-origin: center;
+            animation: title-rule 900ms cubic-bezier(0.22, 0.61, 0.36, 1) 1100ms forwards;
+          }
+          .title-tagline {
+            opacity: 0;
+            animation: title-rise 1300ms cubic-bezier(0.22, 0.61, 0.36, 1) 1300ms forwards;
+            --title-opacity: 0.45;
+          }
+        `}</style>
+        <div className="title-eyebrow" style={{ ...mono, fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 18 }}>
+          Prepared by
+        </div>
+        <div className="title-logo">
+          <CinqLogo width={28} color={DARK_TEXT} />
+        </div>
+        <div className="title-rule" style={{ width: 24, height: 1, background: DARK_TEXT, opacity: 0.25, marginTop: 22 }} />
+        <div className="title-tagline" style={{ ...sans, fontStyle: "italic", fontSize: 12, marginTop: 14, fontFamily: "var(--font-serif)" }}>
+          A studio for thoughtful design.
+        </div>
+      </div>
+    )}
+
+    {/* ─── Page content (renders behind the title card while it's visible) ─── */}
     <LightboxContext.Provider value={openLightbox}>
-    {titleCard}
     <div id="foundations-scroll" style={{ position: "relative", background: DARK_BG, height: "100vh", overflowY: "auto", scrollSnapType: "y proximity" }}>
       {/* Back to portal — top-left, scrolls with page */}
       <div style={{
@@ -678,8 +677,8 @@ export default function BrandFoundationsPage({ params }: { params: { id: string 
         </a>
       </div>
 
-      {/* Sections */}
-      {sections.map((section) => {
+      {/* Sections — only render once data is ready */}
+      {foundation && sections.map((section) => {
         const isDark = section.background === "dark"
         const content = section.content ?? {}
 
@@ -702,16 +701,17 @@ export default function BrandFoundationsPage({ params }: { params: { id: string 
       })}
 
       {/* Approval */}
-      <ApprovalSection
+      {foundation && <ApprovalSection
         foundation={foundation}
         isDark={approvalDark}
         isMobile={isMobile}
         onApprove={handleApprove}
-      />
+      />}
 
       {/* Lightbox */}
       <Lightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
     </div>
     </LightboxContext.Provider>
+    </>
   )
 }

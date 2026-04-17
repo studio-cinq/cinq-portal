@@ -547,12 +547,30 @@ function MoodboardEditor({ content, index, updateContent, uploadImage }: {
   uploadImage: (file: File, sectionIndex: number, imageKey: string, imageIndex?: number) => void
 }) {
   const images: string[] = content.images ?? []
+  const focals: any[] = content.image_focals ?? []
   const layout = content.layout ?? "tall-left"
+  const [dragFrom, setDragFrom] = useState<number | null>(null)
+  const [dragOver, setDragOver] = useState<number | null>(null)
 
   const GRID_AREAS: Record<string, number> = {
     "tall-sides": 4, "tall-left": 5, "tall-center": 5, "grid-2x3": 6, "tall-left-bottom-span": 4,
   }
   const slotCount = GRID_AREAS[layout] ?? 5
+
+  /** Swap two image slots (image + focal + summary index all follow) */
+  function swapImages(from: number, to: number) {
+    if (from === to) return
+    const nextImages = [...images]
+    const nextFocals = [...focals]
+    ;[nextImages[from], nextImages[to]] = [nextImages[to], nextImages[from]]
+    ;[nextFocals[from], nextFocals[to]] = [nextFocals[to], nextFocals[from]]
+    let nextSummary = typeof content.summary_image_index === "number" ? content.summary_image_index : 0
+    if (nextSummary === from) nextSummary = to
+    else if (nextSummary === to) nextSummary = from
+    updateContent(index, "images", nextImages)
+    updateContent(index, "image_focals", nextFocals)
+    updateContent(index, "summary_image_index", nextSummary)
+  }
 
   return (
     <div style={{ paddingTop: 12 }}>
@@ -589,21 +607,46 @@ function MoodboardEditor({ content, index, updateContent, uploadImage }: {
       </div>
       <div>
         <label style={labelStyle}>
-          Images ({slotCount} slots) <span style={{ opacity: 0.5, textTransform: "none", letterSpacing: 0 }}>— click ★ to mark summary thumbnail</span>
+          Images ({slotCount} slots) <span style={{ opacity: 0.5, textTransform: "none", letterSpacing: 0 }}>— drag to reorder · click ★ for summary thumbnail</span>
         </label>
         <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(slotCount, 6)}, 1fr)`, gap: 8 }}>
           {Array.from({ length: slotCount }).map((_, i) => {
             const summaryIdx = typeof content.summary_image_index === "number" ? content.summary_image_index : 0
             const isSummary = images[i] && summaryIdx === i
+            const isDragTarget = dragOver === i && dragFrom !== null && dragFrom !== i
             return (
-              <div key={i} style={{ position: "relative" }}>
+              <div
+                key={i}
+                style={{
+                  position: "relative",
+                  outline: isDragTarget ? "2px solid var(--amber)" : "none",
+                  outlineOffset: -2,
+                  borderRadius: 2,
+                  opacity: dragFrom === i ? 0.45 : 1,
+                  transition: "opacity 0.15s ease",
+                }}
+                draggable={!!images[i]}
+                onDragStart={(e) => {
+                  setDragFrom(i)
+                  e.dataTransfer.effectAllowed = "move"
+                }}
+                onDragOver={(e) => { e.preventDefault(); setDragOver(i) }}
+                onDragLeave={() => setDragOver(null)}
+                onDrop={(e) => {
+                  e.preventDefault()
+                  if (dragFrom !== null) swapImages(dragFrom, i)
+                  setDragFrom(null)
+                  setDragOver(null)
+                }}
+                onDragEnd={() => { setDragFrom(null); setDragOver(null) }}
+              >
                 {images[i] ? (
                   <>
                     <FocalImage
                       src={images[i]}
-                      focal={(content.image_focals ?? [])[i]}
+                      focal={focals[i]}
                       onFocalChange={(f) => {
-                        const next = [...(content.image_focals ?? [])]
+                        const next = [...focals]
                         next[i] = f
                         updateContent(index, "image_focals", next)
                       }}
