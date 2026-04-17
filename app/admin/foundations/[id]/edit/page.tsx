@@ -71,6 +71,8 @@ export default function EditFoundationPage({ params }: { params: { id: string } 
   const [clients, setClients] = useState<{ id: string; name: string }[]>([])
   const [showClientPicker, setShowClientPicker] = useState<"reassign" | "duplicate" | null>(null)
   const [pickerBusy, setPickerBusy] = useState(false)
+  const [favorites, setFavorites] = useState<any[]>([])
+  const [favoritesOpen, setFavoritesOpen] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -91,6 +93,18 @@ export default function EditFoundationPage({ params }: { params: { id: string } 
         .order("sort_order")
 
       setSections((s ?? []).map((sec: any) => ({ ...sec, _collapsed: true })))
+
+      // Pull all favorites the client has left on this foundation's moodboards,
+      // joined with their section so we can display the trait name.
+      const { data: favs } = await supabase
+        .from("foundation_image_favorites")
+        .select("id, image_url, image_index, note, favorited_at, brand_foundation_sections(content)")
+        .eq("foundation_id", params.id)
+        .order("favorited_at", { ascending: true })
+      setFavorites((favs ?? []).map((fav: any) => ({
+        ...fav,
+        trait_name: fav.brand_foundation_sections?.content?.trait_name ?? "",
+      })))
 
       const { data: clientList } = await supabase
         .from("clients")
@@ -431,6 +445,63 @@ export default function EditFoundationPage({ params }: { params: { id: string } 
               <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: 0.5, fontStyle: "italic" }}>
                 &ldquo;{foundation.approval_note}&rdquo;
               </span>
+            )}
+          </div>
+        )}
+
+        {/* Client favorites panel — collapsed by default, expands to show
+            each favorited image with its trait + optional note. */}
+        {favorites.length > 0 && (
+          <div style={{
+            background: "rgba(15,15,14,0.025)", border: "0.5px solid rgba(15,15,14,0.08)",
+            padding: "12px 16px", marginBottom: 24,
+          }}>
+            <button
+              onClick={() => setFavoritesOpen(v => !v)}
+              style={{
+                width: "100%", background: "transparent", border: "none", padding: 0, cursor: "pointer",
+                display: "flex", justifyContent: "space-between", alignItems: "center",
+                fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", color: "inherit",
+              }}
+            >
+              <span style={{ opacity: 0.75 }}>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.55, marginRight: 10 }}>
+                  Client favorites
+                </span>
+                {favorites.length} image{favorites.length === 1 ? "" : "s"}
+                {favorites.filter((f: any) => (f.note ?? "").trim()).length > 0 && (
+                  <span style={{ opacity: 0.5 }}>
+                    {" · "}{favorites.filter((f: any) => (f.note ?? "").trim()).length} with notes
+                  </span>
+                )}
+              </span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, opacity: 0.5 }}>
+                {favoritesOpen ? "Hide" : "Show"}
+              </span>
+            </button>
+            {favoritesOpen && (
+              <div style={{ marginTop: 16, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 14 }}>
+                {favorites.map((fav: any) => (
+                  <div key={fav.id} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                    <img
+                      src={fav.image_url}
+                      alt=""
+                      style={{ width: 72, height: 72, objectFit: "cover", borderRadius: 3, background: "rgba(15,15,14,0.06)", flex: "0 0 auto" }}
+                    />
+                    <div style={{ minWidth: 0 }}>
+                      {fav.trait_name && (
+                        <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.45, marginBottom: 4 }}>
+                          {fav.trait_name}
+                        </div>
+                      )}
+                      {fav.note
+                        ? <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 13, lineHeight: 1.5, opacity: 0.78 }}>&ldquo;{fav.note}&rdquo;</div>
+                        : <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, opacity: 0.35 }}>No note</div>
+                      }
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         )}

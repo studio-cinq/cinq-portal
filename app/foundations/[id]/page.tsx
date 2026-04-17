@@ -8,6 +8,22 @@ import CinqLogo from "@/components/CinqLogo"
 const LightboxContext = createContext<(src: string) => void>(() => {})
 function useLightbox() { return useContext(LightboxContext) }
 
+/* ─── Favorites context — lets any moodboard image toggle a favorite
+       and optionally attach a note. All writes are optimistic and hit
+       the foundation_image_favorites table. ─── */
+type FavoriteRecord = { id: string; note: string | null; imageIndex: number }
+type FavoritesApi = {
+  favorites: Map<string, FavoriteRecord>
+  toggle: (args: { sectionId: string; imageUrl: string; imageIndex: number }) => Promise<void>
+  setNote: (imageUrl: string, note: string) => Promise<void>
+}
+const FavoritesContext = createContext<FavoritesApi>({
+  favorites: new Map(),
+  toggle: async () => {},
+  setNote: async () => {},
+})
+function useFavorites() { return useContext(FavoritesContext) }
+
 /* ─── Typography ─── */
 const serif: React.CSSProperties = { fontFamily: "'Newsreader', 'Times New Roman', Georgia, serif" }
 const sans: React.CSSProperties = { fontFamily: "'Söhne', 'Inter', system-ui, sans-serif" }
@@ -268,7 +284,141 @@ function PhilosophySection({ content, isDark, isMobile, traitMeta = [] }: {
   )
 }
 
-function MoodboardSection({ content, isDark, isMobile }: { content: any; isDark: boolean; isMobile: boolean }) {
+/* ─── Favorite button — heart + optional note, overlaid on moodboard image ─── */
+function FavoriteButton({ sectionId, imageUrl, imageIndex, isMobile }: {
+  sectionId: string; imageUrl: string; imageIndex: number; isMobile: boolean
+}) {
+  const { favorites, toggle, setNote } = useFavorites()
+  const record = favorites.get(imageUrl)
+  const isFav = !!record
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState("")
+
+  // Keep the draft in sync when the record's note changes (e.g. after save).
+  useEffect(() => { setDraft(record?.note ?? "") }, [record?.note])
+
+  // Swallow the click so the lightbox underneath doesn't also fire.
+  const stop = (e: React.MouseEvent) => { e.stopPropagation() }
+
+  const chipBg = "rgba(12,12,12,0.55)"
+  const chipBgHover = "rgba(12,12,12,0.75)"
+  const iconSize = isMobile ? 36 : 30
+  const iconFont = isMobile ? 17 : 14
+
+  return (
+    <>
+      {/* Controls — bottom-right of image */}
+      <div
+        onClick={stop}
+        style={{
+          position: "absolute", bottom: 8, right: 8, zIndex: 2,
+          display: "flex", gap: 6, alignItems: "center",
+        }}
+      >
+        {isFav && (
+          <button
+            onClick={(e) => { stop(e); setEditing(true) }}
+            aria-label={record?.note ? "Edit note" : "Add a note"}
+            style={{
+              ...mono, fontSize: isMobile ? 10 : 9,
+              letterSpacing: "0.1em", textTransform: "uppercase",
+              height: iconSize, padding: "0 12px",
+              background: chipBg, color: "#F0EDE6",
+              border: "none", borderRadius: iconSize / 2,
+              cursor: "pointer", display: "flex", alignItems: "center",
+              backdropFilter: "blur(6px)",
+              WebkitBackdropFilter: "blur(6px)",
+            }}
+            onMouseOver={(e) => { (e.currentTarget as HTMLElement).style.background = chipBgHover }}
+            onMouseOut={(e) => { (e.currentTarget as HTMLElement).style.background = chipBg }}
+          >
+            {record?.note ? "Edit note" : "+ Note"}
+          </button>
+        )}
+        <button
+          onClick={(e) => { stop(e); toggle({ sectionId, imageUrl, imageIndex }) }}
+          aria-label={isFav ? "Remove favorite" : "Favorite this image"}
+          aria-pressed={isFav}
+          style={{
+            width: iconSize, height: iconSize,
+            background: chipBg, color: isFav ? "#ff5c7a" : "#F0EDE6",
+            border: "none", borderRadius: "50%",
+            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: iconFont, lineHeight: 1,
+            backdropFilter: "blur(6px)",
+            WebkitBackdropFilter: "blur(6px)",
+            transition: "transform 120ms ease, color 160ms ease",
+          }}
+          onMouseOver={(e) => { (e.currentTarget as HTMLElement).style.background = chipBgHover }}
+          onMouseOut={(e) => { (e.currentTarget as HTMLElement).style.background = chipBg }}
+        >
+          <span aria-hidden style={{ transform: isFav ? "scale(1.08)" : "scale(1)", transition: "transform 120ms ease", display: "block" }}>
+            {isFav ? "♥" : "♡"}
+          </span>
+        </button>
+      </div>
+
+      {/* Note editor overlay — inside the image cell, above the lightbox */}
+      {editing && (
+        <div
+          onClick={(e) => { stop(e); setEditing(false) }}
+          style={{
+            position: "absolute", inset: 0, zIndex: 3,
+            background: "rgba(8,8,8,0.72)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: 16,
+          }}
+        >
+          <div
+            onClick={stop}
+            style={{
+              background: "#F0EDE6", color: "#1C1916",
+              borderRadius: 4, padding: 16,
+              width: "100%", maxWidth: 320,
+              boxShadow: "0 18px 40px rgba(0,0,0,0.35)",
+            }}
+          >
+            <div style={{ ...mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.5, marginBottom: 10 }}>
+              Note on this image
+            </div>
+            <textarea
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              autoFocus
+              rows={3}
+              placeholder="Why this one?"
+              style={{
+                ...sans, fontSize: 13, lineHeight: 1.5,
+                width: "100%", boxSizing: "border-box",
+                background: "rgba(28,25,22,0.04)",
+                border: "0.5px solid rgba(28,25,22,0.12)",
+                borderRadius: 3, padding: "10px 12px",
+                color: "#1C1916",
+                outline: "none", resize: "vertical",
+              }}
+            />
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 12 }}>
+              <button
+                onClick={(e) => { stop(e); setEditing(false) }}
+                style={{ ...mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", background: "transparent", color: "#1C1916", border: "none", padding: "8px 14px", cursor: "pointer", opacity: 0.55 }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async (e) => { stop(e); await setNote(imageUrl, draft.trim()); setEditing(false) }}
+                style={{ ...mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", background: "#1C1916", color: "#F0EDE6", border: "none", padding: "8px 14px", cursor: "pointer" }}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
+function MoodboardSection({ content, sectionId, isDark, isMobile }: { content: any; sectionId: string; isDark: boolean; isMobile: boolean }) {
   const fade = useFadeIn()
   const layout = content.layout ?? "tall-left"
   const config = GRID_CONFIGS[layout]
@@ -299,18 +449,15 @@ function MoodboardSection({ content, isDark, isMobile }: { content: any; isDark:
           padding: isMobile ? "0 4px" : "0",
         }}>
           {images.filter(Boolean).map((src, i) => (
-            <img
-              key={i}
-              src={src}
-              alt=""
-              onClick={() => openLightbox(src)}
-              style={{
-                width: "100%", display: "block",
-                marginBottom: 4,
-                cursor: "zoom-in",
-                breakInside: "avoid",
-              }}
-            />
+            <div key={i} style={{ position: "relative", marginBottom: 4, breakInside: "avoid" }}>
+              <img
+                src={src}
+                alt=""
+                onClick={() => openLightbox(src)}
+                style={{ width: "100%", display: "block", cursor: "zoom-in" }}
+              />
+              <FavoriteButton sectionId={sectionId} imageUrl={src} imageIndex={i} isMobile={isMobile} />
+            </div>
           ))}
         </div>
       ) : (
@@ -328,12 +475,15 @@ function MoodboardSection({ content, isDark, isMobile }: { content: any; isDark:
           {(config ?? GRID_CONFIGS["tall-left"]).areas.map((area, i) => (
             <div key={i} style={{ gridArea: area, overflow: "hidden", position: "relative", background: isDark ? "rgba(232,229,224,0.06)" : "rgba(28,25,22,0.05)" }}>
               {images[i] ? (
-                <img
-                  src={images[i]}
-                  alt=""
-                  onClick={() => openLightbox(images[i])}
-                  style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: focalToObjectPosition(content.image_focals?.[i]), display: "block", cursor: "zoom-in" }}
-                />
+                <>
+                  <img
+                    src={images[i]}
+                    alt=""
+                    onClick={() => openLightbox(images[i])}
+                    style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: focalToObjectPosition(content.image_focals?.[i]), display: "block", cursor: "zoom-in" }}
+                  />
+                  <FavoriteButton sectionId={sectionId} imageUrl={images[i]} imageIndex={i} isMobile={isMobile} />
+                </>
               ) : (
                 <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <span style={{ ...mono, fontSize: 10, opacity: 0.15, textTransform: "uppercase", letterSpacing: "0.1em" }}>{i + 1}</span>
@@ -610,6 +760,71 @@ export default function BrandFoundationsPage({ params }: { params: { id: string 
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null)
   const openLightbox = useCallback((src: string) => setLightboxSrc(src), [])
 
+  /* ─── Favorites state ─────────────────────────────────────────────
+     Mirrors foundation_image_favorites rows for this foundation. Keyed
+     by image_url since that's the natural identifier in the UI. Writes
+     are optimistic: update the map first, then hit Supabase; on error
+     we roll the state back. ─────────────────────────────────────── */
+  const [favorites, setFavorites] = useState<Map<string, FavoriteRecord>>(new Map())
+
+  useEffect(() => {
+    async function loadFavorites() {
+      const { data } = await supabase
+        .from("foundation_image_favorites")
+        .select("id, image_url, image_index, note")
+        .eq("foundation_id", params.id)
+      if (!data) return
+      const next = new Map<string, FavoriteRecord>()
+      for (const row of data as any[]) {
+        next.set(row.image_url, { id: row.id, note: row.note, imageIndex: row.image_index })
+      }
+      setFavorites(next)
+    }
+    loadFavorites()
+  }, [params.id])
+
+  const toggleFavorite = useCallback(async ({ sectionId, imageUrl, imageIndex }: { sectionId: string; imageUrl: string; imageIndex: number }) => {
+    const existing = favorites.get(imageUrl)
+    if (existing) {
+      // Optimistic remove
+      setFavorites(prev => { const next = new Map(prev); next.delete(imageUrl); return next })
+      const { error } = await supabase.from("foundation_image_favorites").delete().eq("id", existing.id)
+      if (error) {
+        // Roll back
+        setFavorites(prev => { const next = new Map(prev); next.set(imageUrl, existing); return next })
+      }
+    } else {
+      // Optimistic add (temporary id until DB responds)
+      const tempId = `temp-${Date.now()}`
+      setFavorites(prev => { const next = new Map(prev); next.set(imageUrl, { id: tempId, note: null, imageIndex }); return next })
+      const { data, error } = await supabase
+        .from("foundation_image_favorites")
+        .insert({ foundation_id: params.id, section_id: sectionId, image_url: imageUrl, image_index: imageIndex })
+        .select("id")
+        .single()
+      if (error || !data) {
+        setFavorites(prev => { const next = new Map(prev); next.delete(imageUrl); return next })
+      } else {
+        setFavorites(prev => { const next = new Map(prev); next.set(imageUrl, { id: (data as any).id, note: null, imageIndex }); return next })
+      }
+    }
+  }, [favorites, params.id])
+
+  const setFavoriteNote = useCallback(async (imageUrl: string, note: string) => {
+    const existing = favorites.get(imageUrl)
+    if (!existing) return
+    const trimmed = note.trim()
+    const newNote = trimmed.length === 0 ? null : trimmed
+    // Optimistic update
+    setFavorites(prev => { const next = new Map(prev); next.set(imageUrl, { ...existing, note: newNote }); return next })
+    const { error } = await supabase.from("foundation_image_favorites").update({ note: newNote }).eq("id", existing.id)
+    if (error) {
+      setFavorites(prev => { const next = new Map(prev); next.set(imageUrl, existing); return next })
+    }
+  }, [favorites])
+
+  const favoritesApi: FavoritesApi = { favorites, toggle: toggleFavorite, setNote: setFavoriteNote }
+
   async function handleApprove(note: string) {
     const now = new Date().toISOString()
     await supabase.from("brand_foundations").update({
@@ -725,6 +940,7 @@ export default function BrandFoundationsPage({ params }: { params: { id: string 
 
     {/* ─── Page content (renders behind the title card while it's visible) ─── */}
     <LightboxContext.Provider value={openLightbox}>
+    <FavoritesContext.Provider value={favoritesApi}>
     <div id="foundations-scroll" style={{ position: "relative", background: DARK_BG, height: isMobile ? "100dvh" : "100vh", overflowY: "auto", scrollSnapType: "y proximity" }}>
       {/* Back to portal — top-left, scrolls with page */}
       <div style={{
@@ -749,7 +965,7 @@ export default function BrandFoundationsPage({ params }: { params: { id: string 
           case "philosophy":
             return <PhilosophySection key={section.id} content={content} isDark={isDark} isMobile={isMobile} traitMeta={moodboardTraits} />
           case "moodboard":
-            return <MoodboardSection key={section.id} content={content} isDark={isDark} isMobile={isMobile} />
+            return <MoodboardSection key={section.id} sectionId={section.id} content={content} isDark={isDark} isMobile={isMobile} />
           case "summary":
             return <SummarySection key={section.id} content={content} isDark={isDark} isMobile={isMobile} traits={moodboardTraits} />
           case "next_steps":
@@ -770,6 +986,7 @@ export default function BrandFoundationsPage({ params }: { params: { id: string 
       {/* Lightbox */}
       <Lightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
     </div>
+    </FavoritesContext.Provider>
     </LightboxContext.Provider>
     </>
   )
