@@ -302,8 +302,8 @@ function FavoriteButton({ sectionId, imageUrl, imageIndex, isMobile }: {
 
   const chipBg = "rgba(12,12,12,0.55)"
   const chipBgHover = "rgba(12,12,12,0.75)"
-  const iconSize = isMobile ? 36 : 30
-  const iconFont = isMobile ? 17 : 14
+  const iconSize = 30
+  const iconFont = isMobile ? 15 : 14
 
   return (
     <>
