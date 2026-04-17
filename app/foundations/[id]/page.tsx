@@ -551,6 +551,21 @@ export default function BrandFoundationsPage({ params }: { params: { id: string 
     return () => clearTimeout(t)
   }, [cardReadyToFade])
 
+  // Paint html + body dark while the foundations page is mounted.
+  // The scroll container is height: 100dvh on mobile; iOS Safari's URL bar
+  // dynamically shrinks dvh, exposing the page's cream body gradient beneath.
+  // Matching the background here avoids an off-white bar peeking at the bottom.
+  useEffect(() => {
+    const prevHtmlBg = document.documentElement.style.background
+    const prevBodyBg = document.body.style.background
+    document.documentElement.style.background = DARK_BG
+    document.body.style.background = DARK_BG
+    return () => {
+      document.documentElement.style.background = prevHtmlBg
+      document.body.style.background = prevBodyBg
+    }
+  }, [])
+
   useEffect(() => {
     function check() { setIsMobile(window.innerWidth < 768) }
     check()
