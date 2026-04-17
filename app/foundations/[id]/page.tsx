@@ -35,12 +35,19 @@ function Lightbox({ src, onClose }: { src: string | null; onClose: () => void })
     if (!src) return
     function onKey(e: KeyboardEvent) { if (e.key === "Escape") onClose() }
     document.addEventListener("keydown", onKey)
-    // Lock body scroll while open
-    const prevOverflow = document.body.style.overflow
+    // Lock body scroll AND the inner foundations scroll container while open.
+    // Locking body alone isn't enough because #foundations-scroll has its own
+    // overflow-y: auto — wheel/trackpad events would otherwise scroll the page
+    // behind the lightbox, landing the user somewhere else when they close it.
+    const prevBodyOverflow = document.body.style.overflow
     document.body.style.overflow = "hidden"
+    const scroller = document.getElementById("foundations-scroll")
+    const prevScrollerOverflow = scroller?.style.overflow ?? ""
+    if (scroller) scroller.style.overflow = "hidden"
     return () => {
       document.removeEventListener("keydown", onKey)
-      document.body.style.overflow = prevOverflow
+      document.body.style.overflow = prevBodyOverflow
+      if (scroller) scroller.style.overflow = prevScrollerOverflow
     }
   }, [src, onClose])
 
@@ -357,19 +364,21 @@ function SummarySection({ content, isDark, isMobile, traits }: {
 
       {/* Recap — circle left, thumbnail grid right */}
       <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 40 : 48, alignItems: "center", marginBottom: 48 }}>
-        {/* Circle with title + body */}
+        {/* Circle with title + body. Text is constrained to the inscribed
+            square (diameter / √2 ≈ 0.7×) so long copy doesn't clip past
+            the circle's curve at top and bottom. */}
         <div style={{ flex: "0 0 auto" }}>
           <div style={{
-            width: isMobile ? 200 : 260, height: isMobile ? 200 : 260,
+            width: isMobile ? 240 : 260, height: isMobile ? 240 : 260,
             borderRadius: "50%", border: `0.5px solid ${isDark ? "rgba(232,229,224,0.25)" : "rgba(28,25,22,0.22)"}`,
-            display: "flex", alignItems: "center", justifyContent: "center", padding: isMobile ? 28 : 38,
+            display: "flex", alignItems: "center", justifyContent: "center", padding: isMobile ? 36 : 38,
           }}>
-            <div>
+            <div style={{ maxWidth: isMobile ? 168 : 184, textAlign: "center" }}>
               <div style={{ ...sans, fontSize: isMobile ? 12 : 14, fontWeight: 700, lineHeight: 1.35, letterSpacing: "-0.01em", marginBottom: 10 }}>
                 {content.recap_title}
               </div>
               {content.recap_body && (
-                <div style={{ ...sans, fontSize: isMobile ? 10 : 10.5, lineHeight: 1.6, opacity: 0.5 }}>
+                <div style={{ ...sans, fontSize: isMobile ? 10 : 10.5, lineHeight: 1.55, opacity: 0.5 }}>
                   {content.recap_body}
                 </div>
               )}
