@@ -3,3 +3,9 @@ node_modules
 .env.local
 .vercel
 cinq-portal/
+.DS_Store
+
+# Claude Code / local tooling
+.agents
+.claude
+plugins
