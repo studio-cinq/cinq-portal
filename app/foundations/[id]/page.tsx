@@ -4,8 +4,14 @@ import { useState, useEffect, useRef, createContext, useContext, useCallback } f
 import { supabase } from "@/lib/supabase"
 import CinqLogo from "@/components/CinqLogo"
 
-/* ─── Lightbox context — lets any section open a full-size image overlay ─── */
-const LightboxContext = createContext<(src: string) => void>(() => {})
+/* ─── Lightbox context — lets any section open a full-size image overlay.
+       Optional `meta` carries the sectionId + imageIndex for moodboard
+       images, which is what the in-lightbox favorite button needs in
+       order to insert a new foundation_image_favorites row. Non-moodboard
+       images (philosophy, summary thumbnails) just pass the src. ─── */
+type LightboxMeta = { sectionId: string; imageIndex: number }
+type OpenLightbox = (src: string, meta?: LightboxMeta) => void
+const LightboxContext = createContext<OpenLightbox>(() => {})
 function useLightbox() { return useContext(LightboxContext) }
 
 /* ─── Favorites context — lets any moodboard image toggle a favorite
@@ -45,8 +51,33 @@ function focalToObjectPosition(focal?: { x?: number; y?: number } | null): strin
   return `${x}% ${y}%`
 }
 
-/* ─── Lightbox overlay: click image → full view, ESC or click outside closes ─── */
-function Lightbox({ src, onClose }: { src: string | null; onClose: () => void }) {
+/* ─── Lightbox overlay: click image → full view, ESC or click outside closes.
+       Also hosts the favorite heart + note controls for moodboard images —
+       favoriting is an intentional "lean in and look" action, not something
+       we want cluttering the moodboard grid itself. ─── */
+type LightboxState = { src: string; sectionId?: string; imageIndex?: number } | null
+
+function Lightbox({ state, onClose, isMobile }: { state: LightboxState; onClose: () => void; isMobile: boolean }) {
+  const src = state?.src ?? null
+  const sectionId = state?.sectionId
+  const imageIndex = state?.imageIndex
+  const canFavorite = !!sectionId && typeof imageIndex === "number"
+
+  const { favorites, toggle, setNote } = useFavorites()
+  const record = src ? favorites.get(src) : undefined
+  const isFav = !!record
+
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState("")
+
+  // Sync draft with the record's note whenever the lightbox opens or the
+  // record updates (e.g. after save). Also reset editing state when the
+  // lightbox is closed so it doesn't reopen with stale state next time.
+  useEffect(() => {
+    if (!src) { setEditing(false); return }
+    setDraft(record?.note ?? "")
+  }, [src, record?.note])
+
   useEffect(() => {
     if (!src) return
     function onKey(e: KeyboardEvent) { if (e.key === "Escape") onClose() }
@@ -74,6 +105,11 @@ function Lightbox({ src, onClose }: { src: string | null; onClose: () => void })
 
   if (!src) return null
 
+  const stop = (e: React.MouseEvent) => { e.stopPropagation() }
+  const chipBg = "rgba(255,255,255,0.08)"
+  const chipBgHover = "rgba(255,255,255,0.16)"
+  const iconSize = 34
+
   return (
     <div
       onClick={onClose}
@@ -81,7 +117,7 @@ function Lightbox({ src, onClose }: { src: string | null; onClose: () => void })
         position: "fixed", inset: 0, zIndex: 200,
         background: "rgba(8,8,8,0.94)",
         display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "48px 32px",
+        padding: isMobile ? "72px 20px 120px" : "72px 40px 120px",
         cursor: "zoom-out",
         animation: "lightbox-fade 0.18s ease-out",
       }}
@@ -110,6 +146,121 @@ function Lightbox({ src, onClose }: { src: string | null; onClose: () => void })
       >
         ✕
       </button>
+
+      {/* Favorite dock — bottom-center, only for moodboard images */}
+      {canFavorite && (
+        <div
+          onClick={stop}
+          style={{
+            position: "fixed", bottom: isMobile ? 28 : 40, left: 0, right: 0,
+            display: "flex", justifyContent: "center", alignItems: "center", gap: 10,
+            pointerEvents: "none",
+          }}
+        >
+          <div style={{ display: "flex", gap: 8, pointerEvents: "auto" }}>
+            <button
+              onClick={(e) => { stop(e); toggle({ sectionId: sectionId!, imageUrl: src, imageIndex: imageIndex! }) }}
+              aria-label={isFav ? "Remove favorite" : "Favorite this image"}
+              aria-pressed={isFav}
+              style={{
+                width: iconSize, height: iconSize,
+                background: chipBg, color: isFav ? "#ff5c7a" : "#F0EDE6",
+                border: "none", borderRadius: "50%",
+                cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 17, lineHeight: 1,
+                backdropFilter: "blur(10px)",
+                WebkitBackdropFilter: "blur(10px)",
+                transition: "background 160ms ease",
+              }}
+              onMouseOver={(e) => { (e.currentTarget as HTMLElement).style.background = chipBgHover }}
+              onMouseOut={(e) => { (e.currentTarget as HTMLElement).style.background = chipBg }}
+            >
+              <span aria-hidden style={{ transform: isFav ? "scale(1.08)" : "scale(1)", transition: "transform 120ms ease", display: "block" }}>
+                {isFav ? "♥" : "♡"}
+              </span>
+            </button>
+            {isFav && (
+              <button
+                onClick={(e) => { stop(e); setEditing(true) }}
+                aria-label={record?.note ? "Edit note" : "Add a note"}
+                style={{
+                  ...mono, fontSize: 10,
+                  letterSpacing: "0.1em", textTransform: "uppercase",
+                  height: iconSize, padding: "0 14px",
+                  background: chipBg, color: "#F0EDE6",
+                  border: "none", borderRadius: iconSize / 2,
+                  cursor: "pointer", display: "flex", alignItems: "center",
+                  backdropFilter: "blur(10px)",
+                  WebkitBackdropFilter: "blur(10px)",
+                  transition: "background 160ms ease",
+                }}
+                onMouseOver={(e) => { (e.currentTarget as HTMLElement).style.background = chipBgHover }}
+                onMouseOut={(e) => { (e.currentTarget as HTMLElement).style.background = chipBg }}
+              >
+                {record?.note ? "Edit note" : "+ Note"}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Note editor — modal over the lightbox */}
+      {editing && canFavorite && (
+        <div
+          onClick={(e) => { stop(e); setEditing(false) }}
+          style={{
+            position: "fixed", inset: 0, zIndex: 210,
+            background: "rgba(8,8,8,0.55)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: 20,
+          }}
+        >
+          <div
+            onClick={stop}
+            style={{
+              background: "#F0EDE6", color: "#1C1916",
+              borderRadius: 4, padding: 20,
+              width: "100%", maxWidth: 380,
+              boxShadow: "0 24px 60px rgba(0,0,0,0.45)",
+            }}
+          >
+            <div style={{ ...mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.5, marginBottom: 12 }}>
+              Note on this image
+            </div>
+            <textarea
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              autoFocus
+              rows={4}
+              placeholder="Why this one?"
+              style={{
+                ...sans, fontSize: 14, lineHeight: 1.55,
+                width: "100%", boxSizing: "border-box",
+                background: "rgba(28,25,22,0.04)",
+                border: "0.5px solid rgba(28,25,22,0.12)",
+                borderRadius: 3, padding: "12px 14px",
+                color: "#1C1916",
+                outline: "none", resize: "vertical",
+              }}
+            />
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 14 }}>
+              <button
+                onClick={(e) => { stop(e); setEditing(false) }}
+                style={{ ...mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", background: "transparent", color: "#1C1916", border: "none", padding: "10px 16px", cursor: "pointer", opacity: 0.55 }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async (e) => { stop(e); await setNote(src, draft.trim()); setEditing(false) }}
+                style={{ ...mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", background: "#1C1916", color: "#F0EDE6", border: "none", padding: "10px 16px", cursor: "pointer" }}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`@keyframes lightbox-fade { from { opacity: 0 } to { opacity: 1 } }`}</style>
     </div>
   )
@@ -289,140 +440,6 @@ function PhilosophySection({ content, isDark, isMobile, traitMeta = [] }: {
   )
 }
 
-/* ─── Favorite button — heart + optional note, overlaid on moodboard image ─── */
-function FavoriteButton({ sectionId, imageUrl, imageIndex, isMobile }: {
-  sectionId: string; imageUrl: string; imageIndex: number; isMobile: boolean
-}) {
-  const { favorites, toggle, setNote } = useFavorites()
-  const record = favorites.get(imageUrl)
-  const isFav = !!record
-  const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState("")
-
-  // Keep the draft in sync when the record's note changes (e.g. after save).
-  useEffect(() => { setDraft(record?.note ?? "") }, [record?.note])
-
-  // Swallow the click so the lightbox underneath doesn't also fire.
-  const stop = (e: React.MouseEvent) => { e.stopPropagation() }
-
-  const chipBg = "rgba(12,12,12,0.55)"
-  const chipBgHover = "rgba(12,12,12,0.75)"
-  const iconSize = 30
-  const iconFont = isMobile ? 15 : 14
-
-  return (
-    <>
-      {/* Controls — bottom-right of image */}
-      <div
-        onClick={stop}
-        style={{
-          position: "absolute", bottom: 8, right: 8, zIndex: 2,
-          display: "flex", gap: 6, alignItems: "center",
-        }}
-      >
-        {isFav && (
-          <button
-            onClick={(e) => { stop(e); setEditing(true) }}
-            aria-label={record?.note ? "Edit note" : "Add a note"}
-            style={{
-              ...mono, fontSize: isMobile ? 10 : 9,
-              letterSpacing: "0.1em", textTransform: "uppercase",
-              height: iconSize, padding: "0 12px",
-              background: chipBg, color: "#F0EDE6",
-              border: "none", borderRadius: iconSize / 2,
-              cursor: "pointer", display: "flex", alignItems: "center",
-              backdropFilter: "blur(6px)",
-              WebkitBackdropFilter: "blur(6px)",
-            }}
-            onMouseOver={(e) => { (e.currentTarget as HTMLElement).style.background = chipBgHover }}
-            onMouseOut={(e) => { (e.currentTarget as HTMLElement).style.background = chipBg }}
-          >
-            {record?.note ? "Edit note" : "+ Note"}
-          </button>
-        )}
-        <button
-          onClick={(e) => { stop(e); toggle({ sectionId, imageUrl, imageIndex }) }}
-          aria-label={isFav ? "Remove favorite" : "Favorite this image"}
-          aria-pressed={isFav}
-          style={{
-            width: iconSize, height: iconSize,
-            background: chipBg, color: isFav ? "#ff5c7a" : "#F0EDE6",
-            border: "none", borderRadius: "50%",
-            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: iconFont, lineHeight: 1,
-            backdropFilter: "blur(6px)",
-            WebkitBackdropFilter: "blur(6px)",
-            transition: "transform 120ms ease, color 160ms ease",
-          }}
-          onMouseOver={(e) => { (e.currentTarget as HTMLElement).style.background = chipBgHover }}
-          onMouseOut={(e) => { (e.currentTarget as HTMLElement).style.background = chipBg }}
-        >
-          <span aria-hidden style={{ transform: isFav ? "scale(1.08)" : "scale(1)", transition: "transform 120ms ease", display: "block" }}>
-            {isFav ? "♥" : "♡"}
-          </span>
-        </button>
-      </div>
-
-      {/* Note editor overlay — inside the image cell, above the lightbox */}
-      {editing && (
-        <div
-          onClick={(e) => { stop(e); setEditing(false) }}
-          style={{
-            position: "absolute", inset: 0, zIndex: 3,
-            background: "rgba(8,8,8,0.72)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            padding: 16,
-          }}
-        >
-          <div
-            onClick={stop}
-            style={{
-              background: "#F0EDE6", color: "#1C1916",
-              borderRadius: 4, padding: 16,
-              width: "100%", maxWidth: 320,
-              boxShadow: "0 18px 40px rgba(0,0,0,0.35)",
-            }}
-          >
-            <div style={{ ...mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.5, marginBottom: 10 }}>
-              Note on this image
-            </div>
-            <textarea
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              autoFocus
-              rows={3}
-              placeholder="Why this one?"
-              style={{
-                ...sans, fontSize: 13, lineHeight: 1.5,
-                width: "100%", boxSizing: "border-box",
-                background: "rgba(28,25,22,0.04)",
-                border: "0.5px solid rgba(28,25,22,0.12)",
-                borderRadius: 3, padding: "10px 12px",
-                color: "#1C1916",
-                outline: "none", resize: "vertical",
-              }}
-            />
-            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 12 }}>
-              <button
-                onClick={(e) => { stop(e); setEditing(false) }}
-                style={{ ...mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", background: "transparent", color: "#1C1916", border: "none", padding: "8px 14px", cursor: "pointer", opacity: 0.55 }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={async (e) => { stop(e); await setNote(imageUrl, draft.trim()); setEditing(false) }}
-                style={{ ...mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", background: "#1C1916", color: "#F0EDE6", border: "none", padding: "8px 14px", cursor: "pointer" }}
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  )
-}
-
 function MoodboardSection({ content, sectionId, isDark, isMobile }: { content: any; sectionId: string; isDark: boolean; isMobile: boolean }) {
   const fade = useFadeIn()
   const layout = content.layout ?? "tall-left"
@@ -454,15 +471,18 @@ function MoodboardSection({ content, sectionId, isDark, isMobile }: { content: a
           padding: isMobile ? "0 4px" : "0",
         }}>
           {images.filter(Boolean).map((src, i) => (
-            <div key={i} style={{ position: "relative", marginBottom: 4, breakInside: "avoid" }}>
-              <img
-                src={src}
-                alt=""
-                onClick={() => openLightbox(src)}
-                style={{ width: "100%", display: "block", cursor: "zoom-in" }}
-              />
-              <FavoriteButton sectionId={sectionId} imageUrl={src} imageIndex={i} isMobile={isMobile} />
-            </div>
+            <img
+              key={i}
+              src={src}
+              alt=""
+              onClick={() => openLightbox(src, { sectionId, imageIndex: i })}
+              style={{
+                width: "100%", display: "block",
+                marginBottom: 4,
+                cursor: "zoom-in",
+                breakInside: "avoid",
+              }}
+            />
           ))}
         </div>
       ) : (
@@ -480,15 +500,12 @@ function MoodboardSection({ content, sectionId, isDark, isMobile }: { content: a
           {(config ?? GRID_CONFIGS["tall-left"]).areas.map((area, i) => (
             <div key={i} style={{ gridArea: area, overflow: "hidden", position: "relative", background: isDark ? "rgba(232,229,224,0.06)" : "rgba(28,25,22,0.05)" }}>
               {images[i] ? (
-                <>
-                  <img
-                    src={images[i]}
-                    alt=""
-                    onClick={() => openLightbox(images[i])}
-                    style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: focalToObjectPosition(content.image_focals?.[i]), display: "block", cursor: "zoom-in" }}
-                  />
-                  <FavoriteButton sectionId={sectionId} imageUrl={images[i]} imageIndex={i} isMobile={isMobile} />
-                </>
+                <img
+                  src={images[i]}
+                  alt=""
+                  onClick={() => openLightbox(images[i], { sectionId, imageIndex: i })}
+                  style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: focalToObjectPosition(content.image_focals?.[i]), display: "block", cursor: "zoom-in" }}
+                />
               ) : (
                 <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <span style={{ ...mono, fontSize: 10, opacity: 0.15, textTransform: "uppercase", letterSpacing: "0.1em" }}>{i + 1}</span>
@@ -762,8 +779,10 @@ export default function BrandFoundationsPage({ params }: { params: { id: string 
   }, [params.id])
 
   // Lightbox state (declared above early returns to keep hook order stable)
-  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null)
-  const openLightbox = useCallback((src: string) => setLightboxSrc(src), [])
+  const [lightboxState, setLightboxState] = useState<LightboxState>(null)
+  const openLightbox = useCallback<OpenLightbox>((src, meta) => {
+    setLightboxState({ src, ...(meta ?? {}) })
+  }, [])
 
   /* ─── Favorites state ─────────────────────────────────────────────
      Mirrors foundation_image_favorites rows for this foundation. Keyed
@@ -989,7 +1008,7 @@ export default function BrandFoundationsPage({ params }: { params: { id: string 
       />}
 
       {/* Lightbox */}
-      <Lightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
+      <Lightbox state={lightboxState} onClose={() => setLightboxState(null)} isMobile={isMobile} />
     </div>
     </FavoritesContext.Provider>
     </LightboxContext.Provider>
