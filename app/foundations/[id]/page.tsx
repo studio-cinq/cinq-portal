@@ -51,19 +51,24 @@ function Lightbox({ src, onClose }: { src: string | null; onClose: () => void })
     if (!src) return
     function onKey(e: KeyboardEvent) { if (e.key === "Escape") onClose() }
     document.addEventListener("keydown", onKey)
-    // Lock body scroll AND the inner foundations scroll container while open.
-    // Locking body alone isn't enough because #foundations-scroll has its own
-    // overflow-y: auto — wheel/trackpad events would otherwise scroll the page
-    // behind the lightbox, landing the user somewhere else when they close it.
+    // Lock scroll while the lightbox is open. We avoid toggling overflow on
+    // #foundations-scroll (doing that resets its scrollTop when overflow
+    // comes back, kicking the user to the top of the page). Instead we
+    // prevent wheel/touch events from reaching the scroll container, which
+    // freezes it in place without mutating any scroll state.
     const prevBodyOverflow = document.body.style.overflow
     document.body.style.overflow = "hidden"
+
     const scroller = document.getElementById("foundations-scroll")
-    const prevScrollerOverflow = scroller?.style.overflow ?? ""
-    if (scroller) scroller.style.overflow = "hidden"
+    const blockScroll = (e: Event) => { e.preventDefault() }
+    scroller?.addEventListener("wheel", blockScroll, { passive: false })
+    scroller?.addEventListener("touchmove", blockScroll, { passive: false })
+
     return () => {
       document.removeEventListener("keydown", onKey)
       document.body.style.overflow = prevBodyOverflow
-      if (scroller) scroller.style.overflow = prevScrollerOverflow
+      scroller?.removeEventListener("wheel", blockScroll)
+      scroller?.removeEventListener("touchmove", blockScroll)
     }
   }, [src, onClose])
 
