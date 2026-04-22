@@ -91,15 +91,25 @@ function Lightbox({ state, onClose, isMobile }: { state: LightboxState; onClose:
     document.body.style.overflow = "hidden"
 
     const scroller = document.getElementById("foundations-scroll")
-    const blockScroll = (e: Event) => { e.preventDefault() }
-    scroller?.addEventListener("wheel", blockScroll, { passive: false })
-    scroller?.addEventListener("touchmove", blockScroll, { passive: false })
+    // Let pinch-zoom events through (iOS multi-finger touch and desktop
+    // trackpad ctrl+wheel), but block everything else that would scroll
+    // the page behind the lightbox.
+    const blockWheel = (e: WheelEvent) => {
+      if (e.ctrlKey) return
+      e.preventDefault()
+    }
+    const blockSingleFingerScroll = (e: TouchEvent) => {
+      if (e.touches.length > 1) return
+      e.preventDefault()
+    }
+    scroller?.addEventListener("wheel", blockWheel as EventListener, { passive: false })
+    scroller?.addEventListener("touchmove", blockSingleFingerScroll as EventListener, { passive: false })
 
     return () => {
       document.removeEventListener("keydown", onKey)
       document.body.style.overflow = prevBodyOverflow
-      scroller?.removeEventListener("wheel", blockScroll)
-      scroller?.removeEventListener("touchmove", blockScroll)
+      scroller?.removeEventListener("wheel", blockWheel as EventListener)
+      scroller?.removeEventListener("touchmove", blockSingleFingerScroll as EventListener)
     }
   }, [src, onClose])
 
