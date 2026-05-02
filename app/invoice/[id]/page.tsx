@@ -208,14 +208,17 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
         {/* Meta */}
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 16 : 24, marginBottom: 36, padding: "20px 0", borderTop: "0.5px solid rgba(15,15,14,0.1)", borderBottom: "0.5px solid rgba(15,15,14,0.1)" }}>
           {[
-            { label: "From", value: "Studio Cinq" },
-            { label: "To", value: client?.name ?? "—" },
+            { label: "From", value: "Studio Cinq", subline: "Kacie Yates" },
+            { label: "To", value: client?.name ?? "—", subline: client?.contact_name || undefined },
             { label: "Project", value: project?.title ?? "—" },
             { label: "Due", value: invoice.due_date ? new Date(invoice.due_date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : "Upon receipt" },
           ].map(row => (
             <div key={row.label}>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.4, marginBottom: 6 }}>{row.label}</div>
               <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.75 }}>{row.value}</div>
+              {row.subline && (
+                <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: 0.5, marginTop: 2 }}>{row.subline}</div>
+              )}
             </div>
           ))}
         </div>
