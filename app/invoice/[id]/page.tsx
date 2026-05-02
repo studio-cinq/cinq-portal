@@ -226,8 +226,8 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
 
         {/* ACH bank details */}
         {hasACH && !isPaid && achDetails && achDetails.bankName && (
-          <div style={{ marginBottom: 36, padding: "16px 0 16px 20px", borderLeft: "2px solid rgba(15,15,14,0.1)" }}>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.4, marginBottom: 12 }}>
+          <div style={{ marginBottom: 36, padding: "20px 24px", background: "rgba(255,255,255,0.4)", border: "0.5px solid rgba(15,15,14,0.1)" }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.55, marginBottom: 14 }}>
               Bank transfer details
             </div>
             {[
@@ -237,9 +237,9 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
               { label: "Account number", value: achDetails.accountNumber },
               { label: "Reference",      value: `Invoice #${invoice.invoice_number}` },
             ].map(row => (
-              <div key={row.label} style={{ display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", gap: isMobile ? 4 : 16, padding: "7px 0", borderBottom: "0.5px solid rgba(15,15,14,0.05)" }}>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.4 }}>{row.label}</span>
-                <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.75 }}>{row.value}</span>
+              <div key={row.label} style={{ display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", gap: isMobile ? 4 : 16, padding: "8px 0", borderBottom: "0.5px solid rgba(15,15,14,0.08)" }}>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.5 }}>{row.label}</span>
+                <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.85 }}>{row.value}</span>
               </div>
             ))}
           </div>
@@ -280,7 +280,7 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
                 </div>
               )}
               {hasACH && hasStripe && (
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.06em", opacity: 0.4 }}>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.06em", opacity: 0.6 }}>
                   or pay via bank transfer above
                 </span>
               )}
