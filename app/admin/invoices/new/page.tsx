@@ -31,6 +31,7 @@ function NewInvoicePageInner() {
     status:         "sent",
     unlocks_files:  false,
     notes:          "",
+    payment_alert:  "",
     payment_methods: ["stripe"] as string[],
     cc_emails: "",
   })
@@ -103,6 +104,7 @@ function NewInvoicePageInner() {
       amount:         totalCents,
       line_items:     items,
       notes:          form.notes.trim() || null,
+      payment_alert:  form.payment_alert.trim() || null,
       due_date:       form.due_date || null,
       status:         form.status,
       unlocks_files:  form.unlocks_files,
@@ -259,6 +261,18 @@ function NewInvoicePageInner() {
                 ${total.toLocaleString("en-US", { minimumFractionDigits: 2 })}
               </span>
             </div>
+          </div>
+
+          {/* Payment alert */}
+          <div>
+            <label style={labelStyle}>Payment alert <span style={{ opacity: 0.5 }}>(optional — shows as prominent banner at top of client invoice; use sparingly for urgent payment changes)</span></label>
+            <textarea
+              value={form.payment_alert}
+              onChange={e => set("payment_alert", e.target.value)}
+              placeholder="e.g. Our bank account has changed — please update your records and use the new ACH details below."
+              rows={2}
+              style={{ ...inputStyle, resize: "none", lineHeight: 1.7 }}
+            />
           </div>
 
           {/* Notes */}

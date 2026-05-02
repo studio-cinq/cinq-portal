@@ -147,6 +147,38 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
       {/* Content */}
       <main style={{ maxWidth: 640, margin: "0 auto", padding: isMobile ? "32px 20px 56px" : "48px 32px 80px" }}>
 
+        {/* Payment alert — prominent banner for urgent payment changes */}
+        {invoice.payment_alert && !isPaid && (
+          <div role="alert" style={{
+            display: "flex", gap: 14, alignItems: "flex-start",
+            marginBottom: 32, padding: isMobile ? "16px 18px" : "18px 22px",
+            background: "rgba(201,90,59,0.07)",
+            border: "1px solid rgba(201,90,59,0.4)",
+            borderLeft: "3px solid var(--amber)",
+          }}>
+            <span aria-hidden="true" style={{
+              fontFamily: "var(--font-sans)", fontSize: 16, fontWeight: 600,
+              color: "var(--amber)", lineHeight: 1.4, flexShrink: 0,
+            }}>!</span>
+            <div style={{ flex: 1 }}>
+              <div style={{
+                fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
+                letterSpacing: "0.14em", textTransform: "uppercase",
+                color: "var(--amber)", opacity: 0.95, marginBottom: 6, fontWeight: 600,
+              }}>
+                Important — please read
+              </div>
+              <div style={{
+                fontFamily: "var(--font-sans)", fontSize: "var(--text-body)",
+                lineHeight: 1.6, color: "var(--ink)", opacity: 0.88,
+                whiteSpace: "pre-wrap",
+              }}>
+                {invoice.payment_alert}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div style={{ position: "relative" }}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.42, marginBottom: 10 }}>

@@ -49,6 +49,7 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
     status:         "draft",
     unlocks_files:  false,
     notes:          "",
+    payment_alert:  "",
     payment_methods: ["stripe"] as string[],
     cc_emails: "",
   })
@@ -82,6 +83,7 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
           status:         inv.status ?? "draft",
           unlocks_files:  inv.unlocks_files ?? false,
           notes:          inv.notes ?? "",
+          payment_alert:  inv.payment_alert ?? "",
           payment_methods: inv.payment_methods ?? ["stripe"],
           cc_emails: Array.isArray(inv.cc_emails) ? inv.cc_emails.join(", ") : "",
         })
@@ -165,6 +167,7 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
       amount:         totalCents,
       line_items:     items.length > 0 ? items : [],
       notes:          form.notes.trim() || null,
+      payment_alert:  form.payment_alert.trim() || null,
       due_date:       form.due_date || null,
       status:         form.status,
       unlocks_files:  form.unlocks_files,
@@ -363,6 +366,12 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
               <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.5 }}>Total</span>
               <span style={{ fontFamily: "var(--font-sans)", fontSize: 22, letterSpacing: "-0.01em", opacity: 0.88 }}>${total.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
             </div>
+          </div>
+
+          {/* Payment alert */}
+          <div>
+            <label style={labelStyle}>Payment alert <span style={{ opacity: 0.5 }}>(optional — shows as prominent banner at top of client invoice; use sparingly for urgent payment changes)</span></label>
+            <textarea value={form.payment_alert} onChange={e => set("payment_alert", e.target.value)} placeholder="e.g. Our bank account has changed — please update your records and use the new ACH details below." rows={2} style={{ ...inputStyle, resize: "none", lineHeight: 1.7 }} />
           </div>
 
           {/* Notes */}

@@ -121,6 +121,7 @@ export interface Invoice {
   paid_at?: string
   stripe_payment_intent_id?: string
   unlocks_files: boolean
+  payment_alert?: string | null
 }
 
 export interface BrandAsset {
