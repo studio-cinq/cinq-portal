@@ -717,12 +717,24 @@ export default function BrandFoundationsPage({ params }: { params: { id: string 
   const [cardDismissed, setCardDismissed] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
 
+  // ?print=1 flattens the page for headless-Chrome PDF rendering: skips the
+  // title card sequence, expands the scroll container to its full height so
+  // every section is visible at once, forces all fade-ins fully opaque, and
+  // hides the approval CTA + back link. Read once on mount (URL won't change).
+  const [printMode, setPrintMode] = useState(false)
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    setPrintMode(new URLSearchParams(window.location.search).get("print") === "1")
+  }, [])
+
   // Hold the title card on screen long enough for its full sequence (~2.6s).
   // Without this, fast Supabase responses unmount the loader before the logo + tagline animate in.
+  // In print mode we skip the card entirely so the renderer doesn't have to wait.
   useEffect(() => {
+    if (printMode) { setMinTimeElapsed(true); setCardDismissed(true); return }
     const t = setTimeout(() => setMinTimeElapsed(true), 2600)
     return () => clearTimeout(t)
-  }, [])
+  }, [printMode])
 
   // Once both data is ready AND the title sequence has played, fade the card out
   // over 900ms, then unmount it so it stops intercepting interaction.
@@ -975,16 +987,34 @@ export default function BrandFoundationsPage({ params }: { params: { id: string 
     {/* ─── Page content (renders behind the title card while it's visible) ─── */}
     <LightboxContext.Provider value={openLightbox}>
     <FavoritesContext.Provider value={favoritesApi}>
-    <div id="foundations-scroll" style={{ position: "relative", background: DARK_BG, height: isMobile ? "100dvh" : "100vh", overflowY: "auto", scrollSnapType: "y proximity" }}>
-      {/* Back to portal — top-left, scrolls with page */}
-      <div style={{
-        position: "absolute", top: isMobile ? 8 : 24, left: isMobile ? 12 : 32,
-        zIndex: 50, mixBlendMode: "difference",
-      }}>
-        <a href="/login" style={{ ...mono, fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#F0EDE6", textDecoration: "none", opacity: 0.4, padding: isMobile ? "12px 16px" : undefined, display: "block" }}>
-          ← Portal
-        </a>
-      </div>
+    <div
+      id="foundations-scroll"
+      style={
+        printMode
+          ? { position: "relative", background: DARK_BG, height: "auto", overflow: "visible" }
+          : { position: "relative", background: DARK_BG, height: isMobile ? "100dvh" : "100vh", overflowY: "auto", scrollSnapType: "y proximity" }
+      }
+    >
+      {/* Back to portal — top-left, scrolls with page. Hidden in print mode. */}
+      {!printMode && (
+        <div style={{
+          position: "absolute", top: isMobile ? 8 : 24, left: isMobile ? 12 : 32,
+          zIndex: 50, mixBlendMode: "difference",
+        }}>
+          <a href="/login" style={{ ...mono, fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#F0EDE6", textDecoration: "none", opacity: 0.4, padding: isMobile ? "12px 16px" : undefined, display: "block" }}>
+            ← Portal
+          </a>
+        </div>
+      )}
+
+      {/* In print mode, force every fade-in opaque and disable any scroll-snap
+          alignment so headless Chrome captures a clean, flat document. */}
+      {printMode && (
+        <style>{`
+          #foundations-scroll section { scroll-snap-align: none !important; break-inside: avoid; }
+          #foundations-scroll [style*="opacity: 0"] { opacity: 1 !important; transform: none !important; }
+        `}</style>
+      )}
 
       {/* Sections — only render once data is ready */}
       {foundation && sections.map((section) => {
@@ -1009,8 +1039,8 @@ export default function BrandFoundationsPage({ params }: { params: { id: string 
         }
       })}
 
-      {/* Approval */}
-      {foundation && <ApprovalSection
+      {/* Approval — hidden in print mode (PDF exports don't need the CTA). */}
+      {foundation && !printMode && <ApprovalSection
         foundation={foundation}
         isDark={approvalDark}
         isMobile={isMobile}
