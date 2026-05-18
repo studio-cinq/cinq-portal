@@ -76,7 +76,7 @@ export async function middleware(req: NextRequest) {
   if (pathname === "/login" || matchesPrefix(pathname, PUBLIC_PAGE_PREFIXES)) {
     if (user && pathname === "/login") {
       const isAdmin = user.email === process.env.ADMIN_EMAIL
-      return NextResponse.redirect(new URL(isAdmin ? "/admin/studio" : "/dashboard", req.url))
+      return NextResponse.redirect(new URL(isAdmin ? "/admin/focus" : "/dashboard", req.url))
     }
     return res
   }

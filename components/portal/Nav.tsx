@@ -17,6 +17,7 @@ const CLIENT_LINKS = [
 ]
 
 const ADMIN_LINKS = [
+  { href: "/admin/focus",     label: "Focus"     },
   { href: "/admin/studio",    label: "Studio"    },
   { href: "/admin/clients",   label: "Clients"   },
   { href: "/admin/proposals", label: "Proposals" },
@@ -52,7 +53,7 @@ export default function PortalNav({ clientName, isAdmin }: NavProps) {
         zIndex: 100,
         boxSizing: "border-box",
       }}>
-        <Link href={isAdmin ? "/admin/studio" : "/dashboard"} aria-label="Go to home" style={{ display: "flex" }}>
+        <Link href={isAdmin ? "/admin/focus" : "/dashboard"} aria-label="Go to home" style={{ display: "flex" }}>
           <CinqLogo width={33} />
         </Link>
 
