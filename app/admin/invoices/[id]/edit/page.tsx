@@ -52,6 +52,7 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
     payment_alert:  "",
     payment_methods: ["stripe"] as string[],
     cc_emails: "",
+    skip_email:     false,
   })
 
   const [lineItems, setLineItems] = useState<{ description: string; amount: string }[]>([
@@ -86,6 +87,7 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
           payment_alert:  inv.payment_alert ?? "",
           payment_methods: inv.payment_methods ?? ["stripe"],
           cc_emails: Array.isArray(inv.cc_emails) ? inv.cc_emails.join(", ") : "",
+          skip_email:     false,
         })
 
         // Load line items from DB
@@ -195,8 +197,8 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
 
     if (error) { setError(error.message); return }
 
-    // Re-send invoice email if status changed to "sent"
-    if (form.status === "sent" && originalStatus !== "sent") {
+    // Re-send invoice email if status changed to "sent" (unless skip_email is checked)
+    if (form.status === "sent" && originalStatus !== "sent" && !form.skip_email) {
       fetch("/api/admin/send-invoice-by-number", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -246,7 +248,8 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
   }
 
   const statusChanged = form.status !== originalStatus
-  const willResend    = form.status === "sent" && originalStatus !== "sent"
+  const wouldSend     = form.status === "sent" && originalStatus !== "sent"
+  const willResend    = wouldSend && !form.skip_email
 
   return (
     <>
@@ -445,6 +448,26 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
             </div>
           </div>
 
+          {/* Skip-email option (only when status change would trigger an email) */}
+          {wouldSend && (
+            <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer", paddingTop: 4 }}>
+              <input
+                type="checkbox"
+                checked={form.skip_email}
+                onChange={e => set("skip_email", e.target.checked)}
+                style={{ marginTop: 3 }}
+              />
+              <div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.08em", opacity: 0.7 }}>
+                  Skip portal email (I'm sending this manually)
+                </div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.04em", opacity: 0.4, marginTop: 4, lineHeight: 1.5 }}>
+                  Saves the invoice as Sent without firing the portal&rsquo;s automated email.
+                </div>
+              </div>
+            </label>
+          )}
+
           {/* Resend notice */}
           {willResend && (
             <div style={{
@@ -456,6 +479,18 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
               padding: "10px 14px",
             }}>
               Invoice email will be re-sent to the client when you save.
+            </div>
+          )}
+          {wouldSend && form.skip_email && (
+            <div style={{
+              ...mono,
+              fontSize: 10, letterSpacing: "0.08em",
+              color: "var(--ink)", opacity: 0.55,
+              background: "rgba(15,15,14,0.04)",
+              border: "0.5px solid rgba(15,15,14,0.1)",
+              padding: "10px 14px",
+            }}>
+              No portal email will be sent. Status will be marked Sent for tracking only.
             </div>
           )}
 

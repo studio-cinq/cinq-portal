@@ -34,6 +34,7 @@ function NewInvoicePageInner() {
     payment_alert:  "",
     payment_methods: ["stripe"] as string[],
     cc_emails: "",
+    skip_email:     false,
   })
 
   const [lineItems, setLineItems] = useState<LineItem[]>([
@@ -118,7 +119,7 @@ function NewInvoicePageInner() {
 
     if (dbError) { setError(dbError.message); return }
 
-    if (form.status === "sent") {
+    if (form.status === "sent" && !form.skip_email) {
       fetch("/api/admin/send-invoice-by-number", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -349,6 +350,26 @@ function NewInvoicePageInner() {
               </label>
             </div>
           </div>
+
+          {/* Skip-email option (only when Sent — would otherwise auto-email the client) */}
+          {form.status === "sent" && (
+            <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer", paddingTop: 4 }}>
+              <input
+                type="checkbox"
+                checked={form.skip_email}
+                onChange={e => set("skip_email", e.target.checked)}
+                style={{ marginTop: 3 }}
+              />
+              <div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.08em", opacity: 0.7 }}>
+                  Skip portal email (I&rsquo;m sending this manually)
+                </div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.04em", opacity: 0.4, marginTop: 4, lineHeight: 1.5 }}>
+                  Saves the invoice as Sent without firing the portal&rsquo;s automated email.
+                </div>
+              </div>
+            </label>
+          )}
 
           {error && (
             <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--danger)", opacity: 0.8 }}>{error}</div>
