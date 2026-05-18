@@ -21,6 +21,7 @@ export default function EditProjectPage() {
     scope: "",
     contact_id: "",
     status: "active",
+    focus_state: "" as "" | "focus_today" | "in_queue",
     start_date: "",
     end_date: "",
     total_weeks: "",
@@ -36,6 +37,7 @@ export default function EditProjectPage() {
           scope: data.scope ?? "",
           contact_id: data.contact_id ?? "",
           status: data.status ?? "active",
+          focus_state: (data.focus_state ?? "") as "" | "focus_today" | "in_queue",
           start_date: data.start_date ?? "",
           end_date: data.end_date ?? "",
           total_weeks: data.total_weeks ? String(data.total_weeks) : "",
@@ -65,6 +67,7 @@ export default function EditProjectPage() {
       scope: form.scope.trim() || null,
       contact_id: form.contact_id || null,
       status: form.status,
+      focus_state: form.focus_state || null,
       start_date: form.start_date || null,
       end_date: form.end_date || null,
       total_weeks: form.total_weeks ? parseInt(form.total_weeks) : null,
@@ -136,14 +139,24 @@ export default function EditProjectPage() {
             <textarea style={{ ...inputStyle, resize: "none", lineHeight: 1.7 }} placeholder="Brief description…" rows={3} value={form.scope} onChange={e => set("scope", e.target.value)} />
           </div>
 
-          <div>
-            <label style={labelStyle}>Status</label>
-            <select value={form.status} onChange={e => set("status", e.target.value)} style={{ ...inputStyle, cursor: "pointer" }}>
-              <option value="proposal_sent">Proposal sent</option>
-              <option value="active">Active</option>
-              <option value="on_hold">On hold</option>
-              <option value="complete">Complete</option>
-            </select>
+          <div className="form-grid-2col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
+            <div>
+              <label style={labelStyle}>Status</label>
+              <select value={form.status} onChange={e => set("status", e.target.value)} style={{ ...inputStyle, cursor: "pointer" }}>
+                <option value="proposal_sent">Proposal sent</option>
+                <option value="active">Active</option>
+                <option value="on_hold">On hold</option>
+                <option value="complete">Complete</option>
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Focus <span style={{ opacity: 0.5 }}>(shows on Focus page)</span></label>
+              <select value={form.focus_state} onChange={e => set("focus_state", e.target.value)} style={{ ...inputStyle, cursor: "pointer" }} disabled={form.status === "complete"}>
+                <option value="">— Not pinned</option>
+                <option value="focus_today">In focus today</option>
+                <option value="in_queue">In the queue</option>
+              </select>
+            </div>
           </div>
 
           <div className="form-grid-2col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>

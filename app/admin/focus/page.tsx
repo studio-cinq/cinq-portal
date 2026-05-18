@@ -65,7 +65,7 @@ export default async function FocusPage() {
       .order("created_at", { ascending: false })
       .then(r => r.data ?? []),
     supabase.from("projects")
-      .select("id, title, updated_at, created_at, clients(id, name)")
+      .select("id, title, updated_at, created_at, focus_state, clients(id, name)")
       .eq("status", "active")
       .then(r => r.data ?? []),
     supabase.from("invoices")
@@ -153,7 +153,6 @@ export default async function FocusPage() {
 
   // 5. Active projects with no activity > 14 days — cap to the 3 quietest
   // so this section doesn't drown out the higher-signal items.
-  // (All active projects still appear in "On my plate" with a freshness dot.)
   const quietProjects = (activeProjects as any[])
     .map(p => ({ ...p, _age: daysSince(p.updated_at) }))
     .filter(p => p._age > 14)
@@ -194,15 +193,15 @@ export default async function FocusPage() {
   }
   thisWeek.sort((a, b) => a.sortKey - b.sortKey)
 
-  /* ─── On my plate (active projects, freshness sorted) ─── */
-  const plate = (activeProjects as any[])
-    .map(p => ({
-      id: p.id,
-      title: p.title,
-      client: p.clients?.name ?? "—",
-      age: daysSince(p.updated_at),
-    }))
-    .sort((a, b) => a.age - b.age)
+  /* ─── In Focus Today + In the Queue (manually pinned) ─── */
+  const projectRows = (activeProjects as any[]).map(p => ({
+    id: p.id,
+    title: p.title,
+    client: p.clients?.name ?? "—",
+    focus_state: p.focus_state as null | "focus_today" | "in_queue",
+  }))
+  const focusToday = projectRows.filter(p => p.focus_state === "focus_today")
+  const inQueue = projectRows.filter(p => p.focus_state === "in_queue")
 
   /* ─── Todos: split into open + recently completed ─── */
   const todosArr = todos as any[]
@@ -286,35 +285,58 @@ export default async function FocusPage() {
           )}
         </section>
 
-        {/* On my plate */}
-        <section style={{ marginBottom: 16 }}>
+        {/* In Focus Today */}
+        <section style={{ marginBottom: 48 }}>
           <div style={sectionLabel}>
-            On my plate {plate.length > 0 && <span style={{ opacity: 0.7 }}>({plate.length} active)</span>}
+            In Focus Today {focusToday.length > 0 && <span style={{ opacity: 0.7 }}>({focusToday.length})</span>}
           </div>
-          {plate.length === 0 ? (
+          {focusToday.length === 0 ? (
             <div style={{ ...sans, fontSize: "var(--text-body)", opacity: 0.4, padding: "20px 0" }}>
-              No active projects.
+              Nothing pinned for today. Open a project to pin it.
             </div>
           ) : (
             <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)" }}>
-              {plate.map(p => {
-                const fresh = p.age <= 7 ? "var(--sage)" : p.age <= 14 ? "var(--amber)" : "rgba(15,15,14,0.25)"
-                return (
-                  <a key={p.id} href={`/admin/projects/${p.id}/edit`} style={{
-                    display: "flex", alignItems: "center", gap: 16,
-                    padding: "14px 0", borderBottom: "0.5px solid rgba(15,15,14,0.08)",
-                    textDecoration: "none", color: "inherit",
-                  }}>
-                    <span style={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0, background: fresh }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ ...sans, fontSize: "var(--text-body)", opacity: 0.88 }}>{p.title}</div>
-                      <div style={{ ...sans, fontSize: "var(--text-sm)", opacity: 0.5, marginTop: 2 }}>
-                        {p.client} · {p.age === 0 ? "active today" : p.age === 1 ? "active yesterday" : `${p.age}d since last activity`}
-                      </div>
-                    </div>
-                  </a>
-                )
-              })}
+              {focusToday.map(p => (
+                <a key={p.id} href={`/admin/projects/${p.id}/edit`} style={{
+                  display: "flex", alignItems: "center", gap: 16,
+                  padding: "14px 0", borderBottom: "0.5px solid rgba(15,15,14,0.08)",
+                  textDecoration: "none", color: "inherit",
+                }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0, background: "var(--sage)" }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ ...sans, fontSize: "var(--text-body)", opacity: 0.88 }}>{p.title}</div>
+                    <div style={{ ...sans, fontSize: "var(--text-sm)", opacity: 0.5, marginTop: 2 }}>{p.client}</div>
+                  </div>
+                </a>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* In the Queue */}
+        <section style={{ marginBottom: 16 }}>
+          <div style={sectionLabel}>
+            In the Queue {inQueue.length > 0 && <span style={{ opacity: 0.7 }}>({inQueue.length})</span>}
+          </div>
+          {inQueue.length === 0 ? (
+            <div style={{ ...sans, fontSize: "var(--text-body)", opacity: 0.4, padding: "20px 0" }}>
+              Nothing in the queue.
+            </div>
+          ) : (
+            <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)" }}>
+              {inQueue.map(p => (
+                <a key={p.id} href={`/admin/projects/${p.id}/edit`} style={{
+                  display: "flex", alignItems: "center", gap: 16,
+                  padding: "14px 0", borderBottom: "0.5px solid rgba(15,15,14,0.08)",
+                  textDecoration: "none", color: "inherit",
+                }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0, background: "rgba(15,15,14,0.25)" }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ ...sans, fontSize: "var(--text-body)", opacity: 0.88 }}>{p.title}</div>
+                    <div style={{ ...sans, fontSize: "var(--text-sm)", opacity: 0.5, marginTop: 2 }}>{p.client}</div>
+                  </div>
+                </a>
+              ))}
             </div>
           )}
         </section>
