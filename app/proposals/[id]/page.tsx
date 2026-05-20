@@ -40,6 +40,21 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
         .from("proposals").select("*, clients(name, contact_name)")
         .eq("id", params.id).single()
 
+      // If the proposal doesn't exist, check the redirects table.
+      // Handles the case where a proposal was sent in an email, then later
+      // deleted/recreated under a new ID. We map the dead link → new ID.
+      if (!prop) {
+        const { data: redirect } = await supabase
+          .from("proposal_redirects")
+          .select("new_id")
+          .eq("old_id", params.id)
+          .single()
+        if (redirect?.new_id) {
+          window.location.replace(`/proposals/${redirect.new_id}`)
+          return
+        }
+      }
+
       if (propError) console.error("[proposal] fetch error:", propError)
       if (!prop) { setLoading(false); return }
       setProposal(prop)
