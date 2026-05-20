@@ -286,6 +286,7 @@ export default function EditProposalPage({ params }: { params: { id: string } })
                 <option value="40/30/30">40% deposit · 30% midpoint · 30% completion</option>
                 <option value="50/25/25">50% deposit · 25% midpoint · 25% completion</option>
                 <option value="100">100% upfront</option>
+                <option value="0/100">100% on completion · unlocks file delivery</option>
                 <option value="33/33/34">33% · 33% · 34% (three equal payments)</option>
               </select>
             </Field>

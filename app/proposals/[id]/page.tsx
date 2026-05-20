@@ -100,13 +100,17 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
 
   const deposit = Math.round((selectedTotal * depositPct) / 100)
 
-  const scheduleLabel = schedule.map((p, i) => {
-    if (i === 0) return `${p}% deposit due now`
-    if (schedule.length === 2 && i === 1) return `${p}% invoiced at completion`
-    if (schedule.length === 3 && i === 1) return `${p}% at project midpoint`
-    if (schedule.length === 3 && i === 2) return `${p}% at completion`
-    return `${p}%`
-  })
+  // Special case: 0% deposit = "100% on completion · unlocks files"
+  const isCompletionOnly = schedule.length === 2 && schedule[0] === 0
+  const scheduleLabel = isCompletionOnly
+    ? [`${schedule[1]}% due on completion`, "Final files unlock when this is paid"]
+    : schedule.map((p, i) => {
+        if (i === 0) return `${p}% deposit due now`
+        if (schedule.length === 2 && i === 1) return `${p}% invoiced at completion`
+        if (schedule.length === 3 && i === 1) return `${p}% at project midpoint`
+        if (schedule.length === 3 && i === 2) return `${p}% at completion`
+        return `${p}%`
+      })
 
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
 
@@ -337,10 +341,13 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
           ${(selectedTotal / 100).toLocaleString()}
         </span>
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 28 }}>
-        <span style={{ ...mono, fontSize: "var(--text-eyebrow)", opacity: 0.38 }}>{scheduleLabel[0]}</span>
-        <span style={{ ...mono, fontSize: "var(--text-body)", opacity: 0.6 }}>${Math.round(deposit / 100).toLocaleString()}</span>
-      </div>
+      {!isCompletionOnly && (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 28 }}>
+          <span style={{ ...mono, fontSize: "var(--text-eyebrow)", opacity: 0.38 }}>{scheduleLabel[0]}</span>
+          <span style={{ ...mono, fontSize: "var(--text-body)", opacity: 0.6 }}>${Math.round(deposit / 100).toLocaleString()}</span>
+        </div>
+      )}
+      {isCompletionOnly && <div style={{ marginBottom: 28 }} />}
 
       {canInteract && (
         <>
@@ -367,7 +374,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
               marginBottom: 16, transition: "opacity 0.2s",
             }}
           >
-            {submitting ? "Redirecting…" : "Confirm & pay deposit"}
+            {submitting ? "Redirecting…" : isCompletionOnly ? "Accept proposal" : "Confirm & pay deposit"}
           </button>
           {checkoutError && (
             <div style={{ ...body, fontSize: "var(--text-sm)", color: "var(--danger)", opacity: 0.8, lineHeight: 1.6, marginBottom: 12 }}>

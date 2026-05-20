@@ -80,14 +80,25 @@ export async function POST(req: NextRequest) {
       return sel ? sel.accepted : (item.is_required || !item.is_optional)
     })
 
+    // Special case: "100% on completion" payment schedule (pct === 0)
+    // → create one invoice for the FULL accepted total, unlocks_files true,
+    //    no due_date (paid on completion, not now)
+    const isCompletionOnly = pct === 0
+    const invoiceAmount = isCompletionOnly
+      ? acceptedItems.reduce((s: number, item: any) => s + (item.price ?? 0), 0)
+      : deposit
+    const invoicePct = isCompletionOnly ? 100 : pct
+
     const invoiceLineItems = acceptedItems.map((item: any) => ({
       description: item.name,
-      amount: Math.round((item.price ?? 0) * (pct / 100)),
+      amount: Math.round((item.price ?? 0) * (invoicePct / 100)),
     }))
 
-    const lineItemDesc = pct === 100
-      ? `${proposal.title}`
-      : `${proposal.title} — ${pct}% deposit`
+    const lineItemDesc = isCompletionOnly
+      ? `${proposal.title} — Final payment (unlocks files)`
+      : pct === 100
+        ? `${proposal.title}`
+        : `${proposal.title} — ${pct}% deposit`
 
     // Create the invoice
     const { data: invoice, error: invoiceError } = await (supabaseAdmin.from("invoices") as any)
@@ -96,12 +107,12 @@ export async function POST(req: NextRequest) {
         project_id:      null,
         invoice_number:  invoiceNumber,
         description:     lineItemDesc,
-        amount:          deposit,
+        amount:          invoiceAmount,
         line_items:      invoiceLineItems,
         notes:           null,
-        due_date:        new Date().toISOString().split("T")[0],
-        status:          "sent",
-        unlocks_files:   false,
+        due_date:        isCompletionOnly ? null : new Date().toISOString().split("T")[0],
+        status:          isCompletionOnly ? "draft" : "sent",
+        unlocks_files:   isCompletionOnly,
         payment_methods: ["stripe", "ach"],
         cc_emails:       [],
       })
