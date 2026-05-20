@@ -270,6 +270,39 @@ export default async function FocusPage() {
           gap: "48px 56px",
         }}>
 
+          {/* In the Queue */}
+          <section>
+            <div style={sectionLabel}>
+              In the Queue {inQueue.length > 0 && <span style={{ opacity: 0.7 }}>· {inQueue.length}</span>}
+            </div>
+            {inQueue.length === 0 ? (
+              <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 15, opacity: 0.5, padding: "16px 0" }}>
+                Nothing in the queue.
+              </div>
+            ) : (
+              <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)" }}>
+                {inQueue.map(p => (
+                  <a key={p.id} href={`/admin/projects/${p.id}`} style={{
+                    display: "flex", alignItems: "flex-start", gap: 14,
+                    padding: "13px 0", borderBottom: "0.5px solid rgba(15,15,14,0.08)",
+                    textDecoration: "none", color: "inherit",
+                  }}>
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0, marginTop: 7, background: "rgba(15,15,14,0.28)" }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ ...sans, fontSize: "var(--text-body)", opacity: 0.88, lineHeight: 1.4 }}>{p.title}</div>
+                      <div style={{ ...sans, fontSize: "var(--text-sm)", opacity: 0.5, marginTop: 2 }}>{p.client}</div>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* My List */}
+          <section>
+            <FocusClient openTodos={openTodos} doneTodos={doneTodos} />
+          </section>
+
           {/* Needs Your Attention */}
           <section>
             <div style={sectionLabel}>
@@ -294,39 +327,6 @@ export default async function FocusPage() {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ ...sans, fontSize: "var(--text-body)", opacity: 0.88, lineHeight: 1.4 }}>{a.label}</div>
                       <div style={{ ...sans, fontSize: "var(--text-sm)", opacity: 0.5, marginTop: 2 }}>{a.detail}</div>
-                    </div>
-                  </a>
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* My List */}
-          <section>
-            <FocusClient openTodos={openTodos} doneTodos={doneTodos} />
-          </section>
-
-          {/* In the Queue */}
-          <section>
-            <div style={sectionLabel}>
-              In the Queue {inQueue.length > 0 && <span style={{ opacity: 0.7 }}>· {inQueue.length}</span>}
-            </div>
-            {inQueue.length === 0 ? (
-              <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 15, opacity: 0.5, padding: "16px 0" }}>
-                Nothing in the queue.
-              </div>
-            ) : (
-              <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)" }}>
-                {inQueue.map(p => (
-                  <a key={p.id} href={`/admin/projects/${p.id}`} style={{
-                    display: "flex", alignItems: "flex-start", gap: 14,
-                    padding: "13px 0", borderBottom: "0.5px solid rgba(15,15,14,0.08)",
-                    textDecoration: "none", color: "inherit",
-                  }}>
-                    <span style={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0, marginTop: 7, background: "rgba(15,15,14,0.28)" }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ ...sans, fontSize: "var(--text-body)", opacity: 0.88, lineHeight: 1.4 }}>{p.title}</div>
-                      <div style={{ ...sans, fontSize: "var(--text-sm)", opacity: 0.5, marginTop: 2 }}>{p.client}</div>
                     </div>
                   </a>
                 ))}
