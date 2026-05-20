@@ -2,6 +2,7 @@ import { createServerComponentClient } from "@/lib/supabase-server"
 import PortalNav from "@/components/portal/Nav"
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import ProjectFiles from "./ProjectFiles"
 
 /* ─── Shared styles ─── */
 const mono = { fontFamily: "var(--font-mono)" } as const
@@ -95,6 +96,7 @@ export default async function ProjectOverviewPage({ params }: { params: { id: st
     reviewsRes,
     assetsRes,
     deliverablesRes,
+    projectFilesRes,
   ] = await Promise.all([
     supabase.from("projects").select("*, clients(id, name)").eq("id", params.id).single(),
     supabase.from("invoices").select("*").eq("project_id", params.id).order("created_at", { ascending: false }),
@@ -103,6 +105,7 @@ export default async function ProjectOverviewPage({ params }: { params: { id: st
     supabase.from("review_sessions").select("*").eq("project_id", params.id).order("created_at", { ascending: false }),
     supabase.from("brand_assets").select("id, name, category").eq("project_id", params.id),
     supabase.from("deliverables").select("*").eq("project_id", params.id).order("sort_order", { ascending: true }),
+    supabase.from("project_files").select("*").eq("project_id", params.id).order("uploaded_at", { ascending: false }),
   ])
 
   if (projectRes.error || !projectRes.data) return notFound()
@@ -115,6 +118,7 @@ export default async function ProjectOverviewPage({ params }: { params: { id: st
   const reviews = (reviewsRes.data ?? []) as any[]
   const assets = (assetsRes.data ?? []) as any[]
   const deliverables = (deliverablesRes.data ?? []) as any[]
+  const projectFiles = (projectFilesRes.data ?? []) as any[]
 
   /* ─── Build activity timeline (most recent first) ─── */
   const activity: ActivityEvent[] = []
@@ -421,6 +425,11 @@ export default async function ProjectOverviewPage({ params }: { params: { id: st
             )}
 
           </aside>
+        </div>
+
+        {/* ─── Project files (admin-only working files) ─── */}
+        <div style={{ marginTop: 72, paddingTop: 48, borderTop: "0.5px solid rgba(15,15,14,0.1)" }}>
+          <ProjectFiles projectId={params.id} initialFiles={projectFiles} />
         </div>
 
         {/* Mobile collapse */}
