@@ -3,6 +3,7 @@ import PortalNav from "@/components/portal/Nav"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import ProjectFiles from "./ProjectFiles"
+import ClientContext from "./ClientContext"
 
 /* ─── Shared styles ─── */
 const mono = { fontFamily: "var(--font-mono)" } as const
@@ -97,6 +98,7 @@ export default async function ProjectOverviewPage({ params }: { params: { id: st
     assetsRes,
     deliverablesRes,
     projectFilesRes,
+    projectNotesRes,
   ] = await Promise.all([
     supabase.from("projects").select("*, clients(id, name)").eq("id", params.id).single(),
     supabase.from("invoices").select("*").eq("project_id", params.id).order("created_at", { ascending: false }),
@@ -106,6 +108,7 @@ export default async function ProjectOverviewPage({ params }: { params: { id: st
     supabase.from("brand_assets").select("id, name, category").eq("project_id", params.id),
     supabase.from("deliverables").select("*").eq("project_id", params.id).order("sort_order", { ascending: true }),
     supabase.from("project_files").select("*").eq("project_id", params.id).order("uploaded_at", { ascending: false }),
+    supabase.from("project_notes").select("*").eq("project_id", params.id).order("created_at", { ascending: false }),
   ])
 
   if (projectRes.error || !projectRes.data) return notFound()
@@ -119,6 +122,7 @@ export default async function ProjectOverviewPage({ params }: { params: { id: st
   const assets = (assetsRes.data ?? []) as any[]
   const deliverables = (deliverablesRes.data ?? []) as any[]
   const projectFiles = (projectFilesRes.data ?? []) as any[]
+  const projectNotes = (projectNotesRes.data ?? []) as any[]
 
   /* ─── Build activity timeline (most recent first) ─── */
   const activity: ActivityEvent[] = []
@@ -301,6 +305,9 @@ export default async function ProjectOverviewPage({ params }: { params: { id: st
 
           {/* ━━━ Right: Stacked panels ━━━ */}
           <aside style={{ display: "flex", flexDirection: "column", gap: 48 }}>
+
+            {/* Client context */}
+            <ClientContext projectId={params.id} initialNotes={projectNotes} />
 
             {/* Money */}
             <section>
