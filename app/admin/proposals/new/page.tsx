@@ -13,7 +13,7 @@ interface LineItem {
   timeline_min: string
   timeline_max: string
   is_ongoing: boolean
-  phase: "now" | "later"
+  phase: "now" | "later" | "none"
   phase_label: string
   is_recommended: boolean
   is_optional: boolean
@@ -23,7 +23,7 @@ interface LineItem {
 const emptyItem = (): LineItem => ({
   name: "", description: "", price: "",
   timeline_min: "2", timeline_max: "4", is_ongoing: false,
-  phase: "now", phase_label: "", is_recommended: false, is_optional: false, is_required: false,
+  phase: "none", phase_label: "", is_recommended: false, is_optional: false, is_required: false,
 })
 
 export default function NewProposalPage() {
@@ -274,7 +274,8 @@ export default function NewProposalPage() {
                       <input type="number" value={item.timeline_max} onChange={e => setItem(i, "timeline_max", e.target.value)} disabled={item.is_ongoing} style={{ ...inputStyle, opacity: item.is_ongoing ? 0.35 : 1 }} />
                     </Field>
                     <Field label="Default phase">
-                      <select value={item.phase} onChange={e => setItem(i, "phase", e.target.value as "now" | "later")} style={inputStyle}>
+                      <select value={item.phase} onChange={e => setItem(i, "phase", e.target.value as "now" | "later" | "none")} style={inputStyle}>
+                        <option value="none">No phasing</option>
                         <option value="now">Priority for launch</option>
                         <option value="later">Second phase</option>
                       </select>

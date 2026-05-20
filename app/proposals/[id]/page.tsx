@@ -21,7 +21,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
   const [proposal, setProposal]     = useState<any>(null)
   const [items, setItems]           = useState<any[]>([])
   const [checked, setChecked]       = useState<boolean[]>([])
-  const [phases, setPhases]         = useState<("now" | "later")[]>([])
+  const [phases, setPhases]         = useState<("now" | "later" | "none")[]>([])
   const [note, setNote]             = useState("")
   const [loading, setLoading]       = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -66,7 +66,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
       const its = propItems ?? []
       setItems(its)
       setChecked(its.map((i: any) => i.is_required || !i.is_optional))
-      setPhases(its.map((i: any) => i.phase ?? "now"))
+      setPhases(its.map((i: any) => i.phase ?? "none"))
       setLoading(false)
     }
     load()
@@ -115,11 +115,11 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
     setSubmitting(true)
     setCheckoutError(null)
     try {
-      // Build per-item selections
+      // Build per-item selections — preserve "none" phase even on required items
       const selections = items.map((item, i) => ({
         id: item.id,
         accepted: item.is_required || checked[i],
-        phase: item.is_required ? "now" : phases[i],
+        phase: item.phase === "none" ? "none" : (item.is_required ? "now" : phases[i]),
       }))
 
       const res = await fetch("/api/proposal-accept", {
@@ -255,7 +255,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
           </div>
         </div>
 
-        {checked[globalIndex] && canInteract && (
+        {checked[globalIndex] && canInteract && item.phase !== "none" && (
           <div style={{ display: "flex", marginTop: 14, marginLeft: 31 }}>
             {(["now", "later"] as const).map((p, pi) => (
               <button
@@ -454,7 +454,9 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
             </div>
             {canInteract && (
               <div style={{ ...body, fontSize: "var(--text-sm)", opacity: 0.45, lineHeight: 1.6, marginBottom: 4, marginTop: 6 }}>
-                Select any additional phases you'd like to include in the project, then indicate whether each should be prioritized for launch or scheduled for the second phase.
+                {items.some(i => i.phase === "now" || i.phase === "later")
+                  ? "Select any additional phases you'd like to include in the project, then indicate whether each should be prioritized for launch or scheduled for the second phase."
+                  : "Select any additional items you'd like to include in the project."}
               </div>
             )}
             {renderItemsWithPhaseHeaders(selectableItems, renderSelectableItem)}

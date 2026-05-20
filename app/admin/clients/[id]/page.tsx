@@ -950,7 +950,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                       <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "8px 0", borderBottom: "0.5px solid rgba(15,15,14,0.07)" }}>
                         <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
                           <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: item.accepted ? "var(--op-full)" as any : 0.35 }}>{item.name}</span>
-                          {item.accepted && item.phase === "now"   && <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--sage)" }}>accepted</span>}
+                          {item.accepted && (item.phase === "now" || item.phase === "none") && <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--sage)" }}>accepted</span>}
                           {item.accepted && item.phase === "later" && <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--amber)" }}>phase 2</span>}
                           {!item.accepted && <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, opacity: 0.4 }}>declined</span>}
                         </div>

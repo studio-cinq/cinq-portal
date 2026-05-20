@@ -100,7 +100,7 @@ export default async function AdminClientPreviewPage({ params }: { params: { id:
   const acceptedProposal = (proposalsRes.data?.[0] ?? null) as any
 
   const proposalItems = (acceptedProposal?.proposal_items ?? []).sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-  const approvedScope = proposalItems.filter((i: any) => i.accepted && i.phase === "now")
+  const approvedScope = proposalItems.filter((i: any) => i.accepted && i.phase !== "later")
   const laterPhase = proposalItems.filter((i: any) => i.accepted && i.phase === "later")
 
   const activeProjects = projects.filter((p) => {

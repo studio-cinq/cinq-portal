@@ -5,7 +5,7 @@ import { sendProposalAcceptedEmail, sendProposalConfirmationToClient } from "@/l
 interface Selection {
   id: string
   accepted: boolean
-  phase: "now" | "later"
+  phase: "now" | "later" | "none"
 }
 
 export async function POST(req: NextRequest) {
