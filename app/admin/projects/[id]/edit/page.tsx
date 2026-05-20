@@ -161,7 +161,7 @@ export default function EditProjectPage() {
               <input style={inputStyle} type="date" value={form.start_date} onChange={e => set("start_date", e.target.value)} />
             </div>
             <div>
-              <label style={labelStyle}>End date <span style={{ opacity: 0.5 }}>(optional)</span></label>
+              <label style={labelStyle}>End date <span style={{ opacity: 0.5 }}>(shows on calendar)</span></label>
               <input style={inputStyle} type="date" value={form.end_date} onChange={e => set("end_date", e.target.value)} />
             </div>
           </div>
