@@ -77,12 +77,36 @@ function InvStatusBadge({ status }: { status: string }) {
 /* ─── Activity event ─── */
 type ActivityEvent = {
   id: string
-  kind: "invoice_sent" | "invoice_paid" | "invoice_overdue" | "foundation_published" | "foundation_approved" | "message_in" | "message_out" | "review_submitted" | "review_approved" | "project_created"
+  kind:
+    | "invoice_sent" | "invoice_paid" | "invoice_overdue"
+    | "foundation_published" | "foundation_approved"
+    | "message_in" | "message_out"
+    | "review_submitted" | "review_approved"
+    | "project_created" | "status_change"
+    | "file_uploaded" | "note_added"
   timestamp: Date
   label: string
   detail?: string
   href?: string
   icon: "sage" | "amber" | "muted"
+}
+
+const STATUS_LABELS: Record<string, string> = {
+  proposal_sent: "Proposal sent",
+  active: "Active",
+  on_hold: "On hold",
+  complete: "Complete",
+}
+
+function statusChangeLabel(from: string | null, to: string): { label: string; icon: "sage" | "amber" | "muted" } {
+  const fromLbl = from ? (STATUS_LABELS[from] ?? from) : "—"
+  const toLbl = STATUS_LABELS[to] ?? to
+  if (to === "complete") return { label: `Marked complete`, icon: "sage" }
+  if (to === "on_hold") return { label: `Paused — on hold`, icon: "amber" }
+  if (to === "active" && from === "on_hold") return { label: `Resumed`, icon: "sage" }
+  if (to === "active") return { label: `Moved to active`, icon: "sage" }
+  if (to === "proposal_sent") return { label: `Proposal sent`, icon: "amber" }
+  return { label: `Status: ${fromLbl} → ${toLbl}`, icon: "muted" }
 }
 
 export default async function ProjectOverviewPage({ params }: { params: { id: string } }) {
@@ -99,6 +123,7 @@ export default async function ProjectOverviewPage({ params }: { params: { id: st
     deliverablesRes,
     projectFilesRes,
     projectNotesRes,
+    statusChangesRes,
   ] = await Promise.all([
     supabase.from("projects").select("*, clients(id, name)").eq("id", params.id).single(),
     supabase.from("invoices").select("*").eq("project_id", params.id).order("created_at", { ascending: false }),
@@ -109,6 +134,7 @@ export default async function ProjectOverviewPage({ params }: { params: { id: st
     supabase.from("deliverables").select("*").eq("project_id", params.id).order("sort_order", { ascending: true }),
     supabase.from("project_files").select("*").eq("project_id", params.id).order("uploaded_at", { ascending: false }),
     supabase.from("project_notes").select("*").eq("project_id", params.id).order("created_at", { ascending: false }),
+    supabase.from("project_status_changes").select("*").eq("project_id", params.id).order("changed_at", { ascending: false }),
   ])
 
   if (projectRes.error || !projectRes.data) return notFound()
@@ -123,6 +149,7 @@ export default async function ProjectOverviewPage({ params }: { params: { id: st
   const deliverables = (deliverablesRes.data ?? []) as any[]
   const projectFiles = (projectFilesRes.data ?? []) as any[]
   const projectNotes = (projectNotesRes.data ?? []) as any[]
+  const statusChanges = (statusChangesRes.data ?? []) as any[]
 
   /* ─── Build activity timeline (most recent first) ─── */
   const activity: ActivityEvent[] = []
@@ -202,6 +229,39 @@ export default async function ProjectOverviewPage({ params }: { params: { id: st
       label: "Site approved",
       icon: "sage",
       href: `/admin/reviews`,
+    })
+  }
+
+  for (const sc of statusChanges as any[]) {
+    const info = statusChangeLabel(sc.from_status, sc.to_status)
+    activity.push({
+      id: `sc-${sc.id}`,
+      kind: "status_change",
+      timestamp: new Date(sc.changed_at),
+      label: info.label,
+      icon: info.icon,
+    })
+  }
+
+  for (const f of projectFiles as any[]) {
+    activity.push({
+      id: `file-${f.id}`,
+      kind: "file_uploaded",
+      timestamp: new Date(f.uploaded_at),
+      label: "File added",
+      detail: f.name,
+      icon: "muted",
+    })
+  }
+
+  for (const n of projectNotes as any[]) {
+    activity.push({
+      id: `note-${n.id}`,
+      kind: "note_added",
+      timestamp: new Date(n.created_at),
+      label: n.source ? `Note from ${n.source}` : "Context note added",
+      detail: (n.body ?? "").slice(0, 120),
+      icon: "muted",
     })
   }
 
