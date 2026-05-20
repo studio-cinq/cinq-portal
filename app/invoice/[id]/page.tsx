@@ -46,10 +46,12 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
       setInvoice(data)
       setLoading(false)
 
-      // Skip tracking + notification if viewer is logged-in admin
+      // Skip tracking + notification only if viewer is the logged-in admin.
+      // Any other viewer (anonymous, or a logged-in client) gets tracked.
       if (data) {
         const { data: { session } } = await supabase.auth.getSession()
-        if (!session) {
+        const isAdmin = session?.user?.email === "kacie@studiocinq.com"
+        if (!isAdmin) {
           fetch("/api/track-invoice-view", {
             method: "POST",
             headers: { "Content-Type": "application/json" },

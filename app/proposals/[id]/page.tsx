@@ -59,9 +59,11 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
       if (!prop) { setLoading(false); return }
       setProposal(prop)
 
-      // Skip tracking + notification if viewer is logged-in admin
+      // Skip tracking + notification only if viewer is the logged-in admin.
+      // Any other viewer (anonymous, or a logged-in client) gets tracked.
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
+      const isAdmin = session?.user?.email === "kacie@studiocinq.com"
+      if (!isAdmin) {
         const isFirstView = !prop.viewed_at
         const now = new Date().toISOString()
         await supabase.from("proposals").update({

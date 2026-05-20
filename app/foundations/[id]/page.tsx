@@ -787,9 +787,10 @@ export default function BrandFoundationsPage({ params }: { params: { id: string 
       setSections(s ?? [])
       setLoading(false)
 
-      // Track view (skip if admin)
+      // Track view unless the viewer is the logged-in admin
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
+      const isAdmin = session?.user?.email === "kacie@studiocinq.com"
+      if (!isAdmin) {
         fetch("/api/notify/foundations-viewed", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1007,10 +1008,15 @@ export default function BrandFoundationsPage({ params }: { params: { id: string 
         </div>
       )}
 
-      {/* In print mode, force every fade-in opaque and disable any scroll-snap
-          alignment so headless Chrome captures a clean, flat document. */}
+      {/* In print mode, force every fade-in opaque, disable scroll-snap, and
+          tell the browser to honor dark/light backgrounds + section colors
+          when rendering to PDF (Chrome strips them by default for ink savings). */}
       {printMode && (
         <style>{`
+          html, body, #foundations-scroll, #foundations-scroll * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
           #foundations-scroll section { scroll-snap-align: none !important; break-inside: avoid; }
           #foundations-scroll [style*="opacity: 0"] { opacity: 1 !important; transform: none !important; }
         `}</style>
