@@ -1628,8 +1628,20 @@ function SectionHeader({ label }: { label: string }) {
 }
 
 function ProjectStatusBadge({ status }: { status: string }) {
-  const colors: Record<string, string> = { active: "var(--sage)", complete: "rgba(15,15,14,0.4)", on_hold: "var(--amber)", proposal_sent: "var(--amber)" }
-  const labels: Record<string, string> = { active: "Active", complete: "Complete", on_hold: "On hold", proposal_sent: "Proposal sent" }
+  const colors: Record<string, string> = {
+    active: "var(--sage)",
+    complete: "rgba(15,15,14,0.4)",
+    on_hold: "var(--amber)",
+    proposal_sent: "var(--amber)",
+    awaiting_client: "var(--amber)",
+  }
+  const labels: Record<string, string> = {
+    active: "Active",
+    complete: "Complete",
+    on_hold: "On hold",
+    proposal_sent: "Proposal sent",
+    awaiting_client: "Awaiting client",
+  }
   return <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", color: colors[status] ?? "rgba(15,15,14,0.4)" }}>{labels[status] ?? status}</span>
 }
 

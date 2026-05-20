@@ -52,8 +52,20 @@ function relTime(d: string | Date) {
 
 /* ─── Status badges ─── */
 function ProjectStatusBadge({ status }: { status: string }) {
-  const colors: Record<string, string> = { active: "var(--sage)", complete: "rgba(15,15,14,0.4)", on_hold: "var(--amber)", proposal_sent: "var(--amber)" }
-  const labels: Record<string, string> = { active: "Active", complete: "Complete", on_hold: "On hold", proposal_sent: "Proposal sent" }
+  const colors: Record<string, string> = {
+    active: "var(--sage)",
+    complete: "rgba(15,15,14,0.4)",
+    on_hold: "var(--amber)",
+    proposal_sent: "var(--amber)",
+    awaiting_client: "var(--amber)",
+  }
+  const labels: Record<string, string> = {
+    active: "Active",
+    complete: "Complete",
+    on_hold: "On hold",
+    proposal_sent: "Proposal sent",
+    awaiting_client: "Awaiting client",
+  }
   return <span style={{ ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", color: colors[status] ?? "rgba(15,15,14,0.4)" }}>{labels[status] ?? status}</span>
 }
 
@@ -94,6 +106,7 @@ type ActivityEvent = {
 const STATUS_LABELS: Record<string, string> = {
   proposal_sent: "Proposal sent",
   active: "Active",
+  awaiting_client: "Awaiting client",
   on_hold: "On hold",
   complete: "Complete",
 }
@@ -102,8 +115,10 @@ function statusChangeLabel(from: string | null, to: string): { label: string; ic
   const fromLbl = from ? (STATUS_LABELS[from] ?? from) : "—"
   const toLbl = STATUS_LABELS[to] ?? to
   if (to === "complete") return { label: `Marked complete`, icon: "sage" }
+  if (to === "awaiting_client") return { label: `Sent to client — awaiting response`, icon: "amber" }
   if (to === "on_hold") return { label: `Paused — on hold`, icon: "amber" }
   if (to === "active" && from === "on_hold") return { label: `Resumed`, icon: "sage" }
+  if (to === "active" && from === "awaiting_client") return { label: `Client responded — back to active`, icon: "sage" }
   if (to === "active") return { label: `Moved to active`, icon: "sage" }
   if (to === "proposal_sent") return { label: `Proposal sent`, icon: "amber" }
   return { label: `Status: ${fromLbl} → ${toLbl}`, icon: "muted" }

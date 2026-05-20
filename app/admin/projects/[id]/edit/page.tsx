@@ -141,6 +141,7 @@ export default function EditProjectPage() {
               <select value={form.status} onChange={e => set("status", e.target.value)} style={{ ...inputStyle, cursor: "pointer" }}>
                 <option value="proposal_sent">Proposal sent</option>
                 <option value="active">Active</option>
+                <option value="awaiting_client">Awaiting client</option>
                 <option value="on_hold">On hold</option>
                 <option value="complete">Complete</option>
               </select>
