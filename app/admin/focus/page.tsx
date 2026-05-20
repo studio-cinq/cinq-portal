@@ -151,22 +151,9 @@ export default async function FocusPage() {
     })
   }
 
-  // 5. Active projects with no activity > 14 days — cap to the 3 quietest
-  // so this section doesn't drown out the higher-signal items.
-  const quietProjects = (activeProjects as any[])
-    .map(p => ({ ...p, _age: daysSince(p.updated_at) }))
-    .filter(p => p._age > 14)
-    .sort((a, b) => b._age - a._age)
-    .slice(0, 3)
-  for (const proj of quietProjects) {
-    attention.push({
-      id: `proj-${proj.id}`,
-      icon: "muted",
-      label: `Quiet project — ${proj.clients?.name ?? "—"}`,
-      detail: `${proj.title} · ${proj._age}d since last activity`,
-      href: `/admin/projects/${proj.id}/edit`,
-    })
-  }
+  // (Quiet project items removed — they were noise pretending to be signal.
+  // Activity tracking still happens in the background; freshness will show up
+  // organically once you start using the portal more.)
 
   /* ─── This week ─── */
   type WeekItem = { id: string; label: string; detail: string; when: string; sortKey: number }
@@ -212,100 +199,63 @@ export default async function FocusPage() {
     <>
       <PortalNav isAdmin />
 
-      <main style={{ maxWidth: 920, margin: "0 auto", padding: "32px clamp(24px, 4vw, 48px) 80px" }}>
+      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "32px clamp(24px, 4vw, 56px) 96px" }}>
 
-        {/* Header */}
-        <div style={{ marginBottom: 40 }}>
-          <div style={{ ...mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.35, marginBottom: 8 }}>
+        {/* ─── Header ─── */}
+        <header style={{ marginBottom: 48 }}>
+          <div style={{ ...mono, fontSize: 10, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.35, marginBottom: 10 }}>
             {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
           </div>
-          <h1 style={{ ...sans, fontWeight: 400, fontSize: 32, letterSpacing: "-0.02em", margin: 0, opacity: 0.92 }}>
+          <h1 style={{ ...sans, fontWeight: 400, fontSize: 38, letterSpacing: "-0.02em", margin: 0, opacity: 0.95, lineHeight: 1.1 }}>
             Focus
           </h1>
-        </div>
+        </header>
 
-        {/* Quick capture + open todos (client component) */}
-        <FocusClient openTodos={openTodos} doneTodos={doneTodos} />
-
-        {/* Needs your attention */}
-        <section style={{ marginTop: 56, marginBottom: 48 }}>
-          <div style={sectionLabel}>
-            {attention.length > 0 ? `Needs your attention (${attention.length})` : "Needs your attention"}
+        {/* ─── HERO: In Focus Today ─── */}
+        <section style={{ marginBottom: 64 }}>
+          <div style={{ ...mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.45, marginBottom: 20, display: "flex", alignItems: "center", gap: 12 }}>
+            <span>In Focus Today</span>
+            <span style={{ flex: 1, height: 0.5, background: "rgba(15,15,14,0.12)" }} />
+            {focusToday.length > 0 && <span style={{ opacity: 0.6 }}>{focusToday.length}</span>}
           </div>
-          {attention.length === 0 ? (
-            <div style={{ ...sans, fontSize: "var(--text-body)", opacity: 0.4, padding: "20px 0" }}>
-              All clear. Nothing urgent right now.
-            </div>
-          ) : (
-            <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)" }}>
-              {attention.map(a => (
-                <a key={a.id} href={a.href ?? "#"} style={{
-                  display: "flex", alignItems: "center", gap: 16,
-                  padding: "14px 0", borderBottom: "0.5px solid rgba(15,15,14,0.08)",
-                  textDecoration: "none", color: "inherit",
-                }}>
-                  <span style={{
-                    width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
-                    background: a.icon === "amber" ? "var(--amber)" : a.icon === "sage" ? "var(--sage)" : "rgba(15,15,14,0.25)",
-                  }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ ...sans, fontSize: "var(--text-body)", opacity: 0.88 }}>{a.label}</div>
-                    <div style={{ ...sans, fontSize: "var(--text-sm)", opacity: 0.5, marginTop: 2 }}>{a.detail}</div>
-                  </div>
-                </a>
-              ))}
-            </div>
-          )}
-        </section>
 
-        {/* This week */}
-        <section style={{ marginBottom: 48 }}>
-          <div style={sectionLabel}>This week</div>
-          {thisWeek.length === 0 ? (
-            <div style={{ ...sans, fontSize: "var(--text-body)", opacity: 0.4, padding: "20px 0" }}>
-              Nothing on the calendar in the next 7 days.
-            </div>
-          ) : (
-            <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)" }}>
-              {thisWeek.map(item => (
-                <div key={item.id} style={{
-                  display: "flex", alignItems: "center", gap: 16,
-                  padding: "14px 0", borderBottom: "0.5px solid rgba(15,15,14,0.08)",
-                }}>
-                  <div style={{ ...mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.5, width: 72, flexShrink: 0 }}>
-                    {item.when}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ ...sans, fontSize: "var(--text-body)", opacity: 0.88 }}>{item.label}</div>
-                    {item.detail && <div style={{ ...sans, fontSize: "var(--text-sm)", opacity: 0.5, marginTop: 2 }}>{item.detail}</div>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* In Focus Today */}
-        <section style={{ marginBottom: 48 }}>
-          <div style={sectionLabel}>
-            In Focus Today {focusToday.length > 0 && <span style={{ opacity: 0.7 }}>({focusToday.length})</span>}
-          </div>
           {focusToday.length === 0 ? (
-            <div style={{ ...sans, fontSize: "var(--text-body)", opacity: 0.4, padding: "20px 0" }}>
-              Nothing pinned for today. Open a project to pin it.
+            <div style={{
+              padding: "48px 32px",
+              background: "rgba(255,255,255,0.32)",
+              border: "0.5px solid rgba(15,15,14,0.08)",
+              textAlign: "center",
+            }}>
+              <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 18, opacity: 0.55, marginBottom: 6 }}>
+                Nothing pinned for today.
+              </div>
+              <div style={{ ...sans, fontSize: "var(--text-sm)", opacity: 0.45 }}>
+                Open a project and pin it to <em>In focus today</em> to bring it here.
+              </div>
             </div>
           ) : (
-            <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)" }}>
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: focusToday.length === 1 ? "1fr" : "repeat(auto-fit, minmax(320px, 1fr))",
+              gap: 16,
+            }}>
               {focusToday.map(p => (
                 <a key={p.id} href={`/admin/projects/${p.id}/edit`} style={{
-                  display: "flex", alignItems: "center", gap: 16,
-                  padding: "14px 0", borderBottom: "0.5px solid rgba(15,15,14,0.08)",
-                  textDecoration: "none", color: "inherit",
-                }}>
-                  <span style={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0, background: "var(--sage)" }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ ...sans, fontSize: "var(--text-body)", opacity: 0.88 }}>{p.title}</div>
-                    <div style={{ ...sans, fontSize: "var(--text-sm)", opacity: 0.5, marginTop: 2 }}>{p.client}</div>
+                  display: "block",
+                  padding: "26px 28px 30px",
+                  background: "rgba(255,255,255,0.42)",
+                  border: "0.5px solid rgba(15,15,14,0.1)",
+                  borderLeft: "2px solid var(--sage)",
+                  textDecoration: "none",
+                  color: "inherit",
+                  transition: "background 0.18s, border-color 0.18s",
+                }}
+                className="focus-hero-card">
+                  <div style={{ ...mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.5, marginBottom: 12 }}>
+                    {p.client}
+                  </div>
+                  <div style={{ ...sans, fontSize: 22, fontWeight: 500, letterSpacing: "-0.015em", lineHeight: 1.25, opacity: 0.92 }}>
+                    {p.title}
                   </div>
                 </a>
               ))}
@@ -313,33 +263,119 @@ export default async function FocusPage() {
           )}
         </section>
 
-        {/* In the Queue */}
-        <section style={{ marginBottom: 16 }}>
-          <div style={sectionLabel}>
-            In the Queue {inQueue.length > 0 && <span style={{ opacity: 0.7 }}>({inQueue.length})</span>}
-          </div>
-          {inQueue.length === 0 ? (
-            <div style={{ ...sans, fontSize: "var(--text-body)", opacity: 0.4, padding: "20px 0" }}>
-              Nothing in the queue.
+        {/* ─── 2×2 supporting grid ─── */}
+        <div className="focus-grid" style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "48px 56px",
+        }}>
+
+          {/* Needs Your Attention */}
+          <section>
+            <div style={sectionLabel}>
+              {attention.length > 0 ? `Needs your attention · ${attention.length}` : "Needs your attention"}
             </div>
-          ) : (
-            <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)" }}>
-              {inQueue.map(p => (
-                <a key={p.id} href={`/admin/projects/${p.id}/edit`} style={{
-                  display: "flex", alignItems: "center", gap: 16,
-                  padding: "14px 0", borderBottom: "0.5px solid rgba(15,15,14,0.08)",
-                  textDecoration: "none", color: "inherit",
-                }}>
-                  <span style={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0, background: "rgba(15,15,14,0.25)" }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ ...sans, fontSize: "var(--text-body)", opacity: 0.88 }}>{p.title}</div>
-                    <div style={{ ...sans, fontSize: "var(--text-sm)", opacity: 0.5, marginTop: 2 }}>{p.client}</div>
+            {attention.length === 0 ? (
+              <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 15, opacity: 0.5, padding: "16px 0" }}>
+                All clear.
+              </div>
+            ) : (
+              <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)" }}>
+                {attention.map(a => (
+                  <a key={a.id} href={a.href ?? "#"} style={{
+                    display: "flex", alignItems: "flex-start", gap: 14,
+                    padding: "13px 0", borderBottom: "0.5px solid rgba(15,15,14,0.08)",
+                    textDecoration: "none", color: "inherit",
+                  }}>
+                    <span style={{
+                      width: 6, height: 6, borderRadius: "50%", flexShrink: 0, marginTop: 7,
+                      background: a.icon === "amber" ? "var(--amber)" : a.icon === "sage" ? "var(--sage)" : "rgba(15,15,14,0.25)",
+                    }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ ...sans, fontSize: "var(--text-body)", opacity: 0.88, lineHeight: 1.4 }}>{a.label}</div>
+                      <div style={{ ...sans, fontSize: "var(--text-sm)", opacity: 0.5, marginTop: 2 }}>{a.detail}</div>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* My List */}
+          <section>
+            <FocusClient openTodos={openTodos} doneTodos={doneTodos} />
+          </section>
+
+          {/* In the Queue */}
+          <section>
+            <div style={sectionLabel}>
+              In the Queue {inQueue.length > 0 && <span style={{ opacity: 0.7 }}>· {inQueue.length}</span>}
+            </div>
+            {inQueue.length === 0 ? (
+              <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 15, opacity: 0.5, padding: "16px 0" }}>
+                Nothing in the queue.
+              </div>
+            ) : (
+              <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)" }}>
+                {inQueue.map(p => (
+                  <a key={p.id} href={`/admin/projects/${p.id}/edit`} style={{
+                    display: "flex", alignItems: "flex-start", gap: 14,
+                    padding: "13px 0", borderBottom: "0.5px solid rgba(15,15,14,0.08)",
+                    textDecoration: "none", color: "inherit",
+                  }}>
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0, marginTop: 7, background: "rgba(15,15,14,0.28)" }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ ...sans, fontSize: "var(--text-body)", opacity: 0.88, lineHeight: 1.4 }}>{p.title}</div>
+                      <div style={{ ...sans, fontSize: "var(--text-sm)", opacity: 0.5, marginTop: 2 }}>{p.client}</div>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* This Week */}
+          <section>
+            <div style={sectionLabel}>This week</div>
+            {thisWeek.length === 0 ? (
+              <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 15, opacity: 0.5, padding: "16px 0" }}>
+                Quiet week ahead.
+              </div>
+            ) : (
+              <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)" }}>
+                {thisWeek.map(item => (
+                  <div key={item.id} style={{
+                    display: "flex", alignItems: "flex-start", gap: 14,
+                    padding: "13px 0", borderBottom: "0.5px solid rgba(15,15,14,0.08)",
+                  }}>
+                    <div style={{ ...mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.5, width: 56, flexShrink: 0, paddingTop: 3 }}>
+                      {item.when}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ ...sans, fontSize: "var(--text-body)", opacity: 0.88, lineHeight: 1.4 }}>{item.label}</div>
+                      {item.detail && <div style={{ ...sans, fontSize: "var(--text-sm)", opacity: 0.5, marginTop: 2 }}>{item.detail}</div>}
+                    </div>
                   </div>
-                </a>
-              ))}
-            </div>
-          )}
-        </section>
+                ))}
+              </div>
+            )}
+          </section>
+
+        </div>
+
+        {/* Mobile collapse */}
+        <style>{`
+          @media (max-width: 760px) {
+            .focus-grid {
+              grid-template-columns: 1fr !important;
+              gap: 40px !important;
+            }
+          }
+          .focus-hero-card:hover {
+            background: rgba(255,255,255,0.6) !important;
+            border-color: rgba(15,15,14,0.18) !important;
+          }
+        `}</style>
       </main>
     </>
   )
