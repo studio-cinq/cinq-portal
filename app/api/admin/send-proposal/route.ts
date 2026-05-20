@@ -49,9 +49,19 @@ export async function POST(req: Request) {
       expiresAt: proposal.expires_at,
     })
 
+    // Record the send timestamp so we can tell from the DB whether the email
+    // was actually attempted (independent of the proposal's status field).
+    await (supabaseAdmin.from("proposals") as any)
+      .update({ last_sent_at: new Date().toISOString() })
+      .eq("id", proposalId)
+
     return NextResponse.json({ ok: true })
-  } catch (err) {
+  } catch (err: any) {
     console.error("[api/admin/send-proposal]", err)
-    return NextResponse.json({ error: "Failed to send email" }, { status: 500 })
+    // Bubble up the underlying error message so the admin UI can show it
+    return NextResponse.json(
+      { error: err?.message ?? "Failed to send email" },
+      { status: 500 }
+    )
   }
 }

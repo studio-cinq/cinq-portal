@@ -125,11 +125,33 @@ export default function NewProposalPage() {
 
     // Send email to client if status is "sent"
     if (status === "sent") {
-      await fetch("/api/admin/send-proposal", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ proposalId: proposal.id }),
-      }).catch(err => console.error("[send-proposal]", err))
+      try {
+        const sendRes = await fetch("/api/admin/send-proposal", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ proposalId: proposal.id }),
+        })
+        if (!sendRes.ok) {
+          const payload = await sendRes.json().catch(() => ({}))
+          const msg = payload?.error ?? "Email send failed"
+          setLoading(false)
+          alert(
+            `Proposal was saved, but the email to the client failed:\n\n${msg}\n\n` +
+            `Open the proposal and use "Resend email" to try again.`
+          )
+          router.push(`/admin/proposals/${proposal.id}`)
+          return
+        }
+      } catch (err: any) {
+        console.error("[send-proposal]", err)
+        setLoading(false)
+        alert(
+          `Proposal was saved, but the email request failed:\n\n${err?.message ?? "unknown error"}\n\n` +
+          `Open the proposal and use "Resend email" to try again.`
+        )
+        router.push(`/admin/proposals/${proposal.id}`)
+        return
+      }
     }
 
     setLoading(false)
