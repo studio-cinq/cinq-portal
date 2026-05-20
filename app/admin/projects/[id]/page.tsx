@@ -228,11 +228,6 @@ export default async function ProjectOverviewPage({ params }: { params: { id: st
 
         {/* ─── Header strip ─── */}
         <header style={{ marginBottom: 56, paddingBottom: 28, borderBottom: "0.5px solid rgba(15,15,14,0.1)" }}>
-          {client?.name && (
-            <Link href={`/admin/clients/${client.id}`} style={{ ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.5, marginBottom: 12, display: "inline-block", textDecoration: "none" }}>
-              {client.name}
-            </Link>
-          )}
           <h1 style={{ ...sans, fontWeight: 400, fontSize: 34, letterSpacing: "-0.02em", margin: "0 0 18px", opacity: 0.95, lineHeight: 1.1 }}>
             {project.title}
           </h1>
@@ -244,9 +239,14 @@ export default async function ProjectOverviewPage({ params }: { params: { id: st
           <div style={{ display: "flex", flexWrap: "wrap", gap: 24, alignItems: "center" }}>
             <ProjectStatusBadge status={project.status} />
             <FocusStateBadge state={project.focus_state} />
-            {(project.start_date || project.end_date) && (
+            {project.end_date && (
+              <span style={{ ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", opacity: 0.5 }}>
+                <span style={{ opacity: 0.6 }}>Due ·</span> {fmtDate(project.end_date)}
+              </span>
+            )}
+            {!project.end_date && project.start_date && (
               <span style={{ ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", opacity: 0.4 }}>
-                {fmtDate(project.start_date) || "—"} → {fmtDate(project.end_date) || "ongoing"}
+                <span style={{ opacity: 0.7 }}>Started ·</span> {fmtDate(project.start_date)}
               </span>
             )}
             <span style={{ flex: 1 }} />
@@ -265,6 +265,7 @@ export default async function ProjectOverviewPage({ params }: { params: { id: st
           display: "grid",
           gridTemplateColumns: "1fr 360px",
           gap: 64,
+          alignItems: "start",
         }}>
 
           {/* ━━━ Left: Activity timeline ━━━ */}
@@ -311,13 +312,17 @@ export default async function ProjectOverviewPage({ params }: { params: { id: st
 
             {/* Money */}
             <section>
-              <div style={sectionLabel}>Money</div>
               {invoices.length === 0 ? (
-                <div style={{ ...serif, fontStyle: "italic", fontSize: 15, opacity: 0.5 }}>
-                  No invoices yet.
+                <div style={{ ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.4, display: "flex", alignItems: "center", gap: 10 }}>
+                  <span>Money</span>
+                  <span style={{ opacity: 0.5 }}>·</span>
+                  <span style={{ ...serif, fontStyle: "italic", fontSize: 13, letterSpacing: "0", textTransform: "none", opacity: 0.7 }}>
+                    No invoices yet
+                  </span>
                 </div>
               ) : (
                 <>
+                  <div style={sectionLabel}>Money</div>
                   <div style={{
                     display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16,
                     padding: "14px 16px", marginBottom: 14,
