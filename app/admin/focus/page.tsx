@@ -240,7 +240,7 @@ export default async function FocusPage() {
               gap: 16,
             }}>
               {focusToday.map(p => (
-                <a key={p.id} href={`/admin/projects/${p.id}/edit`} style={{
+                <a key={p.id} href={`/admin/projects/${p.id}`} style={{
                   display: "block",
                   padding: "26px 28px 30px",
                   background: "rgba(255,255,255,0.42)",
@@ -318,7 +318,7 @@ export default async function FocusPage() {
             ) : (
               <div style={{ borderTop: "0.5px solid rgba(15,15,14,0.08)" }}>
                 {inQueue.map(p => (
-                  <a key={p.id} href={`/admin/projects/${p.id}/edit`} style={{
+                  <a key={p.id} href={`/admin/projects/${p.id}`} style={{
                     display: "flex", alignItems: "flex-start", gap: 14,
                     padding: "13px 0", borderBottom: "0.5px solid rgba(15,15,14,0.08)",
                     textDecoration: "none", color: "inherit",

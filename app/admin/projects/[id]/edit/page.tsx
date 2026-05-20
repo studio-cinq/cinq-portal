@@ -77,11 +77,7 @@ export default function EditProjectPage() {
     setSaving(false)
     if (updateErr) { setError(updateErr.message); return }
 
-    if (clientId) {
-      router.push(`/admin/clients/${clientId}`)
-    } else {
-      router.push("/admin/studio")
-    }
+    router.push(`/admin/projects/${params.id}`)
     router.refresh()
   }
 
@@ -99,8 +95,8 @@ export default function EditProjectPage() {
       <PortalNav isAdmin />
       <main className="form-page-pad" style={{ maxWidth: 640, margin: "0 auto", padding: "48px 48px 80px" }}>
 
-        <Link href={clientId ? `/admin/clients/${clientId}` : "/admin/studio"} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.4, textDecoration: "none", display: "inline-block", marginBottom: 28 }}>
-          ← Back
+        <Link href={`/admin/projects/${params.id}`} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.4, textDecoration: "none", display: "inline-block", marginBottom: 28 }}>
+          ← Back to project
         </Link>
 
         <div style={{ marginBottom: 48 }}>
