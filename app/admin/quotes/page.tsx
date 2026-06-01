@@ -1,0 +1,92 @@
+import { createServerComponentClient } from "@/lib/supabase-server"
+import Link from "next/link"
+import PortalNav from "@/components/portal/Nav"
+
+export default async function AdminQuotesPage() {
+  const supabase = await createServerComponentClient()
+
+  const { data: quotesRaw } = await supabase
+    .from("quotes").select("*, clients(name), quote_items(price)")
+    .order("created_at", { ascending: false })
+  const quotes = quotesRaw as any[] | null
+
+  return (
+    <>
+      <PortalNav isAdmin />
+      <main className="admin-page-pad" style={{ maxWidth: 1200, margin: "0 auto", padding: "40px 48px" }}>
+
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 36 }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.5 }}>
+            Quotes — {quotes?.length ?? 0}
+          </div>
+          <Link href="/admin/quotes/new" style={{
+            fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
+            letterSpacing: "0.14em", textTransform: "uppercase",
+            color: "var(--ink)", opacity: 0.6, textDecoration: "none",
+            border: "0.5px solid rgba(15,15,14,0.2)", padding: "8px 14px",
+          }}>
+            + New quote
+          </Link>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 160px 120px 100px 110px 90px", gap: 16, paddingBottom: 10, borderBottom: "0.5px solid rgba(15,15,14,0.12)" }}>
+          {["Quote", "Client", "Total", "Expires", "Viewed", "Status"].map(h => (
+            <div key={h} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.45 }}>{h}</div>
+          ))}
+        </div>
+
+        {quotes?.map(q => {
+          const total = q.quote_items?.reduce((s: number, i: any) => s + (i.price ?? 0), 0) ?? 0
+          const isExpired = q.expires_at && new Date(q.expires_at) < new Date()
+          return (
+            <Link
+              key={q.id}
+              href={`/admin/quotes/${q.id}`}
+              style={{
+                display: "grid", gridTemplateColumns: "1fr 160px 120px 100px 110px 90px",
+                gap: 16, alignItems: "center", padding: "16px 0",
+                borderBottom: "0.5px solid rgba(15,15,14,0.08)",
+                textDecoration: "none", color: "inherit",
+              }}
+            >
+              <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.88 }}>{q.title}</div>
+              <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: 0.6 }}>{q.clients?.name}</div>
+              <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.78 }}>${Math.round(total / 100).toLocaleString()}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: isExpired ? 0.4 : 0.6, color: isExpired ? "var(--danger)" : "var(--ink)" }}>
+                {q.expires_at ? new Date(q.expires_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
+              </div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)" }}>
+                {q.viewed_at
+                  ? <span style={{ color: "var(--sage)", opacity: 0.8 }}>{new Date(q.viewed_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+                  : <span style={{ opacity: 0.35 }}>Not yet</span>
+                }
+              </div>
+              <QuoteStatus status={q.status} />
+            </Link>
+          )
+        })}
+
+        {(!quotes || quotes.length === 0) && (
+          <div style={{ padding: "48px 0", fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.5, textAlign: "center" }}>
+            No quotes yet — <a href="/admin/quotes/new" style={{ opacity: 0.7, textDecoration: "none", borderBottom: "0.5px solid rgba(15,15,14,0.2)" }}>create your first quote</a>.
+          </div>
+        )}
+      </main>
+    </>
+  )
+}
+
+function QuoteStatus({ status }: { status: string }) {
+  const colors: Record<string, string> = {
+    draft:    "rgba(15,15,14,0.35)",
+    sent:     "var(--amber)",
+    accepted: "var(--sage)",
+    declined: "var(--danger)",
+    expired:  "rgba(15,15,14,0.35)",
+  }
+  return (
+    <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.08em", textTransform: "uppercase", color: colors[status] ?? "rgba(15,15,14,0.4)" }}>
+      {status}
+    </span>
+  )
+}

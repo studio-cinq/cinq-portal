@@ -5,6 +5,7 @@ import type { NextRequest } from "next/server"
 const PUBLIC_PAGE_PREFIXES = [
   "/auth/callback",
   "/proposals/",
+  "/quotes/",
   "/invoice/",
   "/review/",
   "/foundations/",
@@ -18,6 +19,7 @@ const PUBLIC_API_ROUTES = new Set([
   "/api/notify/proposal-viewed",
   "/api/proposal-accept",
   "/api/proposal-checkout",
+  "/api/quote-accept",
   "/api/review/approve",
   "/api/review/delete-annotation",
   "/api/review/save-annotation",

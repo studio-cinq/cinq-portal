@@ -21,6 +21,7 @@ const ADMIN_LINKS = [
   { href: "/admin/studio",    label: "Studio"    },
   { href: "/admin/clients",   label: "Clients"   },
   { href: "/admin/proposals", label: "Proposals" },
+  { href: "/admin/quotes",    label: "Quotes"    },
   { href: "/admin/invoices",  label: "Invoices"  },
   { href: "/admin/calendar",  label: "Calendar"  },
   { href: "/admin/reviews",   label: "Reviews"   },

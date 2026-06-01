@@ -107,6 +107,82 @@ export async function sendProposalEmail(p: ProposalSentPayload) {
   });
 }
 
+// ─── Quote sent — to client ───────────────────────────────────────────────────
+
+interface QuoteSentPayload {
+  quoteId: string;
+  quoteTitle: string;
+  clientName: string;
+  contactName: string;
+  contactEmail: string;
+  totalCents: number;
+  expiresAt?: string | null;
+}
+
+export async function sendQuoteEmail(p: QuoteSentPayload) {
+  const quoteUrl = `${PORTAL_URL}/quotes/${p.quoteId}`;
+  const total = (p.totalCents / 100).toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+  });
+
+  const expiresLine = p.expiresAt
+    ? new Date(p.expiresAt).toLocaleDateString("en-US", { timeZone: TZ, month: "long", day: "numeric", year: "numeric" })
+    : null;
+
+  const html = emailShell(`
+    <div class="body">
+      <p>Hi ${p.contactName} — here's a quick quote from Studio Cinq.</p>
+      <div class="meta">
+        <p><strong>Quote</strong> &nbsp;${p.quoteTitle}</p>
+        <p><strong>Total</strong> &nbsp;${total}</p>
+        ${expiresLine ? `<p><strong>Expires</strong> &nbsp;${expiresLine}</p>` : ""}
+      </div>
+      <a class="cta" href="${quoteUrl}" style="color:#FAF8F5;text-decoration:none;">View &amp; approve quote →</a>
+    </div>
+  `);
+
+  return sendEmail({
+    from: "Studio Cinq <portal@studiocinq.com>",
+    replyTo: STUDIO_EMAIL,
+    to: p.contactEmail,
+    subject: `Quote — ${p.quoteTitle}`,
+    html,
+  });
+}
+
+// ─── Quote accepted — to admin ────────────────────────────────────────────────
+
+interface QuoteAcceptedPayload {
+  quoteId: string;
+  quoteTitle: string;
+  clientName: string;
+  totalCents: number;
+  note?: string | null;
+}
+
+export async function sendQuoteAcceptedEmail(p: QuoteAcceptedPayload) {
+  const quoteUrl = `${PORTAL_URL}/admin/quotes/${p.quoteId}`;
+  const total = (p.totalCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+  const html = emailShell(`
+    <div class="body">
+      <p>${p.clientName} accepted the quote.</p>
+      <div class="meta">
+        <p><strong>Quote</strong> &nbsp;${p.quoteTitle}</p>
+        <p><strong>Total</strong> &nbsp;${total}</p>
+        ${p.note ? `<p><strong>Note</strong> &nbsp;<em>${p.note.replace(/</g, "&lt;")}</em></p>` : ""}
+      </div>
+      <a class="cta" href="${quoteUrl}" style="color:#FAF8F5;text-decoration:none;">Open in admin →</a>
+    </div>
+  `);
+  return sendEmail({
+    from: "Studio Cinq <portal@studiocinq.com>",
+    to: STUDIO_EMAIL,
+    subject: `Quote accepted — ${p.clientName}`,
+    html,
+  });
+}
+
 // ─── Proposal viewed ──────────────────────────────────────────────────────────
 
 interface ProposalViewedPayload {

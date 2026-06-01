@@ -2,13 +2,13 @@
 
 import { useState } from "react"
 
-export default function CopyLinkButton({ id }: { id: string }) {
+export default function CopyLinkButton({ id, basePath = "/proposals" }: { id: string; basePath?: string }) {
   const [copied, setCopied] = useState(false)
 
   async function handleCopy() {
     const base = typeof window !== "undefined" ? window.location.origin : "https://portal.studiocinq.com"
     try {
-      await navigator.clipboard.writeText(`${base}/proposals/${id}`)
+      await navigator.clipboard.writeText(`${base}${basePath}/${id}`)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
