@@ -121,33 +121,46 @@ interface QuoteSentPayload {
 
 export async function sendQuoteEmail(p: QuoteSentPayload) {
   const quoteUrl = `${PORTAL_URL}/quotes/${p.quoteId}`;
-  const total = (p.totalCents / 100).toLocaleString("en-US", {
-    style: "currency",
-    currency: "USD",
-  });
-
   const expiresLine = p.expiresAt
     ? new Date(p.expiresAt).toLocaleDateString("en-US", { timeZone: TZ, month: "long", day: "numeric", year: "numeric" })
     : null;
 
+  // Plaintext version with no marketing-y formatting — Gmail uses this signal
+  // when classifying Primary vs Promotions.
+  const text = [
+    `Hi ${p.contactName},`,
+    "",
+    `I put together a quote for ${p.quoteTitle} — you can review and approve it here:`,
+    quoteUrl,
+    "",
+    expiresLine ? `Valid through ${expiresLine}.` : null,
+    "",
+    "Let me know if you have any questions.",
+    "",
+    "Thanks,",
+    "Kacie",
+  ].filter(Boolean).join("\n");
+
+  // Letter-style HTML — no bright CTA button, no "Total: $X" meta block.
+  // Reads more like personal correspondence than a marketing message.
   const html = emailShell(`
     <div class="body">
-      <p>Hi ${p.contactName} — here's a quick quote from Studio Cinq.</p>
-      <div class="meta">
-        <p><strong>Quote</strong> &nbsp;${p.quoteTitle}</p>
-        <p><strong>Total</strong> &nbsp;${total}</p>
-        ${expiresLine ? `<p><strong>Expires</strong> &nbsp;${expiresLine}</p>` : ""}
-      </div>
-      <a class="cta" href="${quoteUrl}" style="color:#FAF8F5;text-decoration:none;">View &amp; approve quote →</a>
+      <p>Hi ${p.contactName},</p>
+      <p>I put together a quote for <strong>${p.quoteTitle}</strong> — you can review and approve it here:</p>
+      <p style="margin:18px 0"><a href="${quoteUrl}" style="color:#1C1916;text-decoration:underline">${quoteUrl}</a></p>
+      ${expiresLine ? `<p style="color:#6B6258;font-size:13px">Valid through ${expiresLine}.</p>` : ""}
+      <p>Let me know if you have any questions.</p>
+      <p style="margin-top:24px">Thanks,<br/>Kacie</p>
     </div>
   `);
 
   return sendEmail({
-    from: "Studio Cinq <portal@studiocinq.com>",
+    from: "Kacie Yates <portal@studiocinq.com>",
     replyTo: STUDIO_EMAIL,
     to: p.contactEmail,
-    subject: `Quote — ${p.quoteTitle}`,
+    subject: `Quote for ${p.contactName.split(" ")[0]} — ${p.quoteTitle}`,
     html,
+    text,
   });
 }
 

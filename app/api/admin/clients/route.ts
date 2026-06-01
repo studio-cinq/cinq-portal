@@ -8,7 +8,7 @@ export async function PATCH(req: Request) {
     if (auth.error) return auth.error
 
     const body = await req.json()
-    const { id, name, contact_name, contact_email, logo_url, notes } = body
+    const { id, name, contact_name, contact_email, logo_url, notes, invoice_prefix } = body
 
     if (!id)   return NextResponse.json({ error: "Missing client ID." }, { status: 400 })
     if (!name || !contact_name || !contact_email) {
@@ -17,7 +17,7 @@ export async function PATCH(req: Request) {
 
     const { data, error } = await (supabaseAdmin
       .from("clients") as any)
-      .update({ name, contact_name, contact_email, logo_url, notes })
+      .update({ name, contact_name, contact_email, logo_url, notes, invoice_prefix })
       .eq("id", id)
       .select()
       .single()

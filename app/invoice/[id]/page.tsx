@@ -181,6 +181,44 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
           </div>
         )}
 
+        {/* On-completion banner — shown when invoice is draft + unlocks_files
+            (i.e., created from a "100% on completion · unlocks files" flow).
+            Keeps the pay-now option but explains the situation clearly. */}
+        {invoice.status === "draft" && invoice.unlocks_files && !isPaid && (
+          <div role="status" style={{
+            display: "flex", gap: 14, alignItems: "flex-start",
+            marginBottom: 32, padding: isMobile ? "16px 18px" : "18px 22px",
+            background: "rgba(143,167,181,0.08)",
+            border: "1px solid rgba(143,167,181,0.35)",
+            borderLeft: "3px solid var(--sage)",
+          }}>
+            <span aria-hidden="true" style={{
+              fontFamily: "var(--font-sans)", fontSize: 16, fontWeight: 600,
+              color: "var(--sage)", lineHeight: 1.4, flexShrink: 0,
+            }}>✓</span>
+            <div style={{ flex: 1 }}>
+              <div style={{
+                fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
+                letterSpacing: "0.14em", textTransform: "uppercase",
+                color: "var(--sage)", opacity: 0.95, marginBottom: 6, fontWeight: 600,
+              }}>
+                Quote approved · payment due on completion
+              </div>
+              <div style={{
+                fontFamily: "var(--font-sans)", fontSize: "var(--text-body)",
+                lineHeight: 1.6, color: "var(--ink)", opacity: 0.85,
+              }}>
+                No action needed right now — we'll let you know when the project is ready.
+                Final files unlock for download as soon as this is paid.
+                {" "}
+                <span style={{ opacity: 0.7, fontStyle: "italic", fontFamily: "var(--font-serif)" }}>
+                  (If you'd like to pay early, the option is below.)
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div style={{ position: "relative" }}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.42, marginBottom: 10 }}>

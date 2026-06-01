@@ -46,11 +46,12 @@ export default function EditClientPage({ params }: { params: { id: string } }) {
   const [saved, setSaved]     = useState(false)
 
   const [form, setForm] = useState({
-    name:          "",
-    contact_name:  "",
-    contact_email: "",
-    logo_url:      "",
-    notes:         "",
+    name:           "",
+    contact_name:   "",
+    contact_email:  "",
+    logo_url:       "",
+    notes:          "",
+    invoice_prefix: "",
   })
 
   useEffect(() => {
@@ -62,11 +63,12 @@ export default function EditClientPage({ params }: { params: { id: string } }) {
       .then(({ data }) => {
         if (data) {
           setForm({
-            name:          data.name ?? "",
-            contact_name:  data.contact_name ?? "",
-            contact_email: data.contact_email ?? "",
-            logo_url:      data.logo_url ?? "",
-            notes:         data.notes ?? "",
+            name:           data.name ?? "",
+            contact_name:   data.contact_name ?? "",
+            contact_email:  data.contact_email ?? "",
+            logo_url:       data.logo_url ?? "",
+            notes:          data.notes ?? "",
+            invoice_prefix: data.invoice_prefix ?? "",
           })
         }
         setLoading(false)
@@ -90,12 +92,13 @@ export default function EditClientPage({ params }: { params: { id: string } }) {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        id:            params.id,
-        name:          form.name.trim(),
-        contact_name:  form.contact_name.trim(),
-        contact_email: form.contact_email.trim(),
-        logo_url:      form.logo_url.trim() || null,
-        notes:         form.notes.trim() || null,
+        id:             params.id,
+        name:           form.name.trim(),
+        contact_name:   form.contact_name.trim(),
+        contact_email:  form.contact_email.trim(),
+        logo_url:       form.logo_url.trim() || null,
+        notes:          form.notes.trim() || null,
+        invoice_prefix: form.invoice_prefix.trim().toUpperCase() || null,
       }),
     })
 
@@ -178,14 +181,26 @@ export default function EditClientPage({ params }: { params: { id: string } }) {
             </div>
           </div>
 
-          <div>
-            <label style={labelStyle}>Logo URL <span style={{ opacity: 0.5 }}>(optional)</span></label>
-            <input
-              style={inputStyle}
-              placeholder="https://..."
-              value={form.logo_url}
-              onChange={e => set("logo_url", e.target.value)}
-            />
+          <div className="form-grid-2col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
+            <div>
+              <label style={labelStyle}>Logo URL <span style={{ opacity: 0.5 }}>(optional)</span></label>
+              <input
+                style={inputStyle}
+                placeholder="https://..."
+                value={form.logo_url}
+                onChange={e => set("logo_url", e.target.value)}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Invoice prefix <span style={{ opacity: 0.5 }}>(e.g. MOR, TUC)</span></label>
+              <input
+                style={inputStyle}
+                placeholder="MOR"
+                maxLength={6}
+                value={form.invoice_prefix}
+                onChange={e => set("invoice_prefix", e.target.value.toUpperCase())}
+              />
+            </div>
           </div>
 
           <div>

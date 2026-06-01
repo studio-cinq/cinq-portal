@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
     if (!quoteId) return NextResponse.json({ error: "Missing quoteId" }, { status: 400 })
 
     const { data: quote } = await (supabaseAdmin.from("quotes") as any)
-      .select("*, clients(id, name, contact_name, contact_email)")
+      .select("*, clients(id, name, contact_name, contact_email, invoice_prefix)")
       .eq("id", quoteId).single()
 
     if (!quote) return NextResponse.json({ error: "Quote not found" }, { status: 404 })
@@ -29,16 +29,20 @@ export async function POST(req: NextRequest) {
     const invoicePct = isCompletionOnly ? 100 : depositPct
     const invoiceAmount = isCompletionOnly ? total : Math.round(total * (depositPct / 100))
 
-    // Generate invoice number (QT-XXX prefix to distinguish from proposal-derived SC-XXX)
+    // Generate invoice number using the client's prefix.
+    // Falls back to "Q" if the client doesn't have one set.
+    const rawPrefix = (client?.invoice_prefix ?? "Q").toString().trim().toUpperCase()
+    const prefix = rawPrefix || "Q"
     const { data: latestInv } = await (supabaseAdmin.from("invoices") as any)
-      .select("invoice_number").ilike("invoice_number", "QT-%")
+      .select("invoice_number")
+      .ilike("invoice_number", `${prefix}-%`)
       .order("created_at", { ascending: false }).limit(1).single()
     let nextNum = 1
     if (latestInv?.invoice_number) {
-      const m = latestInv.invoice_number.match(/QT-(\d+)/)
+      const m = latestInv.invoice_number.match(new RegExp(`${prefix}-(\\d+)`))
       if (m) nextNum = parseInt(m[1]) + 1
     }
-    const invoiceNumber = `QT-${String(nextNum).padStart(3, "0")}`
+    const invoiceNumber = `${prefix}-${String(nextNum).padStart(3, "0")}`
 
     const invoiceLineItems = itemList.map(item => ({
       description: item.name,

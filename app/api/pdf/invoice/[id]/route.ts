@@ -56,10 +56,13 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     setColor(doc, INK, 0.38)
     doc.text("INVOICE", marginL, y)
 
-    // Status badge (top right) — skip if paid, stamp handles it
-    if (invoice.status !== "paid") {
+    // Status badge (top right) — only show for actively-tracked states.
+    // "Paid" is handled by the paid stamp; "draft" is an internal-only state
+    // that shouldn't appear on the downloaded PDF (the client doesn't need
+    // to see it and it looks weird on a final-payment-on-completion invoice).
+    if (invoice.status === "sent" || invoice.status === "overdue") {
       const statusColors: Record<string, readonly number[]> = {
-        sent: AMBER, overdue: [192, 57, 43], draft: INK,
+        sent: AMBER, overdue: [192, 57, 43],
       }
       const statusColor = statusColors[invoice.status] ?? INK
       doc.setFontSize(8)
