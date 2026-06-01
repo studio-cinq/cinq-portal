@@ -1,12 +1,13 @@
 import { createServerComponentClient } from "@/lib/supabase-server"
 import Link from "next/link"
 import PortalNav from "@/components/portal/Nav"
+import DeleteButton from "@/components/portal/DeleteButton"
 
 export default async function AdminQuotesPage() {
   const supabase = await createServerComponentClient()
 
   const { data: quotesRaw } = await supabase
-    .from("quotes").select("*, clients(name), quote_items(price)")
+    .from("quotes").select("id, title, status, expires_at, viewed_at, invoice_id, created_at, clients(name), quote_items(price)")
     .order("created_at", { ascending: false })
   const quotes = quotesRaw as any[] | null
 
@@ -29,27 +30,30 @@ export default async function AdminQuotesPage() {
           </Link>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 160px 120px 100px 110px 90px", gap: 16, paddingBottom: 10, borderBottom: "0.5px solid rgba(15,15,14,0.12)" }}>
-          {["Quote", "Client", "Total", "Expires", "Viewed", "Status"].map(h => (
-            <div key={h} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.45 }}>{h}</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 160px 120px 100px 110px 90px 60px", gap: 16, paddingBottom: 10, borderBottom: "0.5px solid rgba(15,15,14,0.12)" }}>
+          {["Quote", "Client", "Total", "Expires", "Viewed", "Status", ""].map((h, i) => (
+            <div key={i} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.45 }}>{h}</div>
           ))}
         </div>
 
         {quotes?.map(q => {
           const total = q.quote_items?.reduce((s: number, i: any) => s + (i.price ?? 0), 0) ?? 0
           const isExpired = q.expires_at && new Date(q.expires_at) < new Date()
+          const confirmMsg = q.invoice_id
+            ? `Delete "${q.title}"? This will also delete the linked invoice. Cannot be undone.`
+            : `Delete "${q.title}"? This cannot be undone.`
           return (
-            <Link
+            <div
               key={q.id}
-              href={`/admin/quotes/${q.id}`}
               style={{
-                display: "grid", gridTemplateColumns: "1fr 160px 120px 100px 110px 90px",
+                display: "grid", gridTemplateColumns: "1fr 160px 120px 100px 110px 90px 60px",
                 gap: 16, alignItems: "center", padding: "16px 0",
                 borderBottom: "0.5px solid rgba(15,15,14,0.08)",
-                textDecoration: "none", color: "inherit",
               }}
             >
-              <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.88 }}>{q.title}</div>
+              <Link href={`/admin/quotes/${q.id}`} style={{ textDecoration: "none", color: "inherit", fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.88 }}>
+                {q.title}
+              </Link>
               <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: 0.6 }}>{q.clients?.name}</div>
               <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.78 }}>${Math.round(total / 100).toLocaleString()}</div>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: isExpired ? 0.4 : 0.6, color: isExpired ? "var(--danger)" : "var(--ink)" }}>
@@ -62,7 +66,8 @@ export default async function AdminQuotesPage() {
                 }
               </div>
               <QuoteStatus status={q.status} />
-            </Link>
+              <DeleteButton endpoint="/api/admin/delete/quote" id={q.id} confirm={confirmMsg} />
+            </div>
           )
         })}
 

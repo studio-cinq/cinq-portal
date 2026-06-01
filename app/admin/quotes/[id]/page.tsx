@@ -4,6 +4,7 @@ import { notFound } from "next/navigation"
 import PortalNav from "@/components/portal/Nav"
 import CopyLinkButton from "@/components/portal/CopyLinkButton"
 import ResendQuoteButton from "@/components/portal/ResendQuoteButton"
+import DeleteButton from "@/components/portal/DeleteButton"
 
 const mono = { fontFamily: "var(--font-mono)" } as const
 const sans = { fontFamily: "var(--font-sans)" } as const
@@ -69,10 +70,22 @@ export default async function AdminQuoteDetailPage({ params }: { params: { id: s
         </div>
 
         {/* Actions */}
-        <div style={{ display: "flex", gap: 10, marginBottom: 36, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 10, marginBottom: 36, flexWrap: "wrap", alignItems: "center" }}>
           <Link href={`/admin/quotes/${params.id}/edit`} style={btn}>Edit</Link>
           {(quote as any).status !== "accepted" && <ResendQuoteButton quoteId={params.id} />}
           <CopyLinkButton id={params.id} basePath="/quotes" />
+          <span style={{ flex: 1 }} />
+          <DeleteButton
+            endpoint="/api/admin/delete/quote"
+            id={params.id}
+            label="Delete quote"
+            redirectTo="/admin/quotes"
+            confirm={
+              (quote as any).invoice_id
+                ? `Delete "${(quote as any).title}"? This will also delete the linked invoice. Cannot be undone.`
+                : `Delete "${(quote as any).title}"? This cannot be undone.`
+            }
+          />
         </div>
 
         {/* Items */}

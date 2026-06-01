@@ -8,9 +8,11 @@ interface DeleteButtonProps {
   id: string
   label?: string
   confirm?: string
+  /** Where to navigate after a successful delete. Defaults to refreshing the current page. */
+  redirectTo?: string
 }
 
-export default function DeleteButton({ endpoint, id, label = "Delete", confirm = "Are you sure? This cannot be undone." }: DeleteButtonProps) {
+export default function DeleteButton({ endpoint, id, label = "Delete", confirm = "Are you sure? This cannot be undone.", redirectTo }: DeleteButtonProps) {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
@@ -25,7 +27,11 @@ export default function DeleteButton({ endpoint, id, label = "Delete", confirm =
       })
       setLoading(false)
       if (res.ok) {
-        router.refresh()
+        if (redirectTo) {
+          router.push(redirectTo)
+        } else {
+          router.refresh()
+        }
       } else {
         alert("Something went wrong. Please try again.")
       }
