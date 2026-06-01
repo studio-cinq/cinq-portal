@@ -121,6 +121,7 @@ interface QuoteSentPayload {
 
 export async function sendQuoteEmail(p: QuoteSentPayload) {
   const quoteUrl = `${PORTAL_URL}/quotes/${p.quoteId}`;
+  const firstName = (p.contactName ?? "").trim().split(/\s+/)[0] || p.contactName;
   const expiresLine = p.expiresAt
     ? new Date(p.expiresAt).toLocaleDateString("en-US", { timeZone: TZ, month: "long", day: "numeric", year: "numeric" })
     : null;
@@ -128,7 +129,7 @@ export async function sendQuoteEmail(p: QuoteSentPayload) {
   // Plaintext version with no marketing-y formatting — Gmail uses this signal
   // when classifying Primary vs Promotions.
   const text = [
-    `Hi ${p.contactName},`,
+    `Hi ${firstName},`,
     "",
     `I put together a quote for ${p.quoteTitle} — you can review and approve it here:`,
     quoteUrl,
@@ -145,7 +146,7 @@ export async function sendQuoteEmail(p: QuoteSentPayload) {
   // Reads more like personal correspondence than a marketing message.
   const html = emailShell(`
     <div class="body">
-      <p>Hi ${p.contactName},</p>
+      <p>Hi ${firstName},</p>
       <p>I put together a quote for <strong>${p.quoteTitle}</strong> — you can review and approve it here:</p>
       <p style="margin:18px 0"><a href="${quoteUrl}" style="color:#1C1916;text-decoration:underline">${quoteUrl}</a></p>
       ${expiresLine ? `<p style="color:#6B6258;font-size:13px">Valid through ${expiresLine}.</p>` : ""}
@@ -158,7 +159,7 @@ export async function sendQuoteEmail(p: QuoteSentPayload) {
     from: "Kacie Yates <portal@studiocinq.com>",
     replyTo: STUDIO_EMAIL,
     to: p.contactEmail,
-    subject: `Quote for ${p.contactName.split(" ")[0]} — ${p.quoteTitle}`,
+    subject: `Quote for ${firstName} — ${p.quoteTitle}`,
     html,
     text,
   });
