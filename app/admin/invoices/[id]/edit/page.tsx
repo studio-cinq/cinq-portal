@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 import PortalNav from "@/components/portal/Nav"
 import Link from "next/link"
+import SendInvoiceReminderButton from "@/components/portal/SendInvoiceReminderButton"
 
 const mono: React.CSSProperties = { fontFamily: "var(--font-mono)" }
 const serif: React.CSSProperties = { fontFamily: "var(--font-sans)" }
@@ -38,6 +39,8 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
   const [originalStatus, setOriginalStatus] = useState("")
   const [sending, setSending]     = useState(false)
   const [emailSent, setEmailSent] = useState(false)
+  const [remindersSent, setRemindersSent] = useState(0)
+  const [lastReminderAt, setLastReminderAt] = useState<string | null>(null)
 
   const [form, setForm] = useState({
     client_id:      "",
@@ -89,6 +92,9 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
           cc_emails: Array.isArray(inv.cc_emails) ? inv.cc_emails.join(", ") : "",
           skip_email:     false,
         })
+
+        setRemindersSent(inv.reminders_sent_count ?? 0)
+        setLastReminderAt(inv.last_reminder_sent_at ?? null)
 
         // Load line items from DB
         if (Array.isArray(inv.line_items) && inv.line_items.length > 0) {
@@ -544,6 +550,18 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
               Cancel
             </button>
           </div>
+
+          {/* Send reminder — only visible for unpaid invoices that have been sent */}
+          {(form.status === "sent" || form.status === "overdue") && (
+            <div style={{ marginTop: 28, paddingTop: 24, borderTop: "0.5px solid rgba(15,15,14,0.08)", display: "flex", alignItems: "center", gap: 18 }}>
+              <SendInvoiceReminderButton invoiceId={params.id} remindersSent={remindersSent} />
+              {remindersSent > 0 && lastReminderAt && (
+                <div style={{ ...mono, fontSize: 10, letterSpacing: "0.1em", opacity: 0.5 }}>
+                  {remindersSent} reminder{remindersSent === 1 ? "" : "s"} sent · last on {new Date(lastReminderAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                </div>
+              )}
+            </div>
+          )}
 
         </div>
       </main>

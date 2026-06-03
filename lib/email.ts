@@ -165,6 +165,59 @@ export async function sendQuoteEmail(p: QuoteSentPayload) {
   });
 }
 
+// ─── Invoice reminder — to client ─────────────────────────────────────────────
+
+interface InvoiceReminderPayload {
+  invoiceId: string;
+  invoiceNumber: string;
+  contactName: string;
+  contactEmail: string;
+  amountCents: number;
+  ccEmails?: string[] | null;
+}
+
+export async function sendInvoiceReminderEmail(p: InvoiceReminderPayload) {
+  const invoiceUrl = `${PORTAL_URL}/invoice/${p.invoiceId}`;
+  const firstName = (p.contactName ?? "").trim().split(/\s+/)[0] || p.contactName;
+  const amount = (p.amountCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+
+  // Plain-text version (Gmail uses this for Primary vs Promotions sorting)
+  const text = [
+    `Hi ${firstName},`,
+    "",
+    `A small reminder that Invoice #${p.invoiceNumber} for ${amount} is still outstanding.`,
+    "",
+    "You can view and pay it here:",
+    invoiceUrl,
+    "",
+    "Let me know if there's anything you need from me on this.",
+    "",
+    "Thanks,",
+    "Kacie | Cinq",
+  ].join("\n");
+
+  const html = emailShell(`
+    <div class="body">
+      <p>Hi ${firstName},</p>
+      <p>A small reminder that Invoice <strong>#${p.invoiceNumber}</strong> for <strong>${amount}</strong> is still outstanding.</p>
+      <p>You can view and pay it here:</p>
+      <p style="margin:14px 0"><a href="${invoiceUrl}" style="color:#1C1916;text-decoration:underline">${invoiceUrl}</a></p>
+      <p>Let me know if there&rsquo;s anything you need from me on this.</p>
+      <p style="margin-top:24px">Thanks,<br/>Kacie | Cinq</p>
+    </div>
+  `);
+
+  return sendEmail({
+    from: "Kacie Yates <portal@studiocinq.com>",
+    replyTo: STUDIO_EMAIL,
+    to: p.contactEmail,
+    cc: (p.ccEmails ?? []).filter(Boolean),
+    subject: `A reminder — Invoice #${p.invoiceNumber}`,
+    html,
+    text,
+  });
+}
+
 // ─── Quote accepted — to admin ────────────────────────────────────────────────
 
 interface QuoteAcceptedPayload {

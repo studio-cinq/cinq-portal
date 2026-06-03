@@ -4,6 +4,7 @@ import PortalNav from "@/components/portal/Nav"
 import DeleteButton from "@/components/portal/DeleteButton"
 import MarkPaidButton from "@/components/portal/MarkPaidButton"
 import DownloadPDFButton from "@/components/portal/DownloadPDFButton"
+import SendInvoiceReminderButton from "@/components/portal/SendInvoiceReminderButton"
 
 export default async function AdminInvoicesPage() {
   const supabase = await createServerComponentClient()
@@ -77,9 +78,12 @@ export default async function AdminInvoicesPage() {
               {inv.due_date ? new Date(inv.due_date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
             </div>
             <InvoiceStatusBadge status={inv.status} />
-            <div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
               {["sent", "overdue"].includes(inv.status) && (
-                <MarkPaidButton invoiceId={inv.id} invoiceNumber={inv.invoice_number} />
+                <>
+                  <MarkPaidButton invoiceId={inv.id} invoiceNumber={inv.invoice_number} />
+                  <SendInvoiceReminderButton invoiceId={inv.id} remindersSent={(inv as any).reminders_sent_count ?? 0} compact />
+                </>
               )}
             </div>
             <DownloadPDFButton type="invoice" id={inv.id} label="PDF" />
