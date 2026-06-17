@@ -224,7 +224,7 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
   const marksNum = logoGroups.length > 0 ? num() : null
   const colorNum = colors.length > 0 ? num() : null
   const typeNum = typefaces.length > 0 ? num() : null
-  const inventoryNum = (assets.length > 0 || typefaces.length > 0) ? num() : null
+  const inventoryNum = (guideAssets.length > 0 || otherAssets.length > 0) ? num() : null
   const misuseRules = Array.isArray(kit?.misuse_rules) ? kit.misuse_rules as any[] : []
   const misuseNum = misuseRules.length > 0 ? num() : null
 
@@ -571,92 +571,30 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
       {/* ─── Asset inventory ───────────────────────────────────── */}
       {inventoryNum && (
         <section style={{ padding: "clamp(80px, 10vw, 140px) clamp(28px, 6vw, 80px)", maxWidth: 1100, margin: "0 auto", borderTop: `0.5px solid ${LINE}` }}>
-          <SectionHeader number={inventoryNum} label="Asset Inventory" lede="Everything that ships with this kit." />
+          <SectionHeader number={inventoryNum} label="Files for download" lede="Guidelines and source files that ship with this kit." />
 
-          <div style={{ marginTop: 40, background: PAPER, border: `0.5px solid ${LINE}` }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-              <thead>
-                <tr>
-                  {["Asset", "Formats", "Primary use"].map(h => (
-                    <th key={h} style={{ ...mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", textAlign: "left", padding: "12px 16px", borderBottom: `0.5px solid ${LINE}`, color: MUTED, fontWeight: 500 }}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {logoGroups.map((g, i) => (
-                  <tr key={g.name}>
-                    <td style={{ padding: "12px 16px", borderBottom: `0.5px solid ${LINE}`, ...sans, opacity: 0.88 }}>
-                      {g.name}
-                    </td>
-                    <td style={{ padding: "12px 16px", borderBottom: `0.5px solid ${LINE}`, ...mono, fontSize: 11, opacity: 0.7 }}>
-                      {g.files.map(f => f.file_type).join(" · ")}
-                    </td>
-                    <td style={{ padding: "12px 16px", borderBottom: `0.5px solid ${LINE}`, ...sans, fontSize: 13, color: MUTED }}>
-                      {g.primary_use || g.usage || "—"}
-                    </td>
-                  </tr>
-                ))}
-                {[...guideAssets, ...otherAssets].map(a => (
-                  <tr key={a.id}>
-                    <td style={{ padding: "12px 16px", borderBottom: `0.5px solid ${LINE}`, ...sans, opacity: 0.88 }}>
-                      {a.name}
-                    </td>
-                    <td style={{ padding: "12px 16px", borderBottom: `0.5px solid ${LINE}`, ...mono, fontSize: 11, opacity: 0.7 }}>
-                      {a.file_type}
-                    </td>
-                    <td style={{ padding: "12px 16px", borderBottom: `0.5px solid ${LINE}`, ...sans, fontSize: 13, color: MUTED }}>
-                      {a.usage || a.category}
-                    </td>
-                  </tr>
-                ))}
-                {typefaces.map(t => (
-                  <tr key={t.id}>
-                    <td style={{ padding: "12px 16px", borderBottom: `0.5px solid ${LINE}`, ...sans, opacity: 0.88 }}>
-                      {t.name}
-                    </td>
-                    <td style={{ padding: "12px 16px", borderBottom: `0.5px solid ${LINE}`, ...mono, fontSize: 11, opacity: 0.7 }}>
-                      {t.file_url ? "Font file" : "Licensed"}
-                    </td>
-                    <td style={{ padding: "12px 16px", borderBottom: `0.5px solid ${LINE}`, ...sans, fontSize: 13, color: MUTED }}>
-                      {[t.weight, t.role].filter(Boolean).join(" · ") || "Typography"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div style={{ marginTop: 40, borderTop: `0.5px solid ${LINE}` }}>
+            {[...guideAssets, ...otherAssets].map((a: any) => (
+              <a key={a.id} href={a.file_url} target="_blank" rel="noopener noreferrer" download style={{
+                display: "grid", gridTemplateColumns: "1fr 140px 90px", gap: 24, alignItems: "baseline",
+                padding: "18px 0", borderBottom: `0.5px solid ${LINE}`,
+                textDecoration: "none", color: "inherit",
+              }}>
+                <div>
+                  <div style={{ ...sans, fontSize: 15, opacity: 0.9 }}>{a.name}</div>
+                  <div style={{ ...mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.42, marginTop: 4 }}>
+                    {a.category}
+                  </div>
+                </div>
+                <div style={{ ...mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.55 }}>
+                  {a.file_type}{a.file_size_bytes ? ` · ${fileSize(a.file_size_bytes)}` : ""}
+                </div>
+                <div style={{ ...mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.55, textAlign: "right" }}>
+                  Download ↓
+                </div>
+              </a>
+            ))}
           </div>
-
-          {(guideAssets.length > 0 || otherAssets.length > 0) && (
-            <div style={{ marginTop: 40 }}>
-              <div style={{ ...mono, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.55, marginBottom: 14 }}>
-                Files for download
-              </div>
-              <div style={{ borderTop: `0.5px solid ${LINE}` }}>
-                {[...guideAssets, ...otherAssets].map((a: any) => (
-                  <a key={a.id} href={a.file_url} target="_blank" rel="noopener noreferrer" download style={{
-                    display: "grid", gridTemplateColumns: "1fr 140px 90px", gap: 24, alignItems: "baseline",
-                    padding: "16px 0", borderBottom: `0.5px solid ${LINE}`,
-                    textDecoration: "none", color: "inherit",
-                  }}>
-                    <div>
-                      <div style={{ ...sans, fontSize: 15, opacity: 0.9 }}>{a.name}</div>
-                      <div style={{ ...mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.42, marginTop: 3 }}>
-                        {a.category}
-                      </div>
-                    </div>
-                    <div style={{ ...mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.55 }}>
-                      {a.file_type}{a.file_size_bytes ? ` · ${fileSize(a.file_size_bytes)}` : ""}
-                    </div>
-                    <div style={{ ...mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.55, textAlign: "right" }}>
-                      Download ↓
-                    </div>
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
         </section>
       )}
 
