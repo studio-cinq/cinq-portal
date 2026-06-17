@@ -20,7 +20,7 @@ const sectionLabel: React.CSSProperties = {
 
 type Asset = { id: string; name: string; file_url: string; file_type: string; file_size_bytes?: number; category: string; sort_order: number; description?: string | null; usage?: string | null; primary_use?: string | null; available_color_ids?: string[] | null; color_id?: string | null; display_scale?: number | null; default_colorway_id?: string | null }
 type Color = { id: string; name: string; hex: string; sort_order: number; rgb?: string | null; usage_note?: string | null; cmyk?: string | null; pms?: string | null; tier?: string | null }
-type Typeface = { id: string; name: string; weight?: string | null; role?: string | null; file_url?: string | null; sort_order: number; sample_text?: string | null; weights_note?: string | null }
+type Typeface = { id: string; name: string; weight?: string | null; role?: string | null; file_url?: string | null; otf_url?: string | null; ttf_url?: string | null; sort_order: number; sample_text?: string | null; weights_note?: string | null }
 type MisuseRule = { tag: string; note: string }
 type Kit = {
   id?: string
@@ -309,18 +309,19 @@ export default function AdminProjectBrandKitPage({ params }: { params: { id: str
     showToast(file_url ? "Typeface added with font file ✓" : "Typeface added")
   }
 
-  // Attach (or replace) a font file on an existing typeface row
-  async function attachFontToTypeface(id: string, file: File) {
+  // Attach (or replace) a font file on an existing typeface row.
+  // `column` lets us target file_url (web/WOFF2), otf_url, or ttf_url.
+  async function attachFontToTypeface(id: string, file: File, column: "file_url" | "otf_url" | "ttf_url" = "file_url") {
     const url = await uploadFontFile(file)
     if (!url) return
-    await supabase.from("typeface_entries").update({ file_url: url }).eq("id", id)
-    setTypefaces(prev => prev.map(t => t.id === id ? { ...t, file_url: url } : t))
+    await supabase.from("typeface_entries").update({ [column]: url }).eq("id", id)
+    setTypefaces(prev => prev.map(t => t.id === id ? { ...t, [column]: url } : t))
     showToast("Font file uploaded ✓")
   }
 
-  async function clearFontFromTypeface(id: string) {
-    await supabase.from("typeface_entries").update({ file_url: null }).eq("id", id)
-    setTypefaces(prev => prev.map(t => t.id === id ? { ...t, file_url: null } : t))
+  async function clearFontFromTypeface(id: string, column: "file_url" | "otf_url" | "ttf_url" = "file_url") {
+    await supabase.from("typeface_entries").update({ [column]: null }).eq("id", id)
+    setTypefaces(prev => prev.map(t => t.id === id ? { ...t, [column]: null } : t))
     showToast("Font file cleared")
   }
 
@@ -562,31 +563,48 @@ export default function AdminProjectBrandKitPage({ params }: { params: { id: str
                     </div>
                     <input defaultValue={tf.sample_text ?? ""} onBlur={e => patchTypeface(tf.id, { sample_text: e.target.value || null })} placeholder='Specimen sample text (e.g. "Shops, Studios & Flexible Space")' style={{ ...input, marginBottom: 8 }} />
                     <input defaultValue={tf.weights_note ?? ""} onBlur={e => patchTypeface(tf.id, { weights_note: e.target.value || null })} placeholder='Weights note (e.g. "Thin 100, Light 200, Book 300, Regular 400...")' style={input} />
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 10, paddingTop: 10, borderTop: "0.5px solid rgba(15,15,14,0.06)" }}>
-                      <label style={{ ...mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.65, cursor: "pointer", border: "0.5px solid rgba(15,15,14,0.2)", padding: "6px 10px" }}>
-                        {tf.file_url ? "Replace font file ↑" : "Upload font file ↑"}
-                        <input
-                          type="file"
-                          accept=".woff,.woff2,.otf,.ttf"
-                          onChange={e => { const f = e.target.files?.[0]; if (f) attachFontToTypeface(tf.id, f); e.target.value = "" }}
-                          style={{ display: "none" }}
-                        />
-                      </label>
-                      {tf.file_url ? (
-                        <>
-                          <span style={{ ...mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--sage)", opacity: 0.85 }}>
-                            Font attached ✓
-                          </span>
-                          <span style={{ flex: 1 }} />
-                          <button onClick={() => clearFontFromTypeface(tf.id)} style={{ ...mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", background: "none", border: "none", color: "var(--ink)", opacity: 0.4, cursor: "pointer" }}>
-                            Clear font
-                          </button>
-                        </>
-                      ) : (
-                        <span style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 12, opacity: 0.5 }}>
-                          .woff2 / .otf / .ttf — leave blank if licensed
-                        </span>
-                      )}
+                    <div style={{ marginTop: 10, paddingTop: 10, borderTop: "0.5px solid rgba(15,15,14,0.06)" }}>
+                      <div style={{ ...mono, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.5, marginBottom: 8 }}>
+                        Font files <span style={{ opacity: 0.7 }}>· Web renders the specimen; OTF / TTF are extra download formats for the client</span>
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8 }}>
+                        {([
+                          { column: "file_url" as const, label: "Web (WOFF2)", accept: ".woff,.woff2", url: tf.file_url },
+                          { column: "otf_url" as const, label: "OTF", accept: ".otf", url: tf.otf_url },
+                          { column: "ttf_url" as const, label: "TTF", accept: ".ttf", url: tf.ttf_url },
+                        ]).map(slot => (
+                          <div key={slot.column} style={{ border: "0.5px solid rgba(15,15,14,0.12)", padding: "8px 10px", display: "flex", flexDirection: "column", gap: 6 }}>
+                            <div style={{ ...mono, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.65 }}>
+                              {slot.label}
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <label style={{ ...mono, fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.85, cursor: "pointer", border: "0.5px solid rgba(15,15,14,0.2)", padding: "4px 8px" }}>
+                                {slot.url ? "Replace ↑" : "Upload ↑"}
+                                <input
+                                  type="file"
+                                  accept={slot.accept}
+                                  onChange={e => { const f = e.target.files?.[0]; if (f) attachFontToTypeface(tf.id, f, slot.column); e.target.value = "" }}
+                                  style={{ display: "none" }}
+                                />
+                              </label>
+                              {slot.url ? (
+                                <>
+                                  <span style={{ ...mono, fontSize: 9, color: "var(--sage)", opacity: 0.9 }}>
+                                    ✓
+                                  </span>
+                                  <button onClick={() => clearFontFromTypeface(tf.id, slot.column)} style={{ ...mono, fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", background: "none", border: "none", color: "var(--ink)", opacity: 0.4, cursor: "pointer", marginLeft: "auto" }}>
+                                    Clear
+                                  </button>
+                                </>
+                              ) : (
+                                <span style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 11, opacity: 0.45 }}>
+                                  optional
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 ))}

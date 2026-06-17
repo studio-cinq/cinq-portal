@@ -532,20 +532,49 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
                       )}
                     </div>
                     <div style={{ textAlign: "right" }}>
-                      {tf.file_url ? (
-                        <a href={tf.file_url} target="_blank" rel="noopener noreferrer" download style={{
-                          ...mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase",
-                          color: INK, opacity: 0.65, textDecoration: "none",
-                          border: `0.5px solid ${LINE}`, padding: "9px 14px",
-                          display: "inline-block",
-                        }}>
-                          Download file ↓
-                        </a>
-                      ) : (
-                        <div style={{ ...mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: MUTED }}>
-                          Licensed — see kit
-                        </div>
-                      )}
+                      {(() => {
+                        const formats: Array<{ label: string; url: string }> = []
+                        if (tf.file_url) {
+                          const ext = (tf.file_url.split(".").pop() ?? "").toLowerCase()
+                          formats.push({ label: ext === "woff" || ext === "woff2" ? ext.toUpperCase() : "Web", url: tf.file_url })
+                        }
+                        if (tf.otf_url) formats.push({ label: "OTF", url: tf.otf_url })
+                        if (tf.ttf_url) formats.push({ label: "TTF", url: tf.ttf_url })
+                        if (formats.length === 0) {
+                          return (
+                            <div style={{ ...mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: MUTED }}>
+                              Licensed — see kit
+                            </div>
+                          )
+                        }
+                        return (
+                          <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+                            <div style={{ ...mono, fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase", color: MUTED }}>
+                              Download
+                            </div>
+                            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                              {formats.map(f => (
+                                <a
+                                  key={f.label}
+                                  href={f.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  download
+                                  style={{
+                                    ...mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase",
+                                    color: INK, opacity: 0.7, textDecoration: "none",
+                                    border: `0.5px solid ${LINE}`, padding: "6px 10px",
+                                    display: "inline-flex", alignItems: "center", gap: 6,
+                                  }}
+                                >
+                                  <span>{f.label}</span>
+                                  <span style={{ opacity: 0.5 }}>↓</span>
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )
+                      })()}
                     </div>
                   </div>
                 </div>
