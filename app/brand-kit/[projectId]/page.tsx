@@ -9,11 +9,9 @@ const serif: React.CSSProperties = { fontFamily: "var(--font-serif)" }
 
 const INK = "#1C1916"
 const CREAM = "#F5F1EA"
-
-function fmt(d: string | null | undefined) {
-  if (!d) return ""
-  return new Date(d).toLocaleDateString("en-US", { month: "long", year: "numeric" })
-}
+const PAPER = "#FBF7EE"
+const LINE = "rgba(28,25,22,0.1)"
+const MUTED = "rgba(28,25,22,0.55)"
 
 function fileSize(bytes?: number | null) {
   if (!bytes) return ""
@@ -27,6 +25,55 @@ function pickDarkFlag(name: string): boolean {
   return n.includes("reverse") || n.includes("dark") || n.includes("white") || n.includes("inverse")
 }
 
+function fmtMonth(d: string | null | undefined) {
+  if (!d) return ""
+  return new Date(d).toLocaleDateString("en-US", { month: "long", year: "numeric" })
+}
+
+// Auto-derive RGB triplet from a hex string. Falls back to the stored value
+// (if any) when the hex is unparseable.
+function hexToRgbTriplet(hex: string, fallback?: string | null): string {
+  const h = (hex ?? "").replace("#", "").trim()
+  if (h.length !== 6) return fallback ?? ""
+  const r = parseInt(h.slice(0, 2), 16)
+  const g = parseInt(h.slice(2, 4), 16)
+  const b = parseInt(h.slice(4, 6), 16)
+  if ([r, g, b].some(Number.isNaN)) return fallback ?? ""
+  return `${r}, ${g}, ${b}`
+}
+
+// Compute the WCAG 2.1 relative luminance for a hex color.
+function relativeLuminance(hex: string): number {
+  const h = (hex ?? "").replace("#", "").trim()
+  if (h.length !== 6) return 0
+  const toLin = (v: number) => {
+    const x = v / 255
+    return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4)
+  }
+  const r = toLin(parseInt(h.slice(0, 2), 16))
+  const g = toLin(parseInt(h.slice(2, 4), 16))
+  const b = toLin(parseInt(h.slice(4, 6), 16))
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+
+function contrastRatio(hexA: string, hexB: string): number {
+  const la = relativeLuminance(hexA)
+  const lb = relativeLuminance(hexB)
+  const [light, dark] = la > lb ? [la, lb] : [lb, la]
+  return (light + 0.05) / (dark + 0.05)
+}
+
+function contrastRating(ratio: number): "AAA" | "AA" | "AA Large" | "Fail" {
+  if (ratio >= 7) return "AAA"
+  if (ratio >= 4.5) return "AA"
+  if (ratio >= 3) return "AA Large"
+  return "Fail"
+}
+
+function isLight(hex: string): boolean {
+  return relativeLuminance(hex) > 0.55
+}
+
 export default async function BrandKitPage({ params }: { params: { projectId: string } }) {
   const supabase = await createServerComponentClient()
 
@@ -37,12 +84,14 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
 
   if (!project) return notFound()
 
-  const [{ data: assetsRaw }, { data: colorsRaw }, { data: typefacesRaw }] = await Promise.all([
+  const [{ data: kitRaw }, { data: assetsRaw }, { data: colorsRaw }, { data: typefacesRaw }] = await Promise.all([
+    supabase.from("brand_kits").select("*").eq("project_id", params.projectId).maybeSingle(),
     supabase.from("brand_assets").select("*").eq("project_id", params.projectId).order("sort_order"),
     supabase.from("color_swatches").select("*").eq("project_id", params.projectId).order("sort_order"),
     supabase.from("typeface_entries").select("*").eq("project_id", params.projectId).order("sort_order"),
   ])
 
+  const kit = (kitRaw ?? {}) as any
   const assets = (assetsRaw ?? []) as any[]
   const colors = (colorsRaw ?? []) as any[]
   const typefaces = (typefacesRaw ?? []) as any[]
@@ -51,34 +100,19 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
   const guideAssets = assets.filter(a => a.category === "guidelines")
   const otherAssets = assets.filter(a => !["logo", "guidelines"].includes(a.category))
 
-  // ─── Group logo files by display name so different formats of the
-  // same mark show as one tile with download chips ─────────────────
-  type LogoGroup = {
-    name: string                 // display name (the basename, kept as-uploaded)
-    preview: any                 // the file used for the preview tile
-    files: any[]                 // all files in this group, ordered for chips
-    minSort: number              // smallest sort_order in the group (for ordering groups)
-  }
-
-  // Format preference for which file becomes the preview tile
-  const PREVIEW_RANK: Record<string, number> = {
-    svg: 0, png: 1, webp: 2, jpg: 3, jpeg: 3, pdf: 4,
-  }
-  // Format preference for the order of download chips beneath each tile
-  const CHIP_RANK: Record<string, number> = {
-    svg: 0, png: 1, jpg: 2, jpeg: 2, webp: 3, pdf: 4, eps: 5, ai: 6,
-  }
-
-  const logoGroupMap = new Map<string, LogoGroup>()
+  // Group logos by basename so 5 formats of the same mark = 1 tile with chips
+  type LogoGroup = { name: string; description: string | null; usage: string | null; preview: any; files: any[]; minSort: number }
+  const PREVIEW_RANK: Record<string, number> = { svg: 0, png: 1, webp: 2, jpg: 3, jpeg: 3, pdf: 4 }
+  const CHIP_RANK: Record<string, number> = { svg: 0, png: 1, jpg: 2, jpeg: 2, webp: 3, pdf: 4, eps: 5, ai: 6 }
+  const groupMap = new Map<string, LogoGroup>()
   for (const a of logoAssets) {
-    // Normalize the basename for grouping (lowercase, collapse separators).
-    // The displayed name preserves the original casing of the first file
-    // we encounter for that group.
-    const normKey = (a.name ?? "").toString().trim().toLowerCase().replace(/[\s_]+/g, "-")
-    const existing = logoGroupMap.get(normKey)
+    const key = (a.name ?? "").toString().trim().toLowerCase().replace(/[\s_]+/g, "-")
+    const existing = groupMap.get(key)
     if (!existing) {
-      logoGroupMap.set(normKey, {
+      groupMap.set(key, {
         name: a.name ?? "Mark",
+        description: a.description ?? null,
+        usage: a.usage ?? null,
         preview: a,
         files: [a],
         minSort: a.sort_order ?? 0,
@@ -86,14 +120,15 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
     } else {
       existing.files.push(a)
       if ((a.sort_order ?? 0) < existing.minSort) existing.minSort = a.sort_order ?? 0
-      // If this file ranks higher as a preview candidate, swap it in
+      // Promote description/usage if not already set on the group
+      if (!existing.description && a.description) existing.description = a.description
+      if (!existing.usage && a.usage) existing.usage = a.usage
       const incoming = PREVIEW_RANK[(a.file_type ?? "").toLowerCase()] ?? 99
       const current = PREVIEW_RANK[(existing.preview.file_type ?? "").toLowerCase()] ?? 99
       if (incoming < current) existing.preview = a
     }
   }
-
-  const logoGroups: LogoGroup[] = Array.from(logoGroupMap.values())
+  const logoGroups: LogoGroup[] = Array.from(groupMap.values())
     .map(g => ({
       ...g,
       files: [...g.files].sort((a, b) => {
@@ -105,8 +140,49 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
     }))
     .sort((a, b) => a.minSort - b.minSort)
 
+  // Auto-build contrast matrix for swatches with valid hex
+  const validColors = colors.filter(c => typeof c.hex === "string" && /^#?[0-9a-f]{6}$/i.test(c.hex.trim()))
+  const contrastPairs: { fg: any; bg: any; ratio: number; rating: string }[] = []
+  for (const fg of validColors) {
+    for (const bg of validColors) {
+      if (fg.id === bg.id) continue
+      const ratio = contrastRatio(fg.hex, bg.hex)
+      if (ratio >= 3) {
+        contrastPairs.push({ fg, bg, ratio, rating: contrastRating(ratio) })
+      }
+    }
+  }
+  // De-dup symmetric pairs (Ink-on-Oatmeal == Oatmeal-on-Ink). Show each pair once,
+  // keeping the version with the darker text on the lighter background (conventional reading direction).
+  const contrastSeen = new Set<string>()
+  const dedupedContrast = contrastPairs
+    .filter(p => {
+      const key = [p.fg.id, p.bg.id].sort().join("|")
+      if (contrastSeen.has(key)) return false
+      contrastSeen.add(key)
+      const fgLum = relativeLuminance(p.fg.hex)
+      const bgLum = relativeLuminance(p.bg.hex)
+      // Keep darker-on-lighter
+      return fgLum < bgLum
+    })
+    .sort((a, b) => b.ratio - a.ratio)
+
   const client = (project as any).clients
   const hasAnything = assets.length > 0 || colors.length > 0 || typefaces.length > 0
+
+  // Section numbering (only number sections that exist)
+  let n = 0
+  const num = () => String(++n).padStart(2, "0")
+  const marksNum = logoGroups.length > 0 ? num() : null
+  const colorNum = colors.length > 0 ? num() : null
+  const typeNum = typefaces.length > 0 ? num() : null
+  const inventoryNum = (assets.length > 0 || typefaces.length > 0) ? num() : null
+  const misuseRules = Array.isArray(kit?.misuse_rules) ? kit.misuse_rules as any[] : []
+  const misuseNum = misuseRules.length > 0 ? num() : null
+
+  const eyebrow = kit?.eyebrow || "Brand Identity"
+  const lede = kit?.lede || project.scope || "A working reference for the brand — marks, color, type, and the files that bring it to life."
+  const metaLines: string[] = Array.isArray(kit?.meta_lines) ? kit.meta_lines : []
 
   return (
     <div style={{ background: CREAM, minHeight: "100vh" }}>
@@ -122,24 +198,36 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <CinqLogo width={28} color={CREAM} />
           <div style={{ ...mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.4 }}>
-            Brand Kit · {fmt((project as any).created_at)}
+            Brand Kit · {fmtMonth((project as any).created_at)}
+            {kit?.version && <span style={{ marginLeft: 14, opacity: 0.7 }}>{kit.version}</span>}
           </div>
         </div>
 
-        <div style={{ marginTop: "auto", maxWidth: 780 }}>
-          <div style={{ ...mono, fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.5, marginBottom: 18 }}>
-            {client?.name ?? "Brand"}
+        <div style={{ marginTop: "auto", maxWidth: 820 }}>
+          <div style={{ ...mono, fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(245,241,234,0.55)", marginBottom: 18 }}>
+            {eyebrow}
           </div>
           <h1 style={{
             ...sans, margin: 0, fontWeight: 400,
             fontSize: "clamp(40px, 7vw, 80px)",
-            letterSpacing: "-0.025em", lineHeight: 1.05, opacity: 0.96,
+            letterSpacing: "-0.025em", lineHeight: 1.05, opacity: 0.97,
           }}>
-            {project.title}
+            {client?.name ?? project.title}
           </h1>
-          <div style={{ ...serif, fontStyle: "italic", fontSize: 18, opacity: 0.55, marginTop: 22, maxWidth: 540, lineHeight: 1.55 }}>
-            A working reference for the brand — marks, color, type, and the files that bring it to life.
-          </div>
+          {lede && (
+            <div style={{ ...serif, fontStyle: "italic", fontSize: "clamp(18px, 2vw, 22px)", opacity: 0.65, marginTop: 24, maxWidth: 640, lineHeight: 1.5 }}>
+              {lede}
+            </div>
+          )}
+          {metaLines.length > 0 && (
+            <div style={{ marginTop: 36, display: "flex", flexWrap: "wrap", gap: 28 }}>
+              {metaLines.map((line, i) => (
+                <span key={i} style={{ ...mono, fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(245,241,234,0.45)" }}>
+                  {line}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -151,37 +239,32 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
 
       {/* ─── Marks ─────────────────────────────────────────────── */}
       {logoGroups.length > 0 && (
-        <section style={{ padding: "clamp(80px, 10vw, 140px) clamp(28px, 6vw, 80px)", maxWidth: 1200, margin: "0 auto" }}>
-          <SectionHeader number="01" label="Marks" lede="The wordmark and supporting marks. Use these files exactly as supplied — do not recreate or modify." />
+        <section style={{ padding: "clamp(80px, 10vw, 140px) clamp(28px, 6vw, 80px)", maxWidth: 1100, margin: "0 auto" }}>
+          <SectionHeader number={marksNum!} label="Marks" lede={kit?.marks_intro ?? "The wordmark and supporting marks. Use these files exactly as supplied — do not recreate or modify."} />
 
           <div style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-            gap: "clamp(16px, 2vw, 24px)",
+            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+            gap: "clamp(20px, 2.5vw, 28px)",
             marginTop: 56,
           }}>
             {logoGroups.map(group => {
               const dark = pickDarkFlag(group.name)
               const preview = group.preview
               return (
-                <div key={group.name} style={{ display: "block" }}>
-                  <a
-                    href={preview.file_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    download
-                    style={{ textDecoration: "none", color: "inherit", display: "block" }}
-                  >
+                <div key={group.name} style={{
+                  background: PAPER, border: `0.5px solid ${LINE}`, padding: 22,
+                }}>
+                  <a href={preview.file_url} target="_blank" rel="noopener noreferrer" download style={{ display: "block", textDecoration: "none" }}>
                     <div style={{
-                      background: dark ? INK : "rgba(28,25,22,0.04)",
-                      border: dark ? "0.5px solid rgba(255,255,255,0.08)" : "0.5px solid rgba(28,25,22,0.08)",
-                      aspectRatio: "4/3",
+                      background: dark ? INK : "transparent",
+                      border: dark ? "0.5px solid rgba(255,255,255,0.08)" : "none",
+                      aspectRatio: "5/3",
                       display: "flex", alignItems: "center", justifyContent: "center",
-                      padding: "clamp(20px, 3vw, 36px)",
-                      transition: "background 0.2s",
+                      padding: 24, marginBottom: 18,
                     }}>
                       {/(svg|png|jpg|jpeg|webp)$/i.test(preview.file_type ?? "") ? (
-                        <img src={preview.file_url} alt={group.name} style={{ maxWidth: "60%", maxHeight: "70%", objectFit: "contain" }} />
+                        <img src={preview.file_url} alt={group.name} style={{ maxWidth: "65%", maxHeight: "70%", objectFit: "contain" }} />
                       ) : (
                         <div style={{ ...mono, fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", opacity: dark ? 0.6 : 0.4 }}>
                           {preview.file_type?.toUpperCase()}
@@ -189,91 +272,187 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
                       )}
                     </div>
                   </a>
+                  <div style={{ ...mono, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.78, marginBottom: 8 }}>
+                    {group.name}
+                  </div>
+                  {group.description && (
+                    <div style={{ ...sans, fontSize: 13.5, opacity: 0.7, lineHeight: 1.55, marginBottom: 14 }}>
+                      {group.description}
+                    </div>
+                  )}
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
+                    {group.files.map((f: any) => (
+                      <a
+                        key={f.id}
+                        href={f.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        download
+                        style={{
+                          ...mono, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase",
+                          opacity: 0.6, textDecoration: "none", color: "inherit",
+                          border: `0.5px solid ${LINE}`,
+                          padding: "4px 8px",
+                          display: "inline-flex", alignItems: "center", gap: 6,
+                          transition: "opacity 0.15s, border-color 0.15s",
+                        }}
+                        className="bk-format-chip"
+                        title={`Download ${f.file_type}${f.file_size_bytes ? ` · ${fileSize(f.file_size_bytes)}` : ""}`}
+                      >
+                        <span>{f.file_type}</span>
+                        <span style={{ opacity: 0.5 }}>↓</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          <style>{`.bk-format-chip:hover { opacity: 0.95 !important; border-color: rgba(28,25,22,0.4) !important; }`}</style>
+        </section>
+      )}
 
-                  {/* Title + per-format download chips */}
-                  <div style={{ marginTop: 12 }}>
-                    <div style={{ ...sans, fontSize: 13, opacity: 0.85, marginBottom: 8 }}>{group.name}</div>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                      {group.files.map(f => (
-                        <a
-                          key={f.id}
-                          href={f.file_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          download
-                          style={{
-                            ...mono,
-                            fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase",
-                            opacity: 0.55, textDecoration: "none", color: "inherit",
-                            border: "0.5px solid rgba(28,25,22,0.18)",
-                            padding: "4px 8px",
-                            display: "inline-flex", alignItems: "center", gap: 6,
-                            transition: "opacity 0.15s, border-color 0.15s",
-                          }}
-                          className="bk-format-chip"
-                          title={`Download ${f.file_type}${f.file_size_bytes ? ` · ${fileSize(f.file_size_bytes)}` : ""}`}
-                        >
-                          <span>{f.file_type}</span>
-                          <span style={{ opacity: 0.5 }}>↓</span>
-                        </a>
+      {/* ─── Colour ────────────────────────────────────────────── */}
+      {colors.length > 0 && (
+        <section style={{ padding: "clamp(80px, 10vw, 140px) clamp(28px, 6vw, 80px)", maxWidth: 1100, margin: "0 auto", borderTop: `0.5px solid ${LINE}` }}>
+          <SectionHeader number={colorNum!} label="Colour" lede={kit?.color_intro ?? "Click any swatch to copy its hex value."} />
+
+          <SwatchCopyClient swatches={colors.map(c => ({ id: c.id, name: c.name, hex: c.hex, rgb: c.rgb || hexToRgbTriplet(c.hex, null), usage_note: c.usage_note }))} />
+
+          {dedupedContrast.length > 0 && (
+            <div style={{ marginTop: 64 }}>
+              <div style={{ ...mono, fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.55, marginBottom: 18 }}>
+                Contrast — WCAG 2.1
+              </div>
+              <div style={{ background: PAPER, border: `0.5px solid ${LINE}` }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <thead>
+                    <tr>
+                      {["Foreground", "Background", "Ratio", "Rating"].map(h => (
+                        <th key={h} style={{ ...mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", textAlign: "left", padding: "12px 16px", borderBottom: `0.5px solid ${LINE}`, color: MUTED, fontWeight: 500 }}>
+                          {h}
+                        </th>
                       ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dedupedContrast.map((p, i) => (
+                      <tr key={i}>
+                        <td style={{ padding: "12px 16px", borderBottom: i === dedupedContrast.length - 1 ? "none" : `0.5px solid ${LINE}` }}>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                            <span style={{ display: "inline-block", width: 14, height: 14, background: p.fg.hex, border: `0.5px solid ${LINE}` }} />
+                            <span style={{ ...sans, opacity: 0.85 }}>{p.fg.name}</span>
+                          </span>
+                        </td>
+                        <td style={{ padding: "12px 16px", borderBottom: i === dedupedContrast.length - 1 ? "none" : `0.5px solid ${LINE}` }}>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                            <span style={{ display: "inline-block", width: 14, height: 14, background: p.bg.hex, border: `0.5px solid ${LINE}` }} />
+                            <span style={{ ...sans, opacity: 0.85 }}>{p.bg.name}</span>
+                          </span>
+                        </td>
+                        <td style={{ ...mono, padding: "12px 16px", opacity: 0.85, borderBottom: i === dedupedContrast.length - 1 ? "none" : `0.5px solid ${LINE}` }}>
+                          {p.ratio.toFixed(2)}:1
+                        </td>
+                        <td style={{ ...mono, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", padding: "12px 16px", color: p.rating === "AAA" ? "var(--sage)" : p.rating === "AA" ? "var(--ink)" : p.rating === "AA Large" ? "var(--amber)" : "var(--danger)", borderBottom: i === dedupedContrast.length - 1 ? "none" : `0.5px solid ${LINE}` }}>
+                          {p.rating}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div style={{ ...sans, fontSize: 12, color: MUTED, marginTop: 14, lineHeight: 1.6, maxWidth: 620 }}>
+                AAA passes for body text at any size. AA passes for body text at normal size.
+                AA Large passes only for ≥18pt or ≥14pt bold. Pairings below 3:1 not shown.
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* ─── Type ──────────────────────────────────────────────── */}
+      {typefaces.length > 0 && (
+        <section style={{ padding: "clamp(80px, 10vw, 140px) clamp(28px, 6vw, 80px)", maxWidth: 1100, margin: "0 auto", borderTop: `0.5px solid ${LINE}` }}>
+          <SectionHeader number={typeNum!} label="Type" lede={kit?.type_intro ?? "The typefaces that carry the brand voice."} />
+
+          {/* Inline font-face for any uploaded font files so specimens render in-brand */}
+          {typefaces.some(t => t.file_url) && (
+            <style>{
+              typefaces.filter(t => t.file_url).map(t => `
+                @font-face {
+                  font-family: "kit-${t.id}";
+                  src: url("${t.file_url}");
+                  font-display: swap;
+                }
+              `).join("")
+            }</style>
+          )}
+
+          <div style={{ marginTop: 56, display: "flex", flexDirection: "column", gap: 0 }}>
+            {typefaces.map((tf: any) => {
+              const customFamily = tf.file_url ? `"kit-${tf.id}", ${tf.role?.toLowerCase().includes("serif") ? "Georgia, serif" : "system-ui, sans-serif"}` : undefined
+              const fontStack = customFamily ?? (tf.role?.toLowerCase().includes("serif") ? "Georgia, 'Times New Roman', serif" : "system-ui, -apple-system, sans-serif")
+              const sample = tf.sample_text ?? (tf.role?.toLowerCase().includes("serif")
+                ? "A working building, since 1930."
+                : "Shops, Studios & Flexible Space")
+              return (
+                <div key={tf.id} style={{ borderTop: `0.5px solid ${LINE}`, padding: "32px 0 36px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 200px", gap: 24, alignItems: "baseline" }} className="bk-type-row">
+                    <div>
+                      <div style={{ ...mono, fontSize: 10, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.55, marginBottom: 10 }}>
+                        {[tf.weight, tf.role].filter(Boolean).join(" · ") || "Typeface"}
+                      </div>
+                      <div style={{
+                        fontFamily: fontStack,
+                        fontSize: "clamp(36px, 5vw, 60px)", letterSpacing: "-0.015em", lineHeight: 1.1, opacity: 0.92, marginBottom: 18,
+                      }}>
+                        {sample}
+                      </div>
+                      <div style={{ ...sans, fontSize: 16, opacity: 0.82, letterSpacing: "-0.005em" }}>
+                        {tf.name}
+                      </div>
+                      {tf.weights_note && (
+                        <div style={{ ...sans, fontSize: 13, color: MUTED, marginTop: 10, lineHeight: 1.55, maxWidth: 540 }}>
+                          {tf.weights_note}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      {tf.file_url ? (
+                        <a href={tf.file_url} target="_blank" rel="noopener noreferrer" download style={{
+                          ...mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase",
+                          color: INK, opacity: 0.65, textDecoration: "none",
+                          border: `0.5px solid ${LINE}`, padding: "9px 14px",
+                          display: "inline-block",
+                        }}>
+                          Download file ↓
+                        </a>
+                      ) : (
+                        <div style={{ ...mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: MUTED }}>
+                          Licensed — see kit
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
               )
             })}
           </div>
-          <style>{`
-            .bk-format-chip:hover { opacity: 0.9 !important; border-color: rgba(28,25,22,0.4) !important; }
-          `}</style>
         </section>
       )}
 
-      {/* ─── Color ─────────────────────────────────────────────── */}
-      {colors.length > 0 && (
-        <section style={{ padding: "clamp(80px, 10vw, 140px) clamp(28px, 6vw, 80px)", maxWidth: 1200, margin: "0 auto", borderTop: "0.5px solid rgba(28,25,22,0.08)" }}>
-          <SectionHeader number={logoGroups.length > 0 ? "02" : "01"} label="Colour" lede="Click any swatch to copy its hex value." />
-
-          <SwatchCopyClient swatches={colors.map(c => ({ id: c.id, name: c.name, hex: c.hex }))} />
-        </section>
-      )}
-
-      {/* ─── Type ──────────────────────────────────────────────── */}
-      {typefaces.length > 0 && (
-        <section style={{ padding: "clamp(80px, 10vw, 140px) clamp(28px, 6vw, 80px)", maxWidth: 1200, margin: "0 auto", borderTop: "0.5px solid rgba(28,25,22,0.08)" }}>
-          <SectionHeader
-            number={String((logoGroups.length > 0 ? 1 : 0) + (colors.length > 0 ? 1 : 0) + 1).padStart(2, "0")}
-            label="Type"
-            lede="The typefaces that carry the brand voice."
-          />
-
-          <div style={{ marginTop: 56, display: "flex", flexDirection: "column", gap: 48 }}>
-            {typefaces.map((tf: any) => (
-              <div key={tf.id} style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 220px", gap: 32, alignItems: "baseline", borderTop: "0.5px solid rgba(28,25,22,0.08)", paddingTop: 32 }}
-                className="bk-type-row">
-                <div>
-                  <div style={{ ...sans, fontSize: "clamp(40px, 5.5vw, 64px)", letterSpacing: "-0.02em", lineHeight: 1.05, opacity: 0.92, marginBottom: 14 }}>
-                    {tf.name}
-                  </div>
-                  <div style={{ ...mono, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.45 }}>
-                    {[tf.weight, tf.role].filter(Boolean).join(" · ")}
-                  </div>
+      {/* ─── Misuse rules ──────────────────────────────────────── */}
+      {misuseRules.length > 0 && (
+        <section style={{ padding: "clamp(80px, 10vw, 140px) clamp(28px, 6vw, 80px)", maxWidth: 1100, margin: "0 auto", borderTop: `0.5px solid ${LINE}` }}>
+          <SectionHeader number={misuseNum!} label="Misuse — never" lede="Common mistakes to avoid when using the system." />
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 14, marginTop: 36 }}>
+            {misuseRules.map((r: any, i: number) => (
+              <div key={i} style={{ background: PAPER, border: `0.5px solid ${LINE}`, padding: "18px 20px" }}>
+                <div style={{ ...sans, fontWeight: 600, fontSize: 13, color: "var(--danger)", marginBottom: 8 }}>
+                  ✕ {r.tag}
                 </div>
-                <div style={{ textAlign: "right" }}>
-                  {tf.file_url ? (
-                    <a href={tf.file_url} target="_blank" rel="noopener noreferrer" download style={{
-                      ...mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase",
-                      color: INK, opacity: 0.65, textDecoration: "none",
-                      border: "0.5px solid rgba(28,25,22,0.2)", padding: "9px 14px",
-                      display: "inline-block",
-                    }}>
-                      Download file ↓
-                    </a>
-                  ) : (
-                    <div style={{ ...mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.35 }}>
-                      Licensed font — see notes
-                    </div>
-                  )}
+                <div style={{ ...sans, fontSize: 13, color: MUTED, lineHeight: 1.55 }}>
+                  {r.note}
                 </div>
               </div>
             ))}
@@ -281,44 +460,102 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
         </section>
       )}
 
-      {/* ─── Guidelines + other files ──────────────────────────── */}
-      {(guideAssets.length > 0 || otherAssets.length > 0) && (
-        <section style={{ padding: "clamp(80px, 10vw, 140px) clamp(28px, 6vw, 80px)", maxWidth: 1200, margin: "0 auto", borderTop: "0.5px solid rgba(28,25,22,0.08)" }}>
-          <SectionHeader
-            number={String((logoGroups.length > 0 ? 1 : 0) + (colors.length > 0 ? 1 : 0) + (typefaces.length > 0 ? 1 : 0) + 1).padStart(2, "0")}
-            label="Files"
-            lede="Source files, guidelines, and supporting materials."
-          />
+      {/* ─── Asset inventory ───────────────────────────────────── */}
+      {inventoryNum && (
+        <section style={{ padding: "clamp(80px, 10vw, 140px) clamp(28px, 6vw, 80px)", maxWidth: 1100, margin: "0 auto", borderTop: `0.5px solid ${LINE}` }}>
+          <SectionHeader number={inventoryNum} label="Asset Inventory" lede="Everything that ships with this kit." />
 
-          <div style={{ marginTop: 56, borderTop: "0.5px solid rgba(28,25,22,0.08)" }}>
-            {[...guideAssets, ...otherAssets].map((a: any) => (
-              <a key={a.id} href={a.file_url} target="_blank" rel="noopener noreferrer" download style={{
-                display: "grid", gridTemplateColumns: "1fr 140px 90px", gap: 24, alignItems: "baseline",
-                padding: "18px 0", borderBottom: "0.5px solid rgba(28,25,22,0.08)",
-                textDecoration: "none", color: "inherit",
-              }}>
-                <div>
-                  <div style={{ ...sans, fontSize: 15, opacity: 0.9 }}>{a.name}</div>
-                  <div style={{ ...mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.42, marginTop: 3 }}>
-                    {a.category}
-                  </div>
-                </div>
-                <div style={{ ...mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.5 }}>
-                  {a.file_type}{a.file_size_bytes ? ` · ${fileSize(a.file_size_bytes)}` : ""}
-                </div>
-                <div style={{ ...mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.55, textAlign: "right" }}>
-                  Download ↓
-                </div>
-              </a>
-            ))}
+          <div style={{ marginTop: 40, background: PAPER, border: `0.5px solid ${LINE}` }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead>
+                <tr>
+                  {["Asset", "Formats", "Primary use"].map(h => (
+                    <th key={h} style={{ ...mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", textAlign: "left", padding: "12px 16px", borderBottom: `0.5px solid ${LINE}`, color: MUTED, fontWeight: 500 }}>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {logoGroups.map((g, i) => (
+                  <tr key={g.name}>
+                    <td style={{ padding: "12px 16px", borderBottom: `0.5px solid ${LINE}`, ...sans, opacity: 0.88 }}>
+                      {g.name}
+                    </td>
+                    <td style={{ padding: "12px 16px", borderBottom: `0.5px solid ${LINE}`, ...mono, fontSize: 11, opacity: 0.7 }}>
+                      {g.files.map(f => f.file_type).join(" · ")}
+                    </td>
+                    <td style={{ padding: "12px 16px", borderBottom: `0.5px solid ${LINE}`, ...sans, fontSize: 13, color: MUTED }}>
+                      {g.usage || "—"}
+                    </td>
+                  </tr>
+                ))}
+                {[...guideAssets, ...otherAssets].map(a => (
+                  <tr key={a.id}>
+                    <td style={{ padding: "12px 16px", borderBottom: `0.5px solid ${LINE}`, ...sans, opacity: 0.88 }}>
+                      {a.name}
+                    </td>
+                    <td style={{ padding: "12px 16px", borderBottom: `0.5px solid ${LINE}`, ...mono, fontSize: 11, opacity: 0.7 }}>
+                      {a.file_type}
+                    </td>
+                    <td style={{ padding: "12px 16px", borderBottom: `0.5px solid ${LINE}`, ...sans, fontSize: 13, color: MUTED }}>
+                      {a.usage || a.category}
+                    </td>
+                  </tr>
+                ))}
+                {typefaces.map(t => (
+                  <tr key={t.id}>
+                    <td style={{ padding: "12px 16px", borderBottom: `0.5px solid ${LINE}`, ...sans, opacity: 0.88 }}>
+                      {t.name}
+                    </td>
+                    <td style={{ padding: "12px 16px", borderBottom: `0.5px solid ${LINE}`, ...mono, fontSize: 11, opacity: 0.7 }}>
+                      {t.file_url ? "Font file" : "Licensed"}
+                    </td>
+                    <td style={{ padding: "12px 16px", borderBottom: `0.5px solid ${LINE}`, ...sans, fontSize: 13, color: MUTED }}>
+                      {[t.weight, t.role].filter(Boolean).join(" · ") || "Typography"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
+
+          {(guideAssets.length > 0 || otherAssets.length > 0) && (
+            <div style={{ marginTop: 40 }}>
+              <div style={{ ...mono, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.55, marginBottom: 14 }}>
+                Files for download
+              </div>
+              <div style={{ borderTop: `0.5px solid ${LINE}` }}>
+                {[...guideAssets, ...otherAssets].map((a: any) => (
+                  <a key={a.id} href={a.file_url} target="_blank" rel="noopener noreferrer" download style={{
+                    display: "grid", gridTemplateColumns: "1fr 140px 90px", gap: 24, alignItems: "baseline",
+                    padding: "16px 0", borderBottom: `0.5px solid ${LINE}`,
+                    textDecoration: "none", color: "inherit",
+                  }}>
+                    <div>
+                      <div style={{ ...sans, fontSize: 15, opacity: 0.9 }}>{a.name}</div>
+                      <div style={{ ...mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.42, marginTop: 3 }}>
+                        {a.category}
+                      </div>
+                    </div>
+                    <div style={{ ...mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.55 }}>
+                      {a.file_type}{a.file_size_bytes ? ` · ${fileSize(a.file_size_bytes)}` : ""}
+                    </div>
+                    <div style={{ ...mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.55, textAlign: "right" }}>
+                      Download ↓
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
         </section>
       )}
 
       {/* ─── Footer ────────────────────────────────────────────── */}
-      <footer style={{ borderTop: "0.5px solid rgba(28,25,22,0.08)", padding: "60px clamp(28px, 6vw, 80px)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ ...mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.4 }}>
-          Studio Cinq · Brand Kit · {client?.name ?? ""}
+      <footer style={{ borderTop: `0.5px solid ${LINE}`, padding: "60px clamp(28px, 6vw, 80px)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ ...mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: MUTED }}>
+          Studio Cinq · Brand Kit · {client?.name ?? ""}{kit?.version ? ` · ${kit.version}` : ""}
         </div>
         <CinqLogo width={22} />
       </footer>
@@ -335,16 +572,16 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
 
 function SectionHeader({ number, label, lede }: { number: string; label: string; lede?: string }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "60px minmax(0, 1fr)", gap: 24, alignItems: "baseline" }}>
-      <div style={{ ...mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.4 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "70px minmax(0, 1fr)", gap: 28, alignItems: "baseline" }}>
+      <div style={{ ...mono, fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", opacity: 0.5 }}>
         {number}
       </div>
       <div>
-        <div style={{ ...sans, fontSize: "clamp(28px, 3.5vw, 38px)", letterSpacing: "-0.015em", margin: 0, opacity: 0.93 }}>
+        <h2 style={{ ...sans, fontSize: "clamp(28px, 3.8vw, 40px)", letterSpacing: "-0.02em", margin: 0, opacity: 0.95, lineHeight: 1.1, fontWeight: 400 }}>
           {label}
-        </div>
+        </h2>
         {lede && (
-          <div style={{ ...serif, fontStyle: "italic", fontSize: 16, opacity: 0.55, lineHeight: 1.55, marginTop: 10, maxWidth: 540 }}>
+          <div style={{ ...sans, fontSize: 16, color: "rgba(28,25,22,0.7)", lineHeight: 1.6, marginTop: 16, maxWidth: 620 }}>
             {lede}
           </div>
         )}
