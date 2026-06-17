@@ -93,8 +93,9 @@ function previewFileForColor(files: File[], swatchId: string | null): File | nul
 }
 
 export default function MarkSpreadClient({
-  markName, description, primaryUse, colorways, files, defaultColorwayId, displayScale = 1,
+  projectId, markName, description, primaryUse, colorways, files, defaultColorwayId, displayScale = 1,
 }: {
+  projectId: string
   markName: string
   description?: string | null
   primaryUse?: string | null
@@ -241,7 +242,7 @@ export default function MarkSpreadClient({
                   No files uploaded for this colorway yet.
                 </div>
               ) : (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
                   {bundle.map(f => (
                     <a
                       key={f.id}
@@ -263,6 +264,25 @@ export default function MarkSpreadClient({
                       <span style={{ opacity: 0.5 }}>↓</span>
                     </a>
                   ))}
+                  {bundle.length > 1 && (
+                    <a
+                      href={`/api/brand-kit/download?projectId=${encodeURIComponent(projectId)}&mark=${encodeURIComponent(markName)}&colorwayId=${encodeURIComponent(c.id)}`}
+                      download
+                      style={{
+                        ...mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase",
+                        textDecoration: "none", color: "var(--cream, #F5F1EA)",
+                        background: "rgba(28,25,22,0.92)",
+                        border: "0.5px solid rgba(28,25,22,0.92)",
+                        padding: "6px 10px",
+                        display: "inline-flex", alignItems: "center", gap: 8,
+                        marginLeft: 4,
+                      }}
+                      title={`Download all ${bundle.length} files as a .zip`}
+                    >
+                      <span>Download all</span>
+                      <span style={{ opacity: 0.7 }}>↓</span>
+                    </a>
+                  )}
                 </div>
               )}
             </div>

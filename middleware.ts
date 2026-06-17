@@ -35,7 +35,7 @@ const PUBLIC_API_ROUTES = new Set([
   "/api/webhook",
 ])
 
-const PUBLIC_API_PREFIXES = ["/api/pdf/", "/api/cron/"] as const
+const PUBLIC_API_PREFIXES = ["/api/pdf/", "/api/cron/", "/api/brand-kit/"] as const
 
 const AUTHENTICATED_API_ROUTES = new Set([
   "/api/checkout",

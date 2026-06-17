@@ -316,6 +316,7 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
             </div>
 
             <MarkSpreadClient
+              projectId={projectId}
               markName={group.name}
               description={group.description}
               primaryUse={group.primary_use}
