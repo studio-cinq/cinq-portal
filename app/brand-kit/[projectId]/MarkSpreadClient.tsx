@@ -23,7 +23,7 @@ const PREVIEW_FORMAT_RANK: Record<string, number> = { svg: 0, png: 1, webp: 2, j
 
 /**
  * Hard-coded contrast pairs for the LoomHouse palette. Each colorway click
- * surfaces two combos: the colour as a mark, and the colour as a ground.
+ * surfaces two combos: the color as a mark, and the color as a ground.
  * Ochre is too low-contrast on Plaster (under WCAG 3:1) so it pairs with Iron.
  */
 type ComboKey = "iron" | "plaster" | "limestone" | "sage" | "clay" | "ochre"
@@ -82,7 +82,7 @@ function bundleForColor(files: File[], colorId: string): File[] {
   })
 }
 
-/** Pick the best preview file for a given colour swatch (svg > png > jpg…). */
+/** Pick the best preview file for a given color swatch (svg > png > jpg…). */
 function previewFileForColor(files: File[], swatchId: string | null): File | null {
   const candidates = files
     .filter(f => /(svg|png|jpg|jpeg|webp)$/i.test(f.file_type ?? ""))
@@ -116,7 +116,7 @@ export default function MarkSpreadClient({
   const selected = selectedId ? swatchById.get(selectedId) : null
 
   // Try the LoomHouse-style hard-coded combos first; fall back to a luminance
-  // pairing (selected colour as mark on lightest, selected as ground under darkest).
+  // pairing (selected color as mark on lightest, selected as ground under darkest).
   function previewsForSelected() {
     if (!selected) return null
     const key = selected.name.toLowerCase() as ComboKey
@@ -132,7 +132,7 @@ export default function MarkSpreadClient({
         }))
       }
     }
-    // Fallback: pair the selected colour with the project's lightest + darkest.
+    // Fallback: pair the selected color with the project's lightest + darkest.
     const sorted = [...colorways].sort((a, b) => relativeLuminance(a.hex) - relativeLuminance(b.hex))
     const darkest = sorted[0]
     const lightest = sorted[sorted.length - 1]
@@ -304,7 +304,7 @@ export default function MarkSpreadClient({
           />
         )) : (
           <div style={{ ...sans, fontSize: 14, color: MUTED, fontStyle: "italic" }}>
-            Tag at least one colourway to preview the mark.
+            Tag at least one colorway to preview the mark.
           </div>
         )}
       </div>
@@ -348,7 +348,7 @@ function Stage({
         />
       ) : (
         <div style={{ ...mono, fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: captionColor }}>
-          {markFile ? "Source file" : "Upload this colourway"}
+          {markFile ? "Source file" : "Upload this colorway"}
         </div>
       )}
       <span style={{

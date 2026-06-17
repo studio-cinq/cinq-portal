@@ -148,7 +148,7 @@ export default function AdminProjectBrandKitPage({ params }: { params: { id: str
   // ─── Asset upload + per-asset field edits ─────────────────────
   /**
    * Pull a swatch name out of the filename if present. Matches `iron`,
-   * `-iron-`, `_iron_`, ` iron `, etc. — anywhere a colour name appears
+   * `-iron-`, `_iron_`, ` iron `, etc. — anywhere a color name appears
    * as its own token. Strips the matched token (and adjacent separators)
    * from the returned name so groups still merge by base mark name.
    */
@@ -176,7 +176,7 @@ export default function AdminProjectBrandKitPage({ params }: { params: { id: str
       if (uploadErr) { console.error("[upload]", uploadErr); showToast("Upload failed"); continue }
       const { data: urlData } = supabase.storage.from("brand-assets").getPublicUrl(path)
 
-      // Auto-detect colourway for logo uploads so per-color files tag themselves.
+      // Auto-detect colorway for logo uploads so per-color files tag themselves.
       const { color_id, cleanName } =
         category === "logo" ? detectColorway(file.name, colors) : { color_id: null, cleanName: file.name.replace(/\.[^.]+$/, "") }
 
@@ -193,7 +193,7 @@ export default function AdminProjectBrandKitPage({ params }: { params: { id: str
       if (asset) { setAssets(prev => [...prev, asset as Asset]); uploaded++; if (color_id) tagged++ }
     }
     if (uploaded > 0) {
-      showToast(`${uploaded} file${uploaded > 1 ? "s" : ""} added${tagged > 0 ? ` · ${tagged} auto-tagged by colourway` : ""}`)
+      showToast(`${uploaded} file${uploaded > 1 ? "s" : ""} added${tagged > 0 ? ` · ${tagged} auto-tagged by colorway` : ""}`)
     }
   }
 
@@ -251,7 +251,7 @@ export default function AdminProjectBrandKitPage({ params }: { params: { id: str
     } as any).select().single()
     if (data) setColors(prev => [...prev, data as Color])
     setColorForm({ name: "", hex: "#" })
-    showToast("Colour added")
+    showToast("Color added")
   }
 
   async function patchColor(id: string, patch: Partial<Color>) {
@@ -403,26 +403,16 @@ export default function AdminProjectBrandKitPage({ params }: { params: { id: str
               Brand kit
             </h1>
             <div style={{ ...serif, fontStyle: "italic", fontSize: 15, opacity: 0.55, marginTop: 10, lineHeight: 1.55 }}>
-              Edit the cover, marks, colour, type, and rules for {project.title}. Saved changes appear on the client&apos;s brand kit page.
+              Edit the cover, marks, color, type, and rules for {project.title}. Saved changes appear on the client&apos;s brand kit page.
             </div>
           </div>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <Link href={`/brand-kit/${projectId}`} target="_blank" style={{
-              ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase",
-              color: "var(--ink)", opacity: 0.65, textDecoration: "none",
-              border: "0.5px solid rgba(15,15,14,0.2)", padding: "10px 16px",
-            }}>
-              View client kit ↗
-            </Link>
-            <a href={`/api/pdf/brand-kit/${projectId}`} target="_blank" rel="noopener noreferrer" style={{
-              ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase",
-              color: "var(--cream)", background: "var(--ink)",
-              textDecoration: "none",
-              border: "0.5px solid var(--ink)", padding: "10px 16px",
-            }}>
-              Download PDF ↓
-            </a>
-          </div>
+          <Link href={`/brand-kit/${projectId}`} target="_blank" style={{
+            ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase",
+            color: "var(--ink)", opacity: 0.65, textDecoration: "none",
+            border: "0.5px solid rgba(15,15,14,0.2)", padding: "10px 16px",
+          }}>
+            View client kit ↗
+          </Link>
         </header>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 56 }}>
@@ -492,9 +482,9 @@ export default function AdminProjectBrandKitPage({ params }: { params: { id: str
             </div>
           </section>
 
-          {/* ─── Colour ────────────────────────────────────────── */}
+          {/* ─── Color ────────────────────────────────────────── */}
           <section>
-            <SectionHead label="Colour" count={colors.length} hint="Hex swatches with optional usage notes. Contrast pairings are auto-computed on the client page." />
+            <SectionHead label="Color" count={colors.length} hint="Hex swatches with optional usage notes. Contrast pairings are auto-computed on the client page." />
             <div style={{ marginBottom: 16 }}>
               <FieldLabel label="Section intro" hint="Paragraph above the swatches." />
               <textarea value={kit.color_intro ?? ""} onChange={e => setKit(k => ({ ...k, color_intro: e.target.value }))} rows={2} placeholder="A three-color palette. The default canvas is..." style={{ ...input, resize: "vertical", lineHeight: 1.55 }} />
@@ -693,7 +683,7 @@ export default function AdminProjectBrandKitPage({ params }: { params: { id: str
               {savingKit ? "Saving…" : "Save kit narrative"}
             </button>
             <div style={{ ...serif, fontStyle: "italic", fontSize: 13, opacity: 0.5, lineHeight: 1.5 }}>
-              Cover, section intros, and misuse rules save together. Files, colours, and typefaces save individually as you edit them.
+              Cover, section intros, and misuse rules save together. Files, colors, and typefaces save individually as you edit them.
             </div>
           </div>
         </div>
