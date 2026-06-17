@@ -7,13 +7,13 @@ const mono: React.CSSProperties = { fontFamily: "var(--font-mono)" }
 const sans: React.CSSProperties = { fontFamily: "var(--font-sans)" }
 const serif: React.CSSProperties = { fontFamily: "var(--font-serif)" }
 
-// Editorial palette — cream canvas, ink type, terracotta accent
-const CANVAS = "#EBE4D5"
-const PAPER = "#F4EFE3"
-const INK = "#1C1A18"
-const ACCENT = "#924D39"
-const LINE = "rgba(28,26,24,0.15)"
-const MUTED = "rgba(28,26,24,0.55)"
+// Match the brand-kit palette so portal docs feel like one system
+const CREAM = "#F5F1EA"
+const PAPER = "#FBF7EE"
+const INK = "#1C1916"
+const LINE = "rgba(28,25,22,0.1)"
+const MUTED = "rgba(28,25,22,0.55)"
+const SOFT = "rgba(28,25,22,0.35)"
 
 function fmt$(cents?: number | null) {
   if (cents == null) return null
@@ -55,164 +55,153 @@ export default async function PlanPage({ params }: { params: { id: string } }) {
   const pills: string[] = Array.isArray((plan as any).footer_pills) ? (plan as any).footer_pills : []
 
   return (
-    <div style={{ background: CANVAS, color: INK, minHeight: "100vh", fontFamily: "var(--font-sans)" }}>
+    <div style={{ background: CREAM, color: INK, minHeight: "100vh" }}>
 
       <TrackPlanView planId={params.id} alreadyViewed={!!(plan as any).viewed_at} />
 
       {/* ─── Cover ────────────────────────────────────────────── */}
       <section style={{
         minHeight: "100vh",
-        padding: "clamp(36px, 5vw, 64px) clamp(28px, 6vw, 72px)",
+        padding: "clamp(40px, 6vw, 80px) clamp(28px, 6vw, 80px)",
         display: "flex", flexDirection: "column",
       }}>
         {/* Top bar */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "auto" }}>
-          <div style={{ ...mono, fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.85 }}>
-            {plan.eyebrow ?? "Studio Cinq"}
-          </div>
-          <div style={{ ...mono, fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.7, textAlign: "right" }}>
-            {plan.prepared_for ? <>Prepared for {plan.prepared_for}</> : null}
-            {plan.prepared_for && plan.prepared_date ? <span style={{ margin: "0 10px" }}>·</span> : null}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <CinqLogo width={26} color={INK} />
+          <div style={{ ...mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: MUTED, textAlign: "right" }}>
+            {plan.eyebrow && <><span>{plan.eyebrow}</span><br /></>}
+            {plan.prepared_for ? <span>Prepared for {plan.prepared_for}</span> : null}
+            {plan.prepared_for && plan.prepared_date ? <span style={{ margin: "0 8px", opacity: 0.5 }}>·</span> : null}
             {plan.prepared_date}
           </div>
         </div>
 
-        {/* Client name + tagline */}
-        <div style={{ paddingTop: "8vh" }}>
-          <div style={{
-            ...sans, fontSize: "clamp(40px, 7vw, 76px)", letterSpacing: "0.04em", lineHeight: 1.05,
-            fontWeight: 700,
-            color: INK,
-          }}>
-            {client?.name ?? ""}
-          </div>
-          {plan.tagline && (
-            <div style={{ ...serif, fontStyle: "italic", fontSize: "clamp(15px, 1.6vw, 18px)", color: ACCENT, marginTop: 14 }}>
-              {plan.tagline}
+        {/* Title block */}
+        <div style={{ marginTop: "auto", maxWidth: 820 }}>
+          {client?.name && (
+            <div style={{ ...mono, fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase", color: MUTED, marginBottom: 20 }}>
+              {client.name}
             </div>
           )}
-        </div>
-
-        {/* Title block */}
-        <div style={{ marginTop: 48, maxWidth: 640 }}>
           <h1 style={{
-            ...serif, margin: 0, fontWeight: 400,
-            fontSize: "clamp(40px, 6vw, 68px)", lineHeight: 1.05,
-            letterSpacing: "-0.005em",
+            ...sans, margin: 0, fontWeight: 400,
+            fontSize: "clamp(40px, 7vw, 80px)",
+            letterSpacing: "-0.025em", lineHeight: 1.05, opacity: 0.97,
           }}>
             {plan.title}
           </h1>
           {plan.subtitle && (
-            <div style={{ ...serif, fontStyle: "italic", fontSize: "clamp(17px, 1.8vw, 21px)", marginTop: 18, lineHeight: 1.4, opacity: 0.85 }}>
+            <div style={{ ...serif, fontStyle: "italic", fontSize: "clamp(18px, 2vw, 22px)", opacity: 0.65, marginTop: 22, maxWidth: 640, lineHeight: 1.5 }}>
               {plan.subtitle}
+            </div>
+          )}
+          {plan.tagline && (
+            <div style={{ ...mono, fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: MUTED, marginTop: 36, maxWidth: 640, lineHeight: 1.6 }}>
+              {plan.tagline}
             </div>
           )}
         </div>
 
         {/* Optional cover image */}
         {plan.cover_image_url && (
-          <div style={{ marginTop: 56, marginBottom: 56, textAlign: "center" }}>
-            <img src={plan.cover_image_url} alt="" style={{ maxWidth: "min(680px, 100%)", height: "auto", display: "inline-block" }} />
+          <div style={{ marginTop: 56, marginBottom: 32, textAlign: "center" }}>
+            <img src={plan.cover_image_url} alt="" style={{ maxWidth: "min(640px, 100%)", height: "auto", display: "inline-block" }} />
           </div>
         )}
 
-        {/* Footer pills + logo */}
-        <div style={{ marginTop: "auto", display: "flex", justifyContent: "space-between", alignItems: "flex-end", paddingTop: 48 }}>
+        {/* Footer pills */}
+        <div style={{ marginTop: "auto", paddingTop: 48, display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
           {pills.length > 0 ? (
-            <div style={{ ...mono, fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", opacity: 0.7 }}>
+            <div style={{ ...mono, fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: MUTED }}>
               {pills.map((p, i) => (
                 <span key={i}>
                   {p}
-                  {i < pills.length - 1 ? <span style={{ margin: "0 12px", opacity: 0.45 }}>·</span> : null}
+                  {i < pills.length - 1 ? <span style={{ margin: "0 14px", opacity: 0.5 }}>·</span> : null}
                 </span>
               ))}
             </div>
           ) : <span />}
-          <CinqLogo width={24} color={INK} />
         </div>
       </section>
 
       {/* ─── The Idea + Contents ──────────────────────────────── */}
-      <section style={{
-        padding: "clamp(40px, 6vw, 80px) clamp(28px, 6vw, 72px) clamp(80px, 10vw, 140px)",
-        maxWidth: 880, margin: "0 auto",
-        borderTop: `0.5px solid ${LINE}`,
-      }}>
-        {/* Header strip */}
-        <RunningHeader clientName={client?.name ?? ""} />
+      {(plan.idea_body || sections.length > 0) && (
+        <section style={{
+          padding: "clamp(80px, 10vw, 140px) clamp(28px, 6vw, 80px)",
+          maxWidth: 980, margin: "0 auto",
+          borderTop: `0.5px solid ${LINE}`,
+        }}>
+          {plan.idea_body && (
+            <div style={{ display: "grid", gridTemplateColumns: "70px minmax(0, 1fr)", gap: 28, alignItems: "baseline", marginBottom: sections.length > 0 ? 80 : 0 }} className="plan-grid-2col">
+              <div style={{ ...mono, fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: MUTED }}>
+                {plan.idea_eyebrow || "The Idea"}
+              </div>
+              <div style={{ ...sans, fontSize: "clamp(18px, 1.9vw, 21px)", lineHeight: 1.6, opacity: 0.88, whiteSpace: "pre-wrap", maxWidth: 640 }}>
+                {plan.idea_body}
+              </div>
+            </div>
+          )}
 
-        {plan.idea_body && (
-          <div style={{ marginTop: 56 }}>
-            <div style={{ ...mono, fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: ACCENT, marginBottom: 22 }}>
-              {plan.idea_eyebrow || "The Idea"}
-            </div>
-            <div style={{ ...serif, fontSize: "clamp(20px, 2vw, 23px)", lineHeight: 1.5, opacity: 0.92, whiteSpace: "pre-wrap" }}>
-              {plan.idea_body}
-            </div>
-          </div>
-        )}
-
-        {sections.length > 0 && (
-          <div style={{ marginTop: plan.idea_body ? 88 : 56, borderTop: `0.5px solid ${LINE}`, paddingTop: 36 }}>
-            <div style={{ ...mono, fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: ACCENT, marginBottom: 22 }}>
-              Contents
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {sections.map((s, i) => (
-                <div key={s.id} style={{ display: "grid", gridTemplateColumns: "44px minmax(0, 1fr) auto", gap: 14, alignItems: "baseline", paddingBottom: 14, borderBottom: `0.5px solid ${LINE}` }}>
-                  <div style={{ ...mono, fontSize: 11, letterSpacing: "0.1em", color: ACCENT }}>
-                    {s.number_label ?? String(i).padStart(2, "0")}
-                  </div>
-                  <div style={{ ...serif, fontSize: "clamp(18px, 2vw, 21px)", letterSpacing: "-0.005em" }}>
-                    {s.title}
-                  </div>
-                  {s.aside && (
-                    <div style={{ ...serif, fontStyle: "italic", fontSize: "clamp(13px, 1.4vw, 15px)", opacity: 0.7, textAlign: "right" }}>
-                      {s.aside}
+          {sections.length > 0 && (
+            <div style={{ display: "grid", gridTemplateColumns: "70px minmax(0, 1fr)", gap: 28, alignItems: "baseline" }} className="plan-grid-2col">
+              <div style={{ ...mono, fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: MUTED }}>
+                Contents
+              </div>
+              <div style={{ borderTop: `0.5px solid ${LINE}` }}>
+                {sections.map((s, i) => (
+                  <div key={s.id} style={{ display: "grid", gridTemplateColumns: "44px minmax(0, 1fr) auto", gap: 16, alignItems: "baseline", padding: "16px 0", borderBottom: `0.5px solid ${LINE}` }}>
+                    <div style={{ ...mono, fontSize: 10, letterSpacing: "0.12em", color: MUTED }}>
+                      {s.number_label ?? String(i).padStart(2, "0")}
                     </div>
-                  )}
-                </div>
-              ))}
+                    <div style={{ ...sans, fontSize: "clamp(16px, 1.6vw, 18px)", opacity: 0.92, letterSpacing: "-0.005em" }}>
+                      {s.title}
+                    </div>
+                    {s.aside && (
+                      <div style={{ ...serif, fontStyle: "italic", fontSize: "clamp(13px, 1.4vw, 15px)", color: MUTED, textAlign: "right" }}>
+                        {s.aside}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
-      </section>
+          )}
+        </section>
+      )}
 
-      {/* ─── Section pages ─────────────────────────────────────── */}
+      {/* ─── Section spreads ──────────────────────────────────── */}
       {sections.map((s, sIndex) => {
         const sItems = itemsBySection.get(s.id) ?? []
         return (
           <section
             key={s.id}
             style={{
-              padding: "clamp(60px, 8vw, 100px) clamp(28px, 6vw, 72px)",
-              maxWidth: 980, margin: "0 auto",
+              padding: "clamp(80px, 10vw, 140px) clamp(28px, 6vw, 80px)",
+              maxWidth: 1100, margin: "0 auto",
               borderTop: `0.5px solid ${LINE}`,
             }}
           >
-            <RunningHeader clientName={client?.name ?? ""} />
-
             <div style={{
               display: "grid",
               gridTemplateColumns: "minmax(220px, 1fr) minmax(0, 2fr)",
               gap: 56,
-              marginTop: 36,
             }} className="plan-section-grid">
 
               {/* Left column: section header */}
               <div>
-                <div style={{ ...mono, fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", color: ACCENT, marginBottom: 14 }}>
+                <div style={{ ...mono, fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: MUTED, marginBottom: 16 }}>
                   {s.number_label ?? String(sIndex).padStart(2, "0")}
                 </div>
                 <h2 style={{
-                  ...serif, margin: 0, fontWeight: 400,
-                  fontSize: "clamp(32px, 4vw, 44px)",
-                  letterSpacing: "-0.005em", lineHeight: 1.1,
+                  ...sans, margin: 0, fontWeight: 400,
+                  fontSize: "clamp(28px, 3.8vw, 40px)",
+                  letterSpacing: "-0.02em", lineHeight: 1.1,
+                  opacity: 0.95,
                 }}>
                   {s.title}
                 </h2>
                 {s.lede && (
-                  <div style={{ ...serif, fontStyle: "italic", fontSize: 16, opacity: 0.65, lineHeight: 1.55, marginTop: 18, maxWidth: 320 }}>
+                  <div style={{ ...serif, fontStyle: "italic", fontSize: 16, color: MUTED, lineHeight: 1.55, marginTop: 16, maxWidth: 320 }}>
                     {s.lede}
                   </div>
                 )}
@@ -221,33 +210,33 @@ export default async function PlanPage({ params }: { params: { id: string } }) {
               {/* Right column: items */}
               <div>
                 {sItems.length === 0 ? (
-                  <div style={{ ...serif, fontStyle: "italic", fontSize: 15, opacity: 0.5 }}>
+                  <div style={{ ...serif, fontStyle: "italic", fontSize: 15, color: SOFT }}>
                     No items yet.
                   </div>
                 ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+                  <div style={{ borderTop: `0.5px solid ${LINE}` }}>
                     {sItems.map(it => {
                       const est = fmt$(it.estimate_cents)
                       return (
-                        <div key={it.id} style={{ display: "grid", gridTemplateColumns: "16px minmax(0, 1fr) 100px", gap: 16, alignItems: "baseline" }} className="plan-item-row">
-                          <div style={{ ...sans, fontSize: 14, color: INK, lineHeight: 1, paddingTop: 4 }}>■</div>
-                          <div>
-                            <span style={{ ...serif, fontSize: "clamp(15px, 1.5vw, 17px)", fontWeight: 600 }}>{it.title}</span>
+                        <div key={it.id} style={{ display: "grid", gridTemplateColumns: "12px minmax(0, 1fr) 110px", gap: 18, alignItems: "baseline", padding: "18px 0", borderBottom: `0.5px solid ${LINE}` }} className="plan-item-row">
+                          <div style={{ ...mono, fontSize: 8, color: INK, opacity: 0.6, paddingTop: 5 }}>■</div>
+                          <div style={{ lineHeight: 1.55 }}>
+                            <span style={{ ...sans, fontSize: "clamp(15px, 1.55vw, 17px)", fontWeight: 500, opacity: 0.95 }}>{it.title}</span>
                             {it.description && (
-                              <span style={{ ...serif, fontSize: "clamp(15px, 1.5vw, 17px)", opacity: 0.82, lineHeight: 1.5 }}>
+                              <span style={{ ...sans, fontSize: "clamp(15px, 1.55vw, 17px)", opacity: 0.72 }}>
                                 {" "}— {it.description}
                               </span>
                             )}
                           </div>
-                          <div style={{ ...mono, fontSize: 11, letterSpacing: "0.06em", color: ACCENT, textAlign: "right", whiteSpace: "nowrap" }}>
+                          <div style={{ ...mono, fontSize: 10, letterSpacing: "0.08em", textAlign: "right", whiteSpace: "nowrap", paddingTop: 4 }}>
                             {est && (
                               <>
-                                <span style={{ opacity: 0.65, marginRight: 6 }}>EST.</span>
-                                <span style={{ textDecoration: "underline", textUnderlineOffset: 2 }}>{est}</span>
+                                <span style={{ color: SOFT, marginRight: 8 }}>EST.</span>
+                                <span style={{ color: INK, opacity: 0.85 }}>{est}</span>
                               </>
                             )}
                             {!est && it.estimate_note && (
-                              <span style={{ opacity: 0.6 }}>{it.estimate_note}</span>
+                              <span style={{ color: SOFT }}>{it.estimate_note}</span>
                             )}
                           </div>
                         </div>
@@ -263,35 +252,24 @@ export default async function PlanPage({ params }: { params: { id: string } }) {
 
       {/* ─── Footer ────────────────────────────────────────────── */}
       <footer style={{
-        padding: "60px clamp(28px, 6vw, 72px)",
+        padding: "60px clamp(28px, 6vw, 80px)",
         borderTop: `0.5px solid ${LINE}`,
         display: "flex", justifyContent: "space-between", alignItems: "center",
       }}>
-        <div style={{ ...mono, fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.6 }}>
-          {plan.title}
+        <div style={{ ...mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: MUTED }}>
+          Studio Cinq · Direction Plan{client?.name ? ` · ${client.name}` : ""}
         </div>
-        <div style={{ ...mono, fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.6 }}>
-          Studio Cinq
-        </div>
+        <CinqLogo width={22} color={INK} />
       </footer>
 
       <style>{`
         @media (max-width: 760px) {
           .plan-section-grid { grid-template-columns: 1fr !important; gap: 24px !important; }
-          .plan-item-row { grid-template-columns: 14px minmax(0, 1fr) !important; }
-          .plan-item-row > div:last-child { grid-column: 2; text-align: left !important; margin-top: 4px; }
+          .plan-grid-2col { grid-template-columns: 1fr !important; gap: 16px !important; }
+          .plan-item-row { grid-template-columns: 12px minmax(0, 1fr) !important; }
+          .plan-item-row > div:last-child { grid-column: 2; text-align: left !important; margin-top: 4px; padding-top: 0 !important; }
         }
       `}</style>
-    </div>
-  )
-}
-
-function RunningHeader({ clientName }: { clientName: string }) {
-  return (
-    <div style={{ display: "flex", justifyContent: "flex-end", paddingTop: 8 }}>
-      <div style={{ ...mono, fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", opacity: 0.55 }}>
-        {clientName}
-      </div>
     </div>
   )
 }
