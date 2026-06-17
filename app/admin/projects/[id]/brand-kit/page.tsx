@@ -197,6 +197,22 @@ export default function AdminProjectBrandKitPage({ params }: { params: { id: str
   }
 
   async function patchAsset(id: string, patch: Partial<Asset>) {
+    // Renaming a logo asset propagates to all files that shared its old name,
+    // so every per-color file in a mark group keeps grouping together.
+    if ("name" in patch && patch.name !== undefined) {
+      const target = assets.find(a => a.id === id)
+      if (target && target.category === "logo" && target.name !== patch.name) {
+        const siblings = assets.filter(a => a.category === "logo" && a.name === target.name)
+        if (siblings.length > 1) {
+          const newName = patch.name
+          const ids = siblings.map(a => a.id)
+          await supabase.from("brand_assets").update({ ...patch, name: newName }).in("id", ids)
+          setAssets(prev => prev.map(a => ids.includes(a.id) ? { ...a, ...patch, name: newName } : a))
+          showToast(`Renamed ${siblings.length} files`)
+          return
+        }
+      }
+    }
     await supabase.from("brand_assets").update(patch).eq("id", id)
     setAssets(prev => prev.map(a => a.id === id ? { ...a, ...patch } : a))
   }
