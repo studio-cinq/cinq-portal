@@ -14,6 +14,7 @@ const CREAM = "#F5F1EA"
 const PAPER = "#FBF7EE"
 const LINE = "rgba(28,25,22,0.1)"
 const MUTED = "rgba(28,25,22,0.55)"
+const SOFT = "rgba(28,25,22,0.35)"
 
 function fileSize(bytes?: number | null) {
   if (!bytes) return ""
@@ -429,31 +430,24 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
             }</style>
           )}
 
-          <div style={{ marginTop: 56, display: "flex", flexDirection: "column", gap: 0 }}>
+          <div style={{ marginTop: 56, display: "flex", flexDirection: "column", gap: 80 }}>
             {typefaces.map((tf: any) => {
               const customFamily = tf.file_url ? `"kit-${tf.id}", ${tf.role?.toLowerCase().includes("serif") ? "Georgia, serif" : "system-ui, sans-serif"}` : undefined
               const fontStack = customFamily ?? (tf.role?.toLowerCase().includes("serif") ? "Georgia, 'Times New Roman', serif" : "system-ui, -apple-system, sans-serif")
-              const sample = tf.sample_text ?? (tf.role?.toLowerCase().includes("serif")
-                ? "A working building, since 1930."
-                : "Shops, Studios & Flexible Space")
+              const specimens = buildSpecimens(tf, project as any)
               return (
-                <div key={tf.id} style={{ borderTop: `0.5px solid ${LINE}`, padding: "32px 0 36px" }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 200px", gap: 24, alignItems: "baseline" }} className="bk-type-row">
+                <div key={tf.id}>
+                  {/* Header row: typeface name + meta + download chips */}
+                  <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 24, alignItems: "flex-end", borderTop: `0.5px solid ${LINE}`, paddingTop: 28, paddingBottom: 18 }}>
                     <div>
-                      <div style={{ ...mono, fontSize: 10, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.55, marginBottom: 10 }}>
+                      <div style={{ ...mono, fontSize: 10, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.55, marginBottom: 8 }}>
                         {[tf.weight, tf.role].filter(Boolean).join(" · ") || "Typeface"}
                       </div>
-                      <div style={{
-                        fontFamily: fontStack,
-                        fontSize: "clamp(36px, 5vw, 60px)", letterSpacing: "-0.015em", lineHeight: 1.1, opacity: 0.92, marginBottom: 18,
-                      }}>
-                        {sample}
-                      </div>
-                      <div style={{ ...sans, fontSize: 16, opacity: 0.82, letterSpacing: "-0.005em" }}>
+                      <div style={{ ...sans, fontSize: 20, opacity: 0.92, letterSpacing: "-0.005em" }}>
                         {tf.name}
                       </div>
                       {tf.weights_note && (
-                        <div style={{ ...sans, fontSize: 13, color: MUTED, marginTop: 10, lineHeight: 1.55, maxWidth: 540 }}>
+                        <div style={{ ...sans, fontSize: 13, color: MUTED, marginTop: 8, lineHeight: 1.55, maxWidth: 540 }}>
                           {tf.weights_note}
                         </div>
                       )}
@@ -503,6 +497,50 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
                         )
                       })()}
                     </div>
+                  </div>
+
+                  {/* Specimen rows: each role/size demonstrates the typeface */}
+                  <div style={{ display: "flex", flexDirection: "column" }}>
+                    {specimens.map((s, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "minmax(0, 1fr) 180px",
+                          gap: 32,
+                          alignItems: "baseline",
+                          borderBottom: `0.5px solid ${LINE}`,
+                          padding: "28px 0 24px",
+                        }}
+                        className="bk-type-row"
+                      >
+                        <div style={{
+                          fontFamily: fontStack,
+                          fontSize: s.size,
+                          letterSpacing: s.tracking ?? "-0.01em",
+                          lineHeight: s.leading ?? 1.1,
+                          opacity: 0.94,
+                          color: INK,
+                          textTransform: s.caps ? "uppercase" : "none",
+                        }}>
+                          {s.sample}
+                        </div>
+                        <div style={{ textAlign: "right" }}>
+                          <div style={{ ...mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: MUTED }}>
+                            {s.label} · {typeof s.size === "number" ? `${s.size}px` : s.size}
+                          </div>
+                          {(s.tracking || s.leading || s.caps) && (
+                            <div style={{ ...mono, fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: SOFT, marginTop: 4 }}>
+                              {[
+                                s.tracking ? `tr ${s.tracking}` : null,
+                                s.leading ? `ld ${s.leading}` : null,
+                                s.caps ? "caps" : null,
+                              ].filter(Boolean).join(" · ")}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )
@@ -658,3 +696,53 @@ function SectionHeader({ number, label, lede }: { number: string; label: string;
   )
 }
 
+
+type Specimen = {
+  label: string
+  size: number
+  sample: string
+  tracking?: string
+  leading?: string
+  caps?: boolean
+}
+
+/**
+ * Returns the specimen rows to render under a typeface. Honors a saved
+ * `specimens` JSONB array on the typeface_entries row; falls back to a
+ * sensible 5-row default scale seeded with the client name + tagline.
+ */
+function buildSpecimens(tf: any, project: any): Specimen[] {
+  const saved = Array.isArray(tf?.specimens) ? tf.specimens : null
+  if (saved && saved.length > 0) {
+    return saved
+      .filter((s: any) => s && typeof s.sample === "string" && s.sample.trim() && typeof s.size === "number" && s.size > 0)
+      .map((s: any) => ({
+        label: String(s.label ?? "").trim() || "Sample",
+        size: Number(s.size),
+        sample: String(s.sample),
+        tracking: s.tracking?.trim() || undefined,
+        leading: s.leading?.trim() || undefined,
+        caps: Boolean(s.caps),
+      }))
+  }
+
+  const brand = project?.clients?.name ?? "Brand"
+  const role = (tf?.role ?? "").toLowerCase()
+  const isDisplay = role.includes("display") || role.includes("heading") || role.includes("serif") || (!role.includes("body") && !role.includes("mono"))
+
+  if (isDisplay) {
+    return [
+      { label: "Display",  size: 80, sample: brand, tracking: "0", leading: ".95" },
+      { label: "Headline", size: 56, sample: "A working building, since 1930." },
+      { label: "Title",    size: 36, sample: "Shops, Studios & Working Space" },
+      { label: "Subhead",  size: 24, sample: tf?.weight ? `${tf.weight} weight specimen` : "Supporting line" },
+      { label: "Caption",  size: 13, sample: "5000 Rossville Boulevard · Chattanooga", tracking: ".14em", caps: true },
+    ]
+  }
+  return [
+    { label: "Subhead", size: 22, sample: "How the system reads in working copy." },
+    { label: "Body",    size: 18, sample: "A 1930 working building on Rossville Boulevard — shops, studios, and working space, kept as it was found and put back to use.", leading: "1.5" },
+    { label: "Small",   size: 14, sample: "Footnotes, fine print, captions under photos.", leading: "1.5" },
+    { label: "Caption", size: 13, sample: "5000 Rossville Boulevard · Chattanooga, Tenn.", tracking: ".14em", caps: true },
+  ]
+}

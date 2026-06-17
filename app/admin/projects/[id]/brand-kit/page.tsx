@@ -20,7 +20,8 @@ const sectionLabel: React.CSSProperties = {
 
 type Asset = { id: string; name: string; file_url: string; file_type: string; file_size_bytes?: number; category: string; sort_order: number; description?: string | null; usage?: string | null; primary_use?: string | null; color_id?: string | null; display_scale?: number | null; default_colorway_id?: string | null }
 type Color = { id: string; name: string; hex: string; sort_order: number; rgb?: string | null; usage_note?: string | null; cmyk?: string | null; pms?: string | null; tier?: string | null }
-type Typeface = { id: string; name: string; weight?: string | null; role?: string | null; file_url?: string | null; otf_url?: string | null; ttf_url?: string | null; sort_order: number; sample_text?: string | null; weights_note?: string | null }
+type Specimen = { label: string; size: number; sample: string; tracking?: string; leading?: string; caps?: boolean }
+type Typeface = { id: string; name: string; weight?: string | null; role?: string | null; file_url?: string | null; otf_url?: string | null; ttf_url?: string | null; sort_order: number; sample_text?: string | null; weights_note?: string | null; specimens?: Specimen[] | null }
 type MisuseRule = { tag: string; note: string }
 type Kit = {
   id?: string
@@ -612,6 +613,10 @@ export default function AdminProjectBrandKitPage({ params }: { params: { id: str
                         ))}
                       </div>
                     </div>
+                    <SpecimenEditor
+                      typeface={tf}
+                      onChange={specimens => patchTypeface(tf.id, { specimens })}
+                    />
                   </div>
                 ))}
               </div>
@@ -890,4 +895,88 @@ const chip: React.CSSProperties = {
 const chipX: React.CSSProperties = {
   background: "none", border: "none", color: "var(--ink)",
   opacity: 0.4, cursor: "pointer", padding: 0, fontSize: 11,
+}
+
+function SpecimenEditor({ typeface, onChange }: { typeface: Typeface; onChange: (specimens: Specimen[]) => void }) {
+  const list: Specimen[] = Array.isArray(typeface.specimens) ? typeface.specimens : []
+  function update(i: number, patch: Partial<Specimen>) {
+    const next = list.map((s, idx) => idx === i ? { ...s, ...patch } : s)
+    onChange(next)
+  }
+  function add() {
+    const lastSize = list.length > 0 ? list[list.length - 1].size : 56
+    onChange([...list, { label: "New row", size: Math.max(12, lastSize - 8), sample: typeface.name || "Sample text" }])
+  }
+  function remove(i: number) {
+    onChange(list.filter((_, idx) => idx !== i))
+  }
+  function move(i: number, dir: -1 | 1) {
+    const j = i + dir
+    if (j < 0 || j >= list.length) return
+    const next = [...list]
+    ;[next[i], next[j]] = [next[j], next[i]]
+    onChange(next)
+  }
+
+  return (
+    <div style={{ marginTop: 12, paddingTop: 12, borderTop: "0.5px solid rgba(15,15,14,0.06)" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+        <div style={{ ...mono, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.5 }}>
+          Specimens <span style={{ opacity: 0.7 }}>· each row shows the typeface at a real size + sample</span>
+        </div>
+        <button onClick={add} style={{ ...mono, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", background: "transparent", border: "0.5px solid rgba(15,15,14,0.25)", color: "var(--ink)", padding: "4px 8px", cursor: "pointer" }}>+ Add row</button>
+      </div>
+      {list.length === 0 && (
+        <div style={{ ...sans, fontStyle: "italic", fontSize: 12, color: "rgba(15,15,14,0.45)" }}>
+          Leave blank for a sensible default scale, or add rows to spec your own.
+        </div>
+      )}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {list.map((s, i) => (
+          <div key={i} style={{ display: "grid", gridTemplateColumns: "100px 60px 1fr 80px 80px 50px 70px", gap: 8, alignItems: "center", padding: "6px 0" }}>
+            <input
+              value={s.label}
+              onChange={e => update(i, { label: e.target.value })}
+              placeholder="Label"
+              style={{ ...input, ...mono, fontSize: 11, padding: "4px 0" }}
+            />
+            <input
+              type="number"
+              value={s.size}
+              onChange={e => update(i, { size: parseInt(e.target.value) || 0 })}
+              placeholder="px"
+              style={{ ...input, ...mono, fontSize: 11, padding: "4px 0", textAlign: "right" }}
+            />
+            <input
+              value={s.sample}
+              onChange={e => update(i, { sample: e.target.value })}
+              placeholder="Sample text"
+              style={{ ...input, fontSize: 13, padding: "4px 0" }}
+            />
+            <input
+              value={s.tracking ?? ""}
+              onChange={e => update(i, { tracking: e.target.value || undefined })}
+              placeholder="tracking"
+              style={{ ...input, ...mono, fontSize: 11, padding: "4px 0" }}
+            />
+            <input
+              value={s.leading ?? ""}
+              onChange={e => update(i, { leading: e.target.value || undefined })}
+              placeholder="leading"
+              style={{ ...input, ...mono, fontSize: 11, padding: "4px 0" }}
+            />
+            <label style={{ ...mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.6, display: "inline-flex", alignItems: "center", gap: 4, cursor: "pointer" }}>
+              <input type="checkbox" checked={!!s.caps} onChange={e => update(i, { caps: e.target.checked })} />
+              caps
+            </label>
+            <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
+              <button onClick={() => move(i, -1)} style={{ ...mono, fontSize: 10, background: "none", border: "none", color: "var(--ink)", opacity: 0.45, cursor: "pointer" }} aria-label="Up">↑</button>
+              <button onClick={() => move(i, 1)} style={{ ...mono, fontSize: 10, background: "none", border: "none", color: "var(--ink)", opacity: 0.45, cursor: "pointer" }} aria-label="Down">↓</button>
+              <button onClick={() => remove(i)} style={{ ...mono, fontSize: 10, background: "none", border: "none", color: "var(--ink)", opacity: 0.4, cursor: "pointer" }} aria-label="Remove">✕</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }
