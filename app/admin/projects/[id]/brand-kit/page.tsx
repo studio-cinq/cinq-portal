@@ -687,7 +687,7 @@ function AssetEditCard({ asset, onPatch, onDelete, showVisual = false, colorways
           onBlur={e => onPatch({ description: e.target.value || null })}
           placeholder="Description (e.g. The default brand signature. Single word, no space.)"
           rows={2}
-          style={{ ...input, ...serif, fontSize: 15, resize: "vertical", lineHeight: 1.55, marginBottom: 10 }}
+          style={{ ...input, ...sans, fontSize: 14, resize: "vertical", lineHeight: 1.6, marginBottom: 10 }}
         />
         {colorways ? (
           <>
@@ -696,7 +696,7 @@ function AssetEditCard({ asset, onPatch, onDelete, showVisual = false, colorways
               onBlur={e => onPatch({ primary_use: e.target.value || null })}
               placeholder="Primary use (e.g. Used in all main signage, headers, and external print collateral.)"
               rows={2}
-              style={{ ...input, ...serif, fontSize: 15, resize: "vertical", lineHeight: 1.55, marginBottom: 12 }}
+              style={{ ...input, ...sans, fontSize: 14, resize: "vertical", lineHeight: 1.6, marginBottom: 12 }}
             />
             {colorways.length > 0 && (
               <div>

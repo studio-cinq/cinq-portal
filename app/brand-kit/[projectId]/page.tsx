@@ -331,16 +331,16 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
               {/* LEFT: text column */}
               <div>
                 <h3 style={{
-                  ...serif, margin: 0, fontWeight: 400,
-                  fontSize: "clamp(34px, 4vw, 50px)",
-                  letterSpacing: "-0.01em", lineHeight: 1.05,
+                  ...sans, margin: 0, fontWeight: 400,
+                  fontSize: "clamp(28px, 3.5vw, 42px)",
+                  letterSpacing: "-0.02em", lineHeight: 1.1,
                   opacity: 0.95,
                 }}>
                   {group.name}
                 </h3>
 
                 {group.description && (
-                  <div style={{ ...serif, fontSize: "clamp(15px, 1.5vw, 17px)", opacity: 0.78, lineHeight: 1.55, marginTop: 22, maxWidth: 420 }}>
+                  <div style={{ ...sans, fontSize: "clamp(15px, 1.55vw, 16px)", color: "rgba(28,25,22,0.72)", lineHeight: 1.6, marginTop: 20, maxWidth: 420 }}>
                     {group.description}
                   </div>
                 )}
@@ -350,7 +350,7 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
                     <div style={{ ...mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.55, marginBottom: 8 }}>
                       Primary Use
                     </div>
-                    <div style={{ ...serif, fontSize: "clamp(15px, 1.5vw, 17px)", opacity: 0.78, lineHeight: 1.55, maxWidth: 420 }}>
+                    <div style={{ ...sans, fontSize: "clamp(15px, 1.55vw, 16px)", color: "rgba(28,25,22,0.72)", lineHeight: 1.6, maxWidth: 420 }}>
                       {group.primary_use}
                     </div>
                   </div>
