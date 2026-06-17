@@ -58,7 +58,8 @@ type Plan = {
 }
 
 type Section = { id: string; plan_id: string; sort_order: number; number_label?: string | null; title: string; lede?: string | null; aside?: string | null }
-type Item = { id: string; section_id: string; sort_order: number; title: string; description?: string | null; estimate_cents?: number | null; estimate_note?: string | null }
+type Priority = "now" | "next" | "later" | null
+type Item = { id: string; section_id: string; sort_order: number; title: string; description?: string | null; estimate_cents?: number | null; estimate_note?: string | null; priority?: Priority }
 
 export default function EditPlanPage({ params }: { params: { id: string } }) {
   const router = useRouter()
@@ -511,7 +512,7 @@ function ItemRow({ item, first, last, onPatch, onDelete, onMove }: {
 }) {
   const [estDollars, setEstDollars] = useState(item.estimate_cents != null ? String(item.estimate_cents / 100) : "")
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1.4fr 2.2fr 120px 110px 90px", gap: 10, alignItems: "center", padding: "8px 0", borderTop: "0.5px solid rgba(15,15,14,0.06)" }}>
+    <div style={{ display: "grid", gridTemplateColumns: "1.3fr 2fr 110px 100px 78px 88px", gap: 10, alignItems: "center", padding: "8px 0", borderTop: "0.5px solid rgba(15,15,14,0.06)" }}>
       <input defaultValue={item.title} onBlur={e => onPatch({ title: e.target.value })} placeholder="Item title" style={input} />
       <input defaultValue={item.description ?? ""} onBlur={e => onPatch({ description: e.target.value || null })} placeholder="— short description after an em-dash" style={input} />
       <input
@@ -532,6 +533,7 @@ function ItemRow({ item, first, last, onPatch, onDelete, onMove }: {
         placeholder="(if no $)"
         style={{ ...input, ...mono, fontSize: 11, opacity: 0.85 }}
       />
+      <PriorityCycler value={item.priority ?? null} onChange={p => onPatch({ priority: p })} />
       <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
         <button onClick={() => onMove(-1)} disabled={first} style={moveBtn(first)} aria-label="Up">↑</button>
         <button onClick={() => onMove(1)} disabled={last} style={moveBtn(last)} aria-label="Down">↓</button>
@@ -558,6 +560,29 @@ function CoverImagePicker({ currentUrl, onUpload, onClear }: { currentUrl: strin
       )}
       <input ref={ref} type="file" accept="image/*" style={{ display: "none" }} onChange={e => { const f = e.target.files?.[0]; if (f) onUpload(f); e.target.value = "" }} />
     </div>
+  )
+}
+
+function PriorityCycler({ value, onChange }: { value: Priority; onChange: (p: Priority) => void }) {
+  const next: Record<string, Priority> = { "null": "now", "now": "next", "next": "later", "later": null }
+  const label = value ? value.toUpperCase() : "—"
+  const opacity = value === "now" ? 1 : value === "next" ? 0.7 : value === "later" ? 0.4 : 0.3
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(next[value ?? "null"])}
+      title="Cycle priority: Now → Next → Later → none"
+      style={{
+        ...mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase",
+        padding: "5px 8px",
+        background: value ? "rgba(28,25,22,0.04)" : "transparent",
+        border: "0.5px solid rgba(28,25,22,0.18)",
+        color: "var(--ink)", opacity,
+        cursor: "pointer", textAlign: "center",
+      }}
+    >
+      {label}
+    </button>
   )
 }
 

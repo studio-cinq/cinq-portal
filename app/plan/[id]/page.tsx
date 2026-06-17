@@ -20,6 +20,29 @@ function fmt$(cents?: number | null) {
   return `$${(cents / 100).toLocaleString("en-US")}`
 }
 
+function PriorityPill({ value }: { value: "now" | "next" | "later" }) {
+  const styles: Record<typeof value, { bg: string; border: string; color: string }> = {
+    now:   { bg: "rgba(28,25,22,0.92)", border: "rgba(28,25,22,0.92)", color: "#F5F1EA" },
+    next:  { bg: "transparent",          border: "rgba(28,25,22,0.45)", color: "rgba(28,25,22,0.9)" },
+    later: { bg: "transparent",          border: "rgba(28,25,22,0.2)",  color: "rgba(28,25,22,0.5)" },
+  }
+  const s = styles[value]
+  return (
+    <span style={{
+      display: "inline-block",
+      verticalAlign: "1px",
+      margin: "0 4px 0 10px",
+      padding: "2px 7px 1px",
+      fontFamily: "var(--font-mono)",
+      fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase",
+      background: s.bg, border: `0.5px solid ${s.border}`, color: s.color,
+      whiteSpace: "nowrap",
+    }}>
+      {value}
+    </span>
+  )
+}
+
 export default async function PlanPage({ params }: { params: { id: string } }) {
   const supabase = await createServerComponentClient()
 
@@ -222,6 +245,7 @@ export default async function PlanPage({ params }: { params: { id: string } }) {
                           <div style={{ ...mono, fontSize: 8, color: INK, opacity: 0.6, paddingTop: 5 }}>■</div>
                           <div style={{ lineHeight: 1.55 }}>
                             <span style={{ ...sans, fontSize: "clamp(15px, 1.55vw, 17px)", fontWeight: 500, opacity: 0.95 }}>{it.title}</span>
+                            {it.priority && <PriorityPill value={it.priority} />}
                             {it.description && (
                               <span style={{ ...sans, fontSize: "clamp(15px, 1.55vw, 17px)", opacity: 0.72 }}>
                                 {" "}— {it.description}
