@@ -635,12 +635,6 @@ export default function AdminProjectBrandKitPage({ params }: { params: { id: str
 function AssetEditCard({ asset, onPatch, onDelete, showVisual = false, colorways }: { asset: Asset; onPatch: (patch: Partial<Asset>) => void; onDelete: () => void; showVisual?: boolean; colorways?: Color[] }) {
   const dark = /reverse|dark|white|inverse/i.test(asset.name)
   const isImg = /^(svg|png|jpg|jpeg|webp|gif)$/i.test(asset.file_type)
-  const selected = new Set(asset.available_color_ids ?? [])
-  function toggleColor(id: string) {
-    const next = new Set(selected)
-    if (next.has(id)) next.delete(id); else next.add(id)
-    onPatch({ available_color_ids: Array.from(next) })
-  }
   return (
     <div style={{ display: "grid", gridTemplateColumns: showVisual ? "160px 1fr 50px" : "1fr 50px", gap: 14, background: "rgba(255,255,255,0.35)", border: "0.5px solid rgba(15,15,14,0.08)", padding: 14 }}>
       {showVisual && (
@@ -672,52 +666,18 @@ function AssetEditCard({ asset, onPatch, onDelete, showVisual = false, colorways
           <>
             <textarea defaultValue={asset.primary_use ?? asset.usage ?? ""} onBlur={e => onPatch({ primary_use: e.target.value || null })} placeholder="Primary use (e.g. Used in all main signage, headers, and external print collateral.)" rows={2} style={{ ...input, resize: "vertical", lineHeight: 1.5, marginBottom: 10 }} />
             {colorways.length > 0 && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                {/* THIS file's colorway — drives which colorway click surfaces it as a download */}
-                <div>
-                  <div style={{ ...mono, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.5, marginBottom: 6 }}>
-                    This file's colorway
-                  </div>
-                  <select
-                    defaultValue={asset.color_id ?? ""}
-                    onChange={e => onPatch({ color_id: e.target.value || null })}
-                    style={{ ...input, cursor: "pointer", padding: "6px 8px" }}
-                  >
-                    <option value="">— Any / source file (shows under every colorway)</option>
-                    {colorways.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
+              <div>
+                <div style={{ ...mono, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.5, marginBottom: 6 }}>
+                  Colorway
                 </div>
-
-                {/* Available in (display tag) — drives which colorway pills appear on the mark spread */}
-                <div>
-                  <div style={{ ...mono, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.5, marginBottom: 6 }}>
-                    Available in · tap to toggle
-                  </div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                    {colorways.map(c => {
-                      const on = selected.has(c.id)
-                      return (
-                        <button
-                          key={c.id}
-                          type="button"
-                          onClick={() => toggleColor(c.id)}
-                          style={{
-                            display: "inline-flex", alignItems: "center", gap: 6,
-                            padding: "5px 10px 5px 6px",
-                            background: on ? "rgba(28,25,22,0.06)" : "transparent",
-                            border: on ? "0.5px solid rgba(28,25,22,0.4)" : "0.5px solid rgba(28,25,22,0.15)",
-                            cursor: "pointer",
-                            ...mono, fontSize: 10, letterSpacing: "0.06em", color: "var(--ink)",
-                            opacity: on ? 1 : 0.6,
-                          }}
-                        >
-                          <span style={{ width: 12, height: 12, background: c.hex, border: "0.5px solid rgba(28,25,22,0.18)", display: "inline-block" }} />
-                          {c.name}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
+                <select
+                  defaultValue={asset.color_id ?? ""}
+                  onChange={e => onPatch({ color_id: e.target.value || null })}
+                  style={{ ...input, cursor: "pointer", padding: "6px 8px" }}
+                >
+                  <option value="">— Any / source file (shows under every colorway)</option>
+                  {colorways.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
               </div>
             )}
           </>

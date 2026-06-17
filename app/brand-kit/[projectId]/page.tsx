@@ -124,7 +124,7 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
         description: a.description ?? null,
         usage: a.usage ?? null,
         primary_use: a.primary_use ?? null,
-        colorwayIds: Array.isArray(a.available_color_ids) ? a.available_color_ids : [],
+        colorwayIds: [],
         preview: a,
         files: [a],
         minSort: a.sort_order ?? 0,
@@ -135,24 +135,33 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
       if (!existing.description && a.description) existing.description = a.description
       if (!existing.usage && a.usage) existing.usage = a.usage
       if (!existing.primary_use && a.primary_use) existing.primary_use = a.primary_use
-      if (existing.colorwayIds.length === 0 && Array.isArray(a.available_color_ids) && a.available_color_ids.length > 0) {
-        existing.colorwayIds = a.available_color_ids
-      }
       const incoming = PREVIEW_RANK[(a.file_type ?? "").toLowerCase()] ?? 99
       const current = PREVIEW_RANK[(existing.preview.file_type ?? "").toLowerCase()] ?? 99
       if (incoming < current) existing.preview = a
     }
   }
   const logoGroups: LogoGroup[] = Array.from(groupMap.values())
-    .map(g => ({
-      ...g,
-      files: [...g.files].sort((a, b) => {
-        const ar = CHIP_RANK[(a.file_type ?? "").toLowerCase()] ?? 99
-        const br = CHIP_RANK[(b.file_type ?? "").toLowerCase()] ?? 99
-        if (ar !== br) return ar - br
-        return (a.file_type ?? "").localeCompare(b.file_type ?? "")
-      }),
-    }))
+    .map(g => {
+      // Derive colorways automatically from any file.color_id present in the group,
+      // plus any legacy available_color_ids on member files (for backward compat).
+      const colorIds = new Set<string>()
+      for (const f of g.files) {
+        if (f.color_id) colorIds.add(f.color_id)
+        if (Array.isArray(f.available_color_ids)) {
+          for (const id of f.available_color_ids) colorIds.add(id)
+        }
+      }
+      return {
+        ...g,
+        colorwayIds: Array.from(colorIds),
+        files: [...g.files].sort((a, b) => {
+          const ar = CHIP_RANK[(a.file_type ?? "").toLowerCase()] ?? 99
+          const br = CHIP_RANK[(b.file_type ?? "").toLowerCase()] ?? 99
+          if (ar !== br) return ar - br
+          return (a.file_type ?? "").localeCompare(b.file_type ?? "")
+        }),
+      }
+    })
     .sort((a, b) => a.minSort - b.minSort)
 
   // Auto-build contrast matrix for swatches with valid hex
@@ -264,9 +273,9 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
       {logoGroups.map((group, idx) => {
         const preview = group.preview
         const isImg = /(svg|png|jpg|jpeg|webp)$/i.test(preview.file_type ?? "")
-        const colorways = group.colorwayIds
-          .map(id => colors.find(c => c.id === id))
-          .filter(Boolean)
+        const groupColorIds = new Set(group.colorwayIds)
+        // Preserve the project's swatch sort order so pills always read in palette sequence.
+        const colorways = colors.filter(c => groupColorIds.has(c.id))
         const sectionNumber = `${marksNum} · ${String(idx + 1).padStart(2, "0")}`
 
         return (
