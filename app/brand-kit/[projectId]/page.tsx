@@ -240,10 +240,10 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
       {/* ─── Cover ─────────────────────────────────────────────── */}
       <section style={{
         background: INK, color: CREAM,
-        padding: "clamp(60px, 12vh, 140px) clamp(28px, 6vw, 80px)",
+        padding: "clamp(40px, 6vw, 80px) clamp(28px, 6vw, 80px)",
         position: "relative", overflow: "hidden",
-        minHeight: "70vh",
-        display: "flex", flexDirection: "column", justifyContent: "space-between",
+        minHeight: "100vh",
+        display: "flex", flexDirection: "column",
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <CinqLogo width={28} color={CREAM} />
