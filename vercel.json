@@ -1,0 +1,8 @@
+{
+  "functions": {
+    "app/api/pdf/brand-kit/[projectId]/route.ts": {
+      "includeFiles": "node_modules/@sparticuz/chromium/bin/**",
+      "maxDuration": 60
+    }
+  }
+}
