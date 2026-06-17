@@ -198,7 +198,7 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <CinqLogo width={28} color={CREAM} />
           <div style={{ ...mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.4 }}>
-            Brand Kit · {fmtMonth((project as any).created_at)}
+            {kit?.kit_header?.trim() || `Brand Kit · ${fmtMonth((project as any).created_at)}`}
             {kit?.version && <span style={{ marginLeft: 14, opacity: 0.7 }}>{kit.version}</span>}
           </div>
         </div>

@@ -29,6 +29,7 @@ type Kit = {
   lede?: string | null
   meta_lines?: string[] | null
   version?: string | null
+  kit_header?: string | null
   marks_intro?: string | null
   color_intro?: string | null
   type_intro?: string | null
@@ -127,6 +128,7 @@ export default function AdminProjectBrandKitPage({ params }: { params: { id: str
       lede: kit.lede?.trim() || null,
       meta_lines: (kit.meta_lines ?? []).filter(Boolean),
       version: kit.version?.trim() || null,
+      kit_header: kit.kit_header?.trim() || null,
       marks_intro: kit.marks_intro?.trim() || null,
       color_intro: kit.color_intro?.trim() || null,
       type_intro: kit.type_intro?.trim() || null,
@@ -330,6 +332,10 @@ export default function AdminProjectBrandKitPage({ params }: { params: { id: str
                 <FieldLabel label="Version" hint='e.g. "v1.0.0"' />
                 <input type="text" value={kit.version ?? ""} onChange={e => setKit(k => ({ ...k, version: e.target.value }))} placeholder="v1" style={input} />
               </div>
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <FieldLabel label="Top-right header" hint='Shown in the top-right of the cover. Leave blank to auto-generate as "Brand Kit · [project creation month]".' />
+              <input type="text" value={kit.kit_header ?? ""} onChange={e => setKit(k => ({ ...k, kit_header: e.target.value }))} placeholder="Brand Kit · June 2026" style={input} />
             </div>
             <div style={{ marginBottom: 18 }}>
               <FieldLabel label="Lede" hint="The italic paragraph under the title." />
