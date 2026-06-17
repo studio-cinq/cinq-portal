@@ -218,6 +218,51 @@ export async function sendInvoiceReminderEmail(p: InvoiceReminderPayload) {
   });
 }
 
+// ─── Creative Direction Plan sent — to client ─────────────────────────────────
+
+interface PlanSentPayload {
+  planId: string;
+  planTitle: string;
+  contactName: string;
+  contactEmail: string;
+}
+
+export async function sendPlanEmail(p: PlanSentPayload) {
+  const planUrl = `${PORTAL_URL}/plan/${p.planId}`;
+  const firstName = (p.contactName ?? "").trim().split(/\s+/)[0] || p.contactName;
+
+  const text = [
+    `Hi ${firstName},`,
+    "",
+    `I put together a working direction plan for ${p.planTitle} — a roadmap of what could come next. You can read it here:`,
+    planUrl,
+    "",
+    "It's a working list, not a fixed proposal — let me know what feels right and what we'd want to shape together.",
+    "",
+    "Thanks,",
+    "Kacie | Cinq",
+  ].join("\n");
+
+  const html = emailShell(`
+    <div class="body">
+      <p>Hi ${firstName},</p>
+      <p>I put together a working direction plan for <strong>${p.planTitle}</strong> — a roadmap of what could come next. You can read it here:</p>
+      <p style="margin:14px 0"><a href="${planUrl}" style="color:#1C1916;text-decoration:underline">${planUrl}</a></p>
+      <p>It&rsquo;s a working list, not a fixed proposal — let me know what feels right and what we&rsquo;d want to shape together.</p>
+      <p style="margin-top:24px">Thanks,<br/>Kacie | Cinq</p>
+    </div>
+  `);
+
+  return sendEmail({
+    from: "Kacie Yates <portal@studiocinq.com>",
+    replyTo: STUDIO_EMAIL,
+    to: p.contactEmail,
+    subject: `A direction plan for ${firstName} — ${p.planTitle}`,
+    html,
+    text,
+  });
+}
+
 // ─── Quote accepted — to admin ────────────────────────────────────────────────
 
 interface QuoteAcceptedPayload {

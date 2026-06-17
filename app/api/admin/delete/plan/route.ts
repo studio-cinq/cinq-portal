@@ -1,0 +1,20 @@
+import { NextResponse } from "next/server"
+import { supabaseAdmin } from "@/lib/supabase-server"
+import { requireAdmin } from "@/lib/admin-auth"
+
+export async function DELETE(req: Request) {
+  try {
+    const auth = await requireAdmin()
+    if (auth.error) return auth.error
+
+    const { id } = await req.json()
+    if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 })
+
+    const { error } = await supabaseAdmin.from("plans").delete().eq("id", id)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ ok: true })
+  } catch (err) {
+    console.error("[api/admin/delete/plan]", err)
+    return NextResponse.json({ error: "Server error" }, { status: 500 })
+  }
+}

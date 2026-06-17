@@ -23,6 +23,7 @@ const ADMIN_LINKS = [
   { href: "/admin/projects",  label: "Projects"  },
   { href: "/admin/proposals", label: "Proposals" },
   { href: "/admin/quotes",    label: "Quotes"    },
+  { href: "/admin/plans",     label: "Plans"     },
   { href: "/admin/invoices",  label: "Invoices"  },
   { href: "/admin/calendar",  label: "Calendar"  },
   { href: "/admin/reviews",   label: "Reviews"   },
