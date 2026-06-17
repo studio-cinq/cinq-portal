@@ -231,7 +231,9 @@ export default async function BrandKitPage({
   const marksNum = logoGroups.length > 0 ? num() : null
   const colorNum = colors.length > 0 ? num() : null
   const typeNum = typefaces.length > 0 ? num() : null
-  const inventoryNum = (guideAssets.length > 0 || otherAssets.length > 0) ? num() : null
+  // The Files for download section always shows at least the generated brand
+  // kit PDF, so it always claims a section number.
+  const inventoryNum = num()
   const misuseRules = Array.isArray(kit?.misuse_rules) ? kit.misuse_rules as any[] : []
   const misuseNum = misuseRules.length > 0 ? num() : null
 
@@ -590,9 +592,36 @@ export default async function BrandKitPage({
       {/* ─── Asset inventory ───────────────────────────────────── */}
       {inventoryNum && (
         <section style={{ padding: "clamp(80px, 10vw, 140px) clamp(28px, 6vw, 80px)", maxWidth: 1100, margin: "0 auto", borderTop: `0.5px solid ${LINE}` }}>
-          <SectionHeader number={inventoryNum} label="Files for download" lede="Guidelines and source files that ship with this kit." />
+          <SectionHeader number={inventoryNum} label="Files for download" lede="A printable copy of the kit, plus guidelines and source files that ship with it." />
 
           <div style={{ marginTop: 40, borderTop: `0.5px solid ${LINE}` }}>
+            {/* Generated full-kit PDF — always available, always current */}
+            <a
+              href={`/api/pdf/brand-kit/${(project as any).slug || (project as any).id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-print-hide="true"
+              style={{
+                display: "grid", gridTemplateColumns: "1fr 140px 90px", gap: 24, alignItems: "baseline",
+                padding: "18px 0", borderBottom: `0.5px solid ${LINE}`,
+                textDecoration: "none", color: "inherit",
+              }}
+            >
+              <div>
+                <div style={{ ...sans, fontSize: 15, opacity: 0.9 }}>
+                  {(project as any).clients?.name ?? "Brand"} brand kit
+                </div>
+                <div style={{ ...mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.42, marginTop: 4 }}>
+                  Full kit · generated PDF
+                </div>
+              </div>
+              <div style={{ ...mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.55 }}>
+                PDF
+              </div>
+              <div style={{ ...mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.55, textAlign: "right" }}>
+                Download ↓
+              </div>
+            </a>
             {[...guideAssets, ...otherAssets].map((a: any) => (
               <a key={a.id} href={a.file_url} target="_blank" rel="noopener noreferrer" download style={{
                 display: "grid", gridTemplateColumns: "1fr 140px 90px", gap: 24, alignItems: "baseline",
