@@ -2,6 +2,7 @@ import { createServerComponentClient } from "@/lib/supabase-server"
 import { notFound } from "next/navigation"
 import CinqLogo from "@/components/CinqLogo"
 import SwatchCopyClient from "./SwatchCopyClient"
+import MarkColorwaysClient from "./MarkColorwaysClient"
 
 const mono: React.CSSProperties = { fontFamily: "var(--font-mono)" }
 const sans: React.CSSProperties = { fontFamily: "var(--font-sans)" }
@@ -318,53 +319,44 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
                   </div>
                 )}
 
-                {colorways.length > 0 && (
-                  <div style={{ marginTop: 28 }}>
-                    <div style={{ ...mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.55, marginBottom: 12 }}>
-                      Colorways
-                    </div>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 18px" }}>
-                      {colorways.map((c: any) => {
-                        const light = c.hex && relativeLuminance(c.hex) > 0.85
-                        return (
-                          <div key={c.id} style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                            <span style={{
-                              display: "inline-block", width: 16, height: 16, borderRadius: "50%",
-                              background: c.hex || "transparent",
-                              border: light ? `0.5px solid ${LINE}` : "0.5px solid transparent",
-                            }} />
-                            <span style={{ ...sans, fontSize: 13, opacity: 0.82 }}>{c.name}</span>
-                          </div>
-                        )
-                      })}
-                    </div>
+                {colorways.length > 0 ? (
+                  <MarkColorwaysClient
+                    markName={group.name}
+                    colorways={colorways.map((c: any) => ({ id: c.id, name: c.name, hex: c.hex }))}
+                    files={group.files.map((f: any) => ({
+                      id: f.id,
+                      file_url: f.file_url,
+                      file_type: f.file_type,
+                      file_size_bytes: f.file_size_bytes,
+                      color_id: f.color_id ?? null,
+                    }))}
+                  />
+                ) : (
+                  /* Fallback: no colorways tagged — show flat format chips */
+                  <div style={{ marginTop: 32, display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {group.files.map((f: any) => (
+                      <a
+                        key={f.id}
+                        href={f.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        download
+                        style={{
+                          ...mono, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase",
+                          opacity: 0.6, textDecoration: "none", color: "inherit",
+                          border: `0.5px solid ${LINE}`,
+                          padding: "4px 8px",
+                          display: "inline-flex", alignItems: "center", gap: 6,
+                        }}
+                        className="bk-format-chip"
+                        title={`Download ${f.file_type}${f.file_size_bytes ? ` · ${fileSize(f.file_size_bytes)}` : ""}`}
+                      >
+                        <span>{f.file_type}</span>
+                        <span style={{ opacity: 0.5 }}>↓</span>
+                      </a>
+                    ))}
                   </div>
                 )}
-
-                {/* Format download chips */}
-                <div style={{ marginTop: 32, display: "flex", flexWrap: "wrap", gap: 6 }}>
-                  {group.files.map((f: any) => (
-                    <a
-                      key={f.id}
-                      href={f.file_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      download
-                      style={{
-                        ...mono, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase",
-                        opacity: 0.6, textDecoration: "none", color: "inherit",
-                        border: `0.5px solid ${LINE}`,
-                        padding: "4px 8px",
-                        display: "inline-flex", alignItems: "center", gap: 6,
-                      }}
-                      className="bk-format-chip"
-                      title={`Download ${f.file_type}${f.file_size_bytes ? ` · ${fileSize(f.file_size_bytes)}` : ""}`}
-                    >
-                      <span>{f.file_type}</span>
-                      <span style={{ opacity: 0.5 }}>↓</span>
-                    </a>
-                  ))}
-                </div>
               </div>
 
               {/* RIGHT: two-stage display — light bg + dark bg */}
