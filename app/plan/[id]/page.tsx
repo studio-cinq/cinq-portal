@@ -20,6 +20,8 @@ function fmt$(cents?: number | null) {
   return `$${(cents / 100).toLocaleString("en-US")}`
 }
 
+const PRIORITY_LABELS = { now: "In Motion", next: "On Deck", later: "Parked" } as const
+
 function PriorityPill({ value }: { value: "now" | "next" | "later" }) {
   const styles: Record<typeof value, { bg: string; border: string; color: string }> = {
     now:   { bg: "rgba(28,25,22,0.92)", border: "rgba(28,25,22,0.92)", color: "#F5F1EA" },
@@ -34,11 +36,11 @@ function PriorityPill({ value }: { value: "now" | "next" | "later" }) {
       margin: "0 4px 0 10px",
       padding: "2px 7px 1px",
       fontFamily: "var(--font-mono)",
-      fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase",
+      fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase",
       background: s.bg, border: `0.5px solid ${s.border}`, color: s.color,
       whiteSpace: "nowrap",
     }}>
-      {value}
+      {PRIORITY_LABELS[value]}
     </span>
   )
 }

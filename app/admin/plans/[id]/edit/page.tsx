@@ -512,7 +512,7 @@ function ItemRow({ item, first, last, onPatch, onDelete, onMove }: {
 }) {
   const [estDollars, setEstDollars] = useState(item.estimate_cents != null ? String(item.estimate_cents / 100) : "")
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1.3fr 2fr 110px 100px 78px 88px", gap: 10, alignItems: "center", padding: "8px 0", borderTop: "0.5px solid rgba(15,15,14,0.06)" }}>
+    <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1.9fr 100px 95px 92px 84px", gap: 10, alignItems: "center", padding: "8px 0", borderTop: "0.5px solid rgba(15,15,14,0.06)" }}>
       <input defaultValue={item.title} onBlur={e => onPatch({ title: e.target.value })} placeholder="Item title" style={input} />
       <input defaultValue={item.description ?? ""} onBlur={e => onPatch({ description: e.target.value || null })} placeholder="— short description after an em-dash" style={input} />
       <input
@@ -563,22 +563,25 @@ function CoverImagePicker({ currentUrl, onUpload, onClear }: { currentUrl: strin
   )
 }
 
+const PRIORITY_LABELS: Record<"now" | "next" | "later", string> = { now: "In Motion", next: "On Deck", later: "Parked" }
+
 function PriorityCycler({ value, onChange }: { value: Priority; onChange: (p: Priority) => void }) {
   const next: Record<string, Priority> = { "null": "now", "now": "next", "next": "later", "later": null }
-  const label = value ? value.toUpperCase() : "—"
+  const label = value ? PRIORITY_LABELS[value] : "—"
   const opacity = value === "now" ? 1 : value === "next" ? 0.7 : value === "later" ? 0.4 : 0.3
   return (
     <button
       type="button"
       onClick={() => onChange(next[value ?? "null"])}
-      title="Cycle priority: Now → Next → Later → none"
+      title="Cycle priority: In Motion → On Deck → Parked → none"
       style={{
-        ...mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase",
-        padding: "5px 8px",
+        ...mono, fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase",
+        padding: "5px 6px",
         background: value ? "rgba(28,25,22,0.04)" : "transparent",
         border: "0.5px solid rgba(28,25,22,0.18)",
         color: "var(--ink)", opacity,
         cursor: "pointer", textAlign: "center",
+        whiteSpace: "nowrap",
       }}
     >
       {label}
