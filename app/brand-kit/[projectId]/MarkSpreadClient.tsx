@@ -188,7 +188,6 @@ export default function MarkSpreadClient({
                 key={c.id}
                 type="button"
                 onClick={() => setSelectedId(c.id)}
-                onDoubleClick={() => setOpenDownloads(openDownloads === c.id ? null : c.id)}
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 8,
                   padding: "5px 10px 5px 6px",
@@ -197,7 +196,7 @@ export default function MarkSpreadClient({
                   cursor: "pointer", textAlign: "left",
                   fontFamily: "inherit",
                 }}
-                title={isActive ? "Double-click to download" : "Click to preview"}
+                title={`Preview ${c.name}`}
               >
                 <span style={{
                   display: "inline-block", width: 16, height: 16, borderRadius: "50%",
