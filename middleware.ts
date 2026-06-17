@@ -9,6 +9,7 @@ const PUBLIC_PAGE_PREFIXES = [
   "/invoice/",
   "/review/",
   "/foundations/",
+  "/brand-kit/",
   "/update-password",
   "/library/share/",
 ] as const
