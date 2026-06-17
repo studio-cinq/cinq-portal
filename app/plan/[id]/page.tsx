@@ -228,15 +228,15 @@ export default async function PlanPage({ params }: { params: { id: string } }) {
                               </span>
                             )}
                           </div>
-                          <div style={{ ...mono, fontSize: 10, letterSpacing: "0.08em", textAlign: "right", whiteSpace: "nowrap", paddingTop: 4 }}>
+                          <div style={{ ...mono, fontSize: 12, letterSpacing: "0.06em", textAlign: "right", whiteSpace: "nowrap", paddingTop: 3 }}>
                             {est && (
                               <>
-                                <span style={{ color: SOFT, marginRight: 8 }}>EST.</span>
-                                <span style={{ color: INK, opacity: 0.85 }}>{est}</span>
+                                <span style={{ color: MUTED, marginRight: 8, fontSize: 10, letterSpacing: "0.1em" }}>EST.</span>
+                                <span style={{ color: INK, opacity: 1 }}>{est}</span>
                               </>
                             )}
                             {!est && it.estimate_note && (
-                              <span style={{ color: SOFT }}>{it.estimate_note}</span>
+                              <span style={{ color: MUTED, fontSize: 11 }}>{it.estimate_note}</span>
                             )}
                           </div>
                         </div>
