@@ -146,14 +146,10 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
   }
   const logoGroups: LogoGroup[] = Array.from(groupMap.values())
     .map(g => {
-      // Derive colorways automatically from any file.color_id present in the group,
-      // plus any legacy available_color_ids on member files (for backward compat).
+      // Derive colorways from each member file's color_id tag.
       const colorIds = new Set<string>()
       for (const f of g.files) {
         if (f.color_id) colorIds.add(f.color_id)
-        if (Array.isArray(f.available_color_ids)) {
-          for (const id of f.available_color_ids) colorIds.add(id)
-        }
       }
       // Pick the smallest non-default display_scale present on any file in the
       // group — set it once on any sibling and the spread shrinks for the whole mark.
@@ -292,52 +288,9 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
       {/* Each mark gets its own page-style spread — left text column, right
           two-stage stage (mark on light + mark on dark) */}
       {logoGroups.map((group, idx) => {
-        const preview = group.preview
-        const isImg = /(svg|png|jpg|jpeg|webp)$/i.test(preview.file_type ?? "")
         const groupColorIds = new Set(group.colorwayIds)
-
-        // Pick stage previews by colourway luminance so the dark stage
-        // shows a real light-coloured mark file (no inversion hack).
-        // Falls back to inverting the default preview if no opposite-luma
-        // file is uploaded yet.
-        const VIS_RANK = (ft: string) => PREVIEW_RANK[ft?.toLowerCase()] ?? 99
-        const colorById = new Map(colors.map(c => [c.id, c]))
-        function bestFileForLuma(targetIsDark: boolean) {
-          const candidates = group.files
-            .filter(f => f.color_id && /(svg|png|jpg|jpeg|webp)$/i.test(f.file_type ?? ""))
-            .filter(f => {
-              const c = colorById.get(f.color_id)
-              if (!c?.hex) return false
-              const isDark = relativeLuminance(c.hex) < 0.55
-              return isDark === targetIsDark
-            })
-            .sort((a, b) => VIS_RANK(a.file_type) - VIS_RANK(b.file_type))
-          return candidates[0] ?? null
-        }
-        const lightStageFile = bestFileForLuma(true)  // dark mark, shown on light bg
-        const darkStageFile = bestFileForLuma(false)  // light mark, shown on dark bg
-        const lightStage = lightStageFile ?? preview
-        const darkStage = darkStageFile ?? preview
-        const darkStageIsImg = /(svg|png|jpg|jpeg|webp)$/i.test(darkStage.file_type ?? "")
-        const lightStageIsImg = /(svg|png|jpg|jpeg|webp)$/i.test(lightStage.file_type ?? "")
-        // Only fall back to the invert hack if we couldn't find a light-coloured file.
-        const darkStageInvert = !darkStageFile
-
-        // Stage backgrounds + captions come from the lightest & darkest palette swatches.
-        const lightStageBg = lightestSwatch?.hex ?? PAPER
-        const darkStageBg = darkestSwatch?.hex ?? INK
-        const lightStageMarkColor = lightStageFile ? colorById.get(lightStageFile.color_id!) : null
-        const darkStageMarkColor = darkStageFile ? colorById.get(darkStageFile.color_id!) : null
-        const lightStageCaption = lightestSwatch
-          ? `${lightStageMarkColor?.name ?? "Ink"} on ${lightestSwatch.name}`
-          : "Ink on Light"
-        const darkStageCaption = darkestSwatch
-          ? `${darkStageMarkColor?.name ?? "Light"} on ${darkestSwatch.name}`
-          : "Light on Ink"
-
         // Preserve the project's swatch sort order so pills always read in palette sequence.
         const colorways = colors.filter(c => groupColorIds.has(c.id))
-        const sectionNumber = `${marksNum} · ${String(idx + 1).padStart(2, "0")}`
 
         return (
           <section
@@ -354,56 +307,21 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
               <span style={{ opacity: 0.85 }}>{(group.name ?? "").toUpperCase()}</span>
             </div>
 
-            {colorways.length > 0 ? (
-              <MarkSpreadClient
-                markName={group.name}
-                description={group.description}
-                primaryUse={group.primary_use}
-                colorways={colorways.map((c: any) => ({ id: c.id, name: c.name, hex: c.hex }))}
-                files={group.files.map((f: any) => ({
-                  id: f.id,
-                  file_url: f.file_url,
-                  file_type: f.file_type,
-                  file_size_bytes: f.file_size_bytes,
-                  color_id: f.color_id ?? null,
-                }))}
-                defaultColorwayId={group.defaultColorwayId}
-                displayScale={group.displayScale}
-              />
-            ) : (
-              /* Fallback: no colorways tagged — keep the original 2-col layout */
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "minmax(280px, 1fr) minmax(0, 1.5fr)",
-                gap: "clamp(28px, 4vw, 56px)",
-                alignItems: "flex-start",
-              }} className="bk-mark-spread">
-                <div>
-                  <h3 style={{ ...sans, margin: 0, fontWeight: 400, fontSize: "clamp(28px, 3.5vw, 42px)", letterSpacing: "-0.02em", lineHeight: 1.1, opacity: 0.95 }}>
-                    {group.name}
-                  </h3>
-                  {group.description && (
-                    <div style={{ ...sans, fontSize: "clamp(15px, 1.55vw, 16px)", color: "rgba(28,25,22,0.72)", lineHeight: 1.6, marginTop: 20, maxWidth: 420 }}>
-                      {group.description}
-                    </div>
-                  )}
-                  <div style={{ marginTop: 32, display: "flex", flexWrap: "wrap", gap: 6 }}>
-                    {group.files.map((f: any) => (
-                      <a key={f.id} href={f.file_url} target="_blank" rel="noopener noreferrer" download
-                        style={{ ...mono, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.6, textDecoration: "none", color: "inherit", border: `0.5px solid ${LINE}`, padding: "4px 8px", display: "inline-flex", alignItems: "center", gap: 6 }}
-                        className="bk-format-chip"
-                        title={`Download ${f.file_type}${f.file_size_bytes ? ` · ${fileSize(f.file_size_bytes)}` : ""}`}>
-                        <span>{f.file_type}</span>
-                        <span style={{ opacity: 0.5 }}>↓</span>
-                      </a>
-                    ))}
-                  </div>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                  <MarkStage url={preview.file_url} fileType={preview.file_type} name={group.name} background={lightStageBg} borderColor={LINE} captionColor={MUTED} captionText="Mark preview" isImg={isImg} invert={false} scale={group.displayScale} />
-                </div>
-              </div>
-            )}
+            <MarkSpreadClient
+              markName={group.name}
+              description={group.description}
+              primaryUse={group.primary_use}
+              colorways={colorways.map((c: any) => ({ id: c.id, name: c.name, hex: c.hex }))}
+              files={group.files.map((f: any) => ({
+                id: f.id,
+                file_url: f.file_url,
+                file_type: f.file_type,
+                file_size_bytes: f.file_size_bytes,
+                color_id: f.color_id ?? null,
+              }))}
+              defaultColorwayId={group.defaultColorwayId}
+              displayScale={group.displayScale}
+            />
           </section>
         )
       })}
@@ -731,55 +649,3 @@ function SectionHeader({ number, label, lede }: { number: string; label: string;
   )
 }
 
-function MarkStage({
-  url, fileType, name, background, borderColor, captionColor, captionText, isImg, invert, scale = 1,
-}: {
-  url: string
-  fileType: string | null | undefined
-  name: string
-  background: string
-  borderColor: string
-  captionColor: string
-  captionText: string
-  isImg: boolean
-  invert: boolean
-  scale?: number
-}) {
-  const widthPct = Math.max(10, Math.min(95, 60 * scale))
-  const heightPct = Math.max(10, Math.min(95, 75 * scale))
-  return (
-    <div style={{
-      background,
-      border: `0.5px solid ${borderColor}`,
-      aspectRatio: "16/9",
-      position: "relative",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      padding: "32px 24px",
-    }}>
-      {isImg ? (
-        <img
-          src={url}
-          alt={name}
-          style={{
-            maxWidth: `${widthPct}%`, maxHeight: `${heightPct}%`, objectFit: "contain",
-            // Invert mono marks for the dark stage. Works perfectly for ink-on-
-            // transparent SVGs and PNGs; multi-color illustrations may look off
-            // (upload a separate reverse version if needed).
-            filter: invert ? "invert(1) brightness(1.05)" : undefined,
-          }}
-        />
-      ) : (
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: captionColor }}>
-          {fileType?.toUpperCase()}
-        </div>
-      )}
-      <span style={{
-        position: "absolute", left: 16, bottom: 12,
-        fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase",
-        color: captionColor,
-      }}>
-        {captionText}
-      </span>
-    </div>
-  )
-}

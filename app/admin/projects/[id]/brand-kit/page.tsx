@@ -18,7 +18,7 @@ const sectionLabel: React.CSSProperties = {
   marginBottom: 14,
 }
 
-type Asset = { id: string; name: string; file_url: string; file_type: string; file_size_bytes?: number; category: string; sort_order: number; description?: string | null; usage?: string | null; primary_use?: string | null; available_color_ids?: string[] | null; color_id?: string | null; display_scale?: number | null; default_colorway_id?: string | null }
+type Asset = { id: string; name: string; file_url: string; file_type: string; file_size_bytes?: number; category: string; sort_order: number; description?: string | null; usage?: string | null; primary_use?: string | null; color_id?: string | null; display_scale?: number | null; default_colorway_id?: string | null }
 type Color = { id: string; name: string; hex: string; sort_order: number; rgb?: string | null; usage_note?: string | null; cmyk?: string | null; pms?: string | null; tier?: string | null }
 type Typeface = { id: string; name: string; weight?: string | null; role?: string | null; file_url?: string | null; otf_url?: string | null; ttf_url?: string | null; sort_order: number; sample_text?: string | null; weights_note?: string | null }
 type MisuseRule = { tag: string; note: string }
@@ -230,7 +230,9 @@ export default function AdminProjectBrandKitPage({ params }: { params: { id: str
   }
 
   async function deleteAsset(id: string) {
-    if (!confirm("Remove this file from the brand kit?")) return
+    const target = assets.find(a => a.id === id)
+    const label = target ? `${target.name}.${target.file_type?.toLowerCase()}` : "this file"
+    if (!confirm(`Remove "${label}" from the brand kit?`)) return
     await supabase.from("brand_assets").delete().eq("id", id)
     setAssets(prev => prev.filter(a => a.id !== id))
     showToast("Removed")
@@ -257,6 +259,8 @@ export default function AdminProjectBrandKitPage({ params }: { params: { id: str
   }
 
   async function deleteColor(id: string) {
+    const target = colors.find(c => c.id === id)
+    if (!confirm(`Remove "${target?.name || "this swatch"}" from the palette?`)) return
     await supabase.from("color_swatches").delete().eq("id", id)
     setColors(prev => prev.filter(c => c.id !== id))
   }
@@ -331,6 +335,8 @@ export default function AdminProjectBrandKitPage({ params }: { params: { id: str
   }
 
   async function deleteTypeface(id: string) {
+    const target = typefaces.find(t => t.id === id)
+    if (!confirm(`Remove "${target?.name || "this typeface"}" from the type section?`)) return
     await supabase.from("typeface_entries").delete().eq("id", id)
     setTypefaces(prev => prev.filter(t => t.id !== id))
   }

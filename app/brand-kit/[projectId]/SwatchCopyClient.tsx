@@ -29,9 +29,9 @@ function relativeLuminance(hex: string): number {
 const mono: React.CSSProperties = { fontFamily: "var(--font-mono)" }
 const serif: React.CSSProperties = { fontFamily: "var(--font-serif)" }
 
-const INK = "#282320"
-const PLASTER_FALLBACK = "#EBE4D5"
-const HAIRLINE = "rgba(40,35,32,0.1)"
+const INK = "#1C1916"
+const PLASTER_FALLBACK = "#F5F1EA"
+const HAIRLINE = "rgba(28,25,22,0.1)"
 
 function formatRgb(s?: string | null): string | null {
   if (!s) return null
@@ -70,7 +70,7 @@ export default function SwatchCopyClient({
       {swatches.map(s => {
         const blockDark = relativeLuminance(s.hex) < 0.55
         const onBlockColor = blockDark ? panel : INK
-        const onBlockMuted = blockDark ? "rgba(235,228,213,0.65)" : "rgba(40,35,32,0.55)"
+        const onBlockMuted = blockDark ? "rgba(245,241,234,0.65)" : "rgba(28,25,22,0.55)"
         const rgb = formatRgb(s.rgb)
         const rows: Array<[string, string | null | undefined]> = [
           ["HEX",  s.hex?.toUpperCase()],
@@ -127,7 +127,7 @@ export default function SwatchCopyClient({
                   position: "absolute", inset: 0,
                   display: "flex", alignItems: "center", justifyContent: "center",
                   ...mono, fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase",
-                  color: onBlockColor, background: blockDark ? "rgba(40,35,32,0.35)" : "rgba(235,228,213,0.5)",
+                  color: onBlockColor, background: blockDark ? "rgba(28,25,22,0.35)" : "rgba(245,241,234,0.5)",
                   pointerEvents: "none",
                 }}>
                   Copied
@@ -141,7 +141,7 @@ export default function SwatchCopyClient({
               flex: "1 1 37.5%",
               padding: "16px 22px 18px",
               display: "flex", flexDirection: "column", justifyContent: "space-between",
-              borderTop: `0.5px solid rgba(40,35,32,0.2)`,
+              borderTop: `0.5px solid rgba(28,25,22,0.2)`,
               color: INK,
             }}>
               {rows.map(([label, value], i) => (
@@ -149,12 +149,12 @@ export default function SwatchCopyClient({
                   display: "flex", justifyContent: "space-between", alignItems: "baseline",
                   paddingTop: i === 0 ? 0 : 8,
                   paddingBottom: 8,
-                  borderBottom: i === rows.length - 1 ? "none" : "0.5px solid rgba(40,35,32,0.1)",
+                  borderBottom: i === rows.length - 1 ? "none" : "0.5px solid rgba(28,25,22,0.1)",
                   minHeight: 18,
                 }}>
                   <span style={{
                     ...mono, fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase",
-                    color: "rgba(40,35,32,0.6)",
+                    color: "rgba(28,25,22,0.6)",
                   }}>
                     {label}
                   </span>
@@ -169,7 +169,7 @@ export default function SwatchCopyClient({
       })}
 
       <style>{`
-        .bk-swatch-card:hover { transform: translateY(-2px); border-color: rgba(40,35,32,0.3) !important; }
+        .bk-swatch-card:hover { transform: translateY(-2px); border-color: rgba(28,25,22,0.3) !important; }
       `}</style>
     </div>
   )
