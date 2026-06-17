@@ -274,6 +274,34 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
         const preview = group.preview
         const isImg = /(svg|png|jpg|jpeg|webp)$/i.test(preview.file_type ?? "")
         const groupColorIds = new Set(group.colorwayIds)
+
+        // Pick stage previews by colourway luminance so the dark stage
+        // shows a real light-coloured mark file (no inversion hack).
+        // Falls back to inverting the default preview if no opposite-luma
+        // file is uploaded yet.
+        const VIS_RANK = (ft: string) => PREVIEW_RANK[ft?.toLowerCase()] ?? 99
+        const colorById = new Map(colors.map(c => [c.id, c]))
+        function bestFileForLuma(targetIsDark: boolean) {
+          const candidates = group.files
+            .filter(f => f.color_id && /(svg|png|jpg|jpeg|webp)$/i.test(f.file_type ?? ""))
+            .filter(f => {
+              const c = colorById.get(f.color_id)
+              if (!c?.hex) return false
+              const isDark = relativeLuminance(c.hex) < 0.55
+              return isDark === targetIsDark
+            })
+            .sort((a, b) => VIS_RANK(a.file_type) - VIS_RANK(b.file_type))
+          return candidates[0] ?? null
+        }
+        const lightStageFile = bestFileForLuma(true)  // dark mark, shown on light bg
+        const darkStageFile = bestFileForLuma(false)  // light mark, shown on dark bg
+        const lightStage = lightStageFile ?? preview
+        const darkStage = darkStageFile ?? preview
+        const darkStageIsImg = /(svg|png|jpg|jpeg|webp)$/i.test(darkStage.file_type ?? "")
+        const lightStageIsImg = /(svg|png|jpg|jpeg|webp)$/i.test(lightStage.file_type ?? "")
+        // Only fall back to the invert hack if we couldn't find a light-coloured file.
+        const darkStageInvert = !darkStageFile
+
         // Preserve the project's swatch sort order so pills always read in palette sequence.
         const colorways = colors.filter(c => groupColorIds.has(c.id))
         const sectionNumber = `${marksNum} · ${String(idx + 1).padStart(2, "0")}`
@@ -370,29 +398,29 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
 
               {/* RIGHT: two-stage display — light bg + dark bg */}
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                {/* Light stage */}
+                {/* Light stage — dark mark on cream */}
                 <MarkStage
-                  url={preview.file_url}
-                  fileType={preview.file_type}
+                  url={lightStage.file_url}
+                  fileType={lightStage.file_type}
                   name={group.name}
                   background={PAPER}
                   borderColor={LINE}
                   captionColor={MUTED}
                   captionText="Ink on Light"
-                  isImg={isImg}
+                  isImg={lightStageIsImg}
                   invert={false}
                 />
-                {/* Dark stage */}
+                {/* Dark stage — light mark on ink */}
                 <MarkStage
-                  url={preview.file_url}
-                  fileType={preview.file_type}
+                  url={darkStage.file_url}
+                  fileType={darkStage.file_type}
                   name={group.name}
                   background={INK}
                   borderColor="rgba(255,255,255,0.08)"
                   captionColor="rgba(245,241,234,0.55)"
                   captionText="Light on Ink"
-                  isImg={isImg}
-                  invert={true}
+                  isImg={darkStageIsImg}
+                  invert={darkStageInvert}
                 />
               </div>
             </div>
