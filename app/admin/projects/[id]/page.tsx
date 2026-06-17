@@ -325,12 +325,12 @@ export default async function ProjectOverviewPage({ params }: { params: { id: st
               </span>
             )}
             <span style={{ flex: 1 }} />
-            <Link href={`/brand-kit/${project.id}`} target="_blank" style={{
+            <Link href={`/admin/projects/${project.id}/brand-kit`} style={{
               ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase",
               color: "var(--ink)", opacity: 0.6, textDecoration: "none",
               border: "0.5px solid rgba(15,15,14,0.2)", padding: "8px 14px",
             }}>
-              Brand kit ↗
+              Brand kit
             </Link>
             <Link href={`/admin/projects/${project.id}/edit`} style={{
               ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase",
