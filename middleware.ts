@@ -23,6 +23,7 @@ const PUBLIC_API_ROUTES = new Set([
   "/api/proposal-checkout",
   "/api/quote-accept",
   "/api/notify/plan-viewed",
+  "/api/notify/brand-kit-viewed",
   "/api/review/approve",
   "/api/review/delete-annotation",
   "/api/review/save-annotation",

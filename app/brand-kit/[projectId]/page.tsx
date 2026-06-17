@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import CinqLogo from "@/components/CinqLogo"
 import SwatchCopyClient from "./SwatchCopyClient"
 import MarkSpreadClient from "./MarkSpreadClient"
+import TrackBrandKitView from "./TrackBrandKitView"
 
 const mono: React.CSSProperties = { fontFamily: "var(--font-mono)" }
 const sans: React.CSSProperties = { fontFamily: "var(--font-sans)" }
@@ -78,18 +79,23 @@ function isLight(hex: string): boolean {
 export default async function BrandKitPage({ params }: { params: { projectId: string } }) {
   const supabase = await createServerComponentClient()
 
+  // The route param can be either the project UUID or a slug — try both so old
+  // UUID links keep working alongside the pretty /brand-kit/loom-house form.
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.projectId)
   const { data: project } = await supabase
     .from("projects")
-    .select("id, title, scope, created_at, clients(name)")
-    .eq("id", params.projectId).single()
+    .select("id, title, scope, created_at, slug, clients(name)")
+    .eq(isUuid ? "id" : "slug", params.projectId)
+    .maybeSingle()
 
   if (!project) return notFound()
+  const projectId = (project as any).id
 
   const [{ data: kitRaw }, { data: assetsRaw }, { data: colorsRaw }, { data: typefacesRaw }] = await Promise.all([
-    supabase.from("brand_kits").select("*").eq("project_id", params.projectId).maybeSingle(),
-    supabase.from("brand_assets").select("*").eq("project_id", params.projectId).order("sort_order"),
-    supabase.from("color_swatches").select("*").eq("project_id", params.projectId).order("sort_order"),
-    supabase.from("typeface_entries").select("*").eq("project_id", params.projectId).order("sort_order"),
+    supabase.from("brand_kits").select("*").eq("project_id", projectId).maybeSingle(),
+    supabase.from("brand_assets").select("*").eq("project_id", projectId).order("sort_order"),
+    supabase.from("color_swatches").select("*").eq("project_id", projectId).order("sort_order"),
+    supabase.from("typeface_entries").select("*").eq("project_id", projectId).order("sort_order"),
   ])
 
   const kit = (kitRaw ?? {}) as any
@@ -227,6 +233,8 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
 
   return (
     <div style={{ background: CREAM, minHeight: "100vh" }}>
+
+      <TrackBrandKitView projectId={projectId} alreadyViewed={!!kit?.viewed_at} />
 
       {/* ─── Cover ─────────────────────────────────────────────── */}
       <section style={{

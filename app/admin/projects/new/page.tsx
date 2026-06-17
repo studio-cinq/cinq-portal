@@ -74,6 +74,19 @@ function NewProjectPageInner() {
 
     setSaving(true)
 
+    // Generate a unique URL slug from the client name. If a sibling project
+    // already owns the bare slug, append -2/-3/etc until we find an opening.
+    const clientName = clients.find(c => c.id === form.client_id)?.name ?? "project"
+    const baseSlug = clientName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
+    const { data: takenRows } = await supabase
+      .from("projects")
+      .select("slug")
+      .ilike("slug", `${baseSlug}%`)
+    const taken = new Set(((takenRows ?? []) as any[]).map(r => r.slug))
+    let slug = baseSlug
+    let n = 2
+    while (taken.has(slug)) { slug = `${baseSlug}-${n}`; n++ }
+
     const { data, error } = await supabase.from("projects").insert({
       client_id:    form.client_id,
       contact_id:   form.contact_id || null,
@@ -84,7 +97,8 @@ function NewProjectPageInner() {
       end_date:     form.end_date || null,
       total_weeks:  form.total_weeks ? parseInt(form.total_weeks) : null,
       current_week: form.current_week ? parseInt(form.current_week) : 1,
-    }).select().single()
+      slug,
+    } as any).select().single()
 
     setSaving(false)
 
