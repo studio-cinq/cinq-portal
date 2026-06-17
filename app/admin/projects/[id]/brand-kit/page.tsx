@@ -672,15 +672,32 @@ function AssetEditCard({ asset, onPatch, onDelete, showVisual = false, colorways
         </a>
       )}
       <div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 110px 90px", gap: 10, alignItems: "center", marginBottom: 10 }}>
-          <input defaultValue={asset.name} onBlur={e => onPatch({ name: e.target.value })} placeholder="Name" style={input} />
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 110px 90px", gap: 10, alignItems: "baseline", marginBottom: 12 }}>
+          <input
+            defaultValue={asset.name}
+            onBlur={e => onPatch({ name: e.target.value })}
+            placeholder="Name"
+            style={{ ...input, ...sans, fontSize: 18, letterSpacing: "-0.01em", padding: "10px 0" }}
+          />
           <div style={{ ...mono, fontSize: 9, letterSpacing: "0.12em", opacity: 0.5 }}>{asset.file_type}</div>
           <div style={{ ...mono, fontSize: 9, letterSpacing: "0.08em", opacity: 0.5 }}>{fileSize(asset.file_size_bytes)}</div>
         </div>
-        <textarea defaultValue={asset.description ?? ""} onBlur={e => onPatch({ description: e.target.value || null })} placeholder="Description (e.g. The default brand signature. Single word, no space.)" rows={2} style={{ ...input, resize: "vertical", lineHeight: 1.5, marginBottom: 8 }} />
+        <textarea
+          defaultValue={asset.description ?? ""}
+          onBlur={e => onPatch({ description: e.target.value || null })}
+          placeholder="Description (e.g. The default brand signature. Single word, no space.)"
+          rows={2}
+          style={{ ...input, ...serif, fontSize: 15, resize: "vertical", lineHeight: 1.55, marginBottom: 10 }}
+        />
         {colorways ? (
           <>
-            <textarea defaultValue={asset.primary_use ?? asset.usage ?? ""} onBlur={e => onPatch({ primary_use: e.target.value || null })} placeholder="Primary use (e.g. Used in all main signage, headers, and external print collateral.)" rows={2} style={{ ...input, resize: "vertical", lineHeight: 1.5, marginBottom: 10 }} />
+            <textarea
+              defaultValue={asset.primary_use ?? asset.usage ?? ""}
+              onBlur={e => onPatch({ primary_use: e.target.value || null })}
+              placeholder="Primary use (e.g. Used in all main signage, headers, and external print collateral.)"
+              rows={2}
+              style={{ ...input, ...serif, fontSize: 15, resize: "vertical", lineHeight: 1.55, marginBottom: 12 }}
+            />
             {colorways.length > 0 && (
               <div>
                 <div style={{ ...mono, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.5, marginBottom: 6 }}>
