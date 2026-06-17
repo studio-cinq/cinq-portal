@@ -66,9 +66,9 @@ export default async function PlanPage({ params }: { params: { id: string } }) {
         display: "flex", flexDirection: "column",
       }}>
         {/* Top bar */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div className="plan-top-bar" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
           <CinqLogo width={26} color={INK} />
-          <div style={{ ...mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: MUTED, textAlign: "right" }}>
+          <div className="plan-top-meta" style={{ ...mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: MUTED, textAlign: "right" }}>
             {plan.eyebrow && <><span>{plan.eyebrow}</span><br /></>}
             {plan.prepared_for ? <span>Prepared for {plan.prepared_for}</span> : null}
             {plan.prepared_for && plan.prepared_date ? <span style={{ margin: "0 8px", opacity: 0.5 }}>·</span> : null}
@@ -96,7 +96,7 @@ export default async function PlanPage({ params }: { params: { id: string } }) {
             </div>
           )}
           {plan.tagline && (
-            <div style={{ ...mono, fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: MUTED, marginTop: 36, maxWidth: 640, lineHeight: 1.6 }}>
+            <div className="plan-tagline" style={{ ...mono, fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: MUTED, marginTop: 36, maxWidth: 640, lineHeight: 1.6 }}>
               {plan.tagline}
             </div>
           )}
@@ -263,11 +263,15 @@ export default async function PlanPage({ params }: { params: { id: string } }) {
       </footer>
 
       <style>{`
+        /* Undo iOS Safari's auto-detected phone / address link styling inside the tagline */
+        .plan-tagline a { color: inherit !important; text-decoration: none !important; pointer-events: none !important; }
         @media (max-width: 760px) {
           .plan-section-grid { grid-template-columns: 1fr !important; gap: 24px !important; }
           .plan-grid-2col { grid-template-columns: 1fr !important; gap: 16px !important; }
           .plan-item-row { grid-template-columns: 12px minmax(0, 1fr) !important; }
           .plan-item-row > div:last-child { grid-column: 2; text-align: left !important; margin-top: 4px; padding-top: 0 !important; }
+          .plan-top-bar { flex-direction: column !important; align-items: flex-start !important; gap: 20px !important; }
+          .plan-top-meta { text-align: left !important; }
         }
       `}</style>
     </div>
