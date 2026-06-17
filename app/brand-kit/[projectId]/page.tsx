@@ -2,7 +2,7 @@ import { createServerComponentClient } from "@/lib/supabase-server"
 import { notFound } from "next/navigation"
 import CinqLogo from "@/components/CinqLogo"
 import SwatchCopyClient from "./SwatchCopyClient"
-import MarkColorwaysClient from "./MarkColorwaysClient"
+import MarkSpreadClient from "./MarkSpreadClient"
 
 const mono: React.CSSProperties = { fontFamily: "var(--font-mono)" }
 const sans: React.CSSProperties = { fontFamily: "var(--font-sans)" }
@@ -112,6 +112,7 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
     files: any[]
     minSort: number
     displayScale: number
+    defaultColorwayId: string | null
   }
   const PREVIEW_RANK: Record<string, number> = { svg: 0, png: 1, webp: 2, jpg: 3, jpeg: 3, pdf: 4 }
   const CHIP_RANK: Record<string, number> = { svg: 0, png: 1, jpg: 2, jpeg: 2, webp: 3, pdf: 4, eps: 5, ai: 6 }
@@ -130,6 +131,7 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
         files: [a],
         minSort: a.sort_order ?? 0,
         displayScale: 1,
+        defaultColorwayId: null,
       })
     } else {
       existing.files.push(a)
@@ -159,10 +161,15 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
         .map(f => typeof f.display_scale === "number" ? f.display_scale : null)
         .filter((v): v is number => v != null && v > 0)
       const displayScale = scales.length ? Math.min(...scales) : 1
+      // Per-mark default colorway: take the first non-null value across the group.
+      const defaultColorwayId = g.files
+        .map(f => f.default_colorway_id as string | null | undefined)
+        .find(v => v != null) ?? null
       return {
         ...g,
         colorwayIds: Array.from(colorIds),
         displayScale,
+        defaultColorwayId,
         files: [...g.files].sort((a, b) => {
           const ar = CHIP_RANK[(a.file_type ?? "").toLowerCase()] ?? 99
           const br = CHIP_RANK[(b.file_type ?? "").toLowerCase()] ?? 99
@@ -347,111 +354,56 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
               <span style={{ opacity: 0.85 }}>{(group.name ?? "").toUpperCase()}</span>
             </div>
 
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "minmax(280px, 1fr) minmax(0, 1.5fr)",
-              gap: "clamp(28px, 4vw, 56px)",
-              alignItems: "flex-start",
-            }} className="bk-mark-spread">
-
-              {/* LEFT: text column */}
-              <div>
-                <h3 style={{
-                  ...sans, margin: 0, fontWeight: 400,
-                  fontSize: "clamp(28px, 3.5vw, 42px)",
-                  letterSpacing: "-0.02em", lineHeight: 1.1,
-                  opacity: 0.95,
-                }}>
-                  {group.name}
-                </h3>
-
-                {group.description && (
-                  <div style={{ ...sans, fontSize: "clamp(15px, 1.55vw, 16px)", color: "rgba(28,25,22,0.72)", lineHeight: 1.6, marginTop: 20, maxWidth: 420 }}>
-                    {group.description}
-                  </div>
-                )}
-
-                {group.primary_use && (
-                  <div style={{ marginTop: 28 }}>
-                    <div style={{ ...mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.55, marginBottom: 8 }}>
-                      Primary Use
+            {colorways.length > 0 ? (
+              <MarkSpreadClient
+                markName={group.name}
+                description={group.description}
+                primaryUse={group.primary_use}
+                colorways={colorways.map((c: any) => ({ id: c.id, name: c.name, hex: c.hex }))}
+                files={group.files.map((f: any) => ({
+                  id: f.id,
+                  file_url: f.file_url,
+                  file_type: f.file_type,
+                  file_size_bytes: f.file_size_bytes,
+                  color_id: f.color_id ?? null,
+                }))}
+                defaultColorwayId={group.defaultColorwayId}
+                displayScale={group.displayScale}
+              />
+            ) : (
+              /* Fallback: no colorways tagged — keep the original 2-col layout */
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "minmax(280px, 1fr) minmax(0, 1.5fr)",
+                gap: "clamp(28px, 4vw, 56px)",
+                alignItems: "flex-start",
+              }} className="bk-mark-spread">
+                <div>
+                  <h3 style={{ ...sans, margin: 0, fontWeight: 400, fontSize: "clamp(28px, 3.5vw, 42px)", letterSpacing: "-0.02em", lineHeight: 1.1, opacity: 0.95 }}>
+                    {group.name}
+                  </h3>
+                  {group.description && (
+                    <div style={{ ...sans, fontSize: "clamp(15px, 1.55vw, 16px)", color: "rgba(28,25,22,0.72)", lineHeight: 1.6, marginTop: 20, maxWidth: 420 }}>
+                      {group.description}
                     </div>
-                    <div style={{ ...sans, fontSize: "clamp(15px, 1.55vw, 16px)", color: "rgba(28,25,22,0.72)", lineHeight: 1.6, maxWidth: 420 }}>
-                      {group.primary_use}
-                    </div>
-                  </div>
-                )}
-
-                {colorways.length > 0 ? (
-                  <MarkColorwaysClient
-                    markName={group.name}
-                    colorways={colorways.map((c: any) => ({ id: c.id, name: c.name, hex: c.hex }))}
-                    files={group.files.map((f: any) => ({
-                      id: f.id,
-                      file_url: f.file_url,
-                      file_type: f.file_type,
-                      file_size_bytes: f.file_size_bytes,
-                      color_id: f.color_id ?? null,
-                    }))}
-                  />
-                ) : (
-                  /* Fallback: no colorways tagged — show flat format chips */
+                  )}
                   <div style={{ marginTop: 32, display: "flex", flexWrap: "wrap", gap: 6 }}>
                     {group.files.map((f: any) => (
-                      <a
-                        key={f.id}
-                        href={f.file_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        download
-                        style={{
-                          ...mono, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase",
-                          opacity: 0.6, textDecoration: "none", color: "inherit",
-                          border: `0.5px solid ${LINE}`,
-                          padding: "4px 8px",
-                          display: "inline-flex", alignItems: "center", gap: 6,
-                        }}
+                      <a key={f.id} href={f.file_url} target="_blank" rel="noopener noreferrer" download
+                        style={{ ...mono, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.6, textDecoration: "none", color: "inherit", border: `0.5px solid ${LINE}`, padding: "4px 8px", display: "inline-flex", alignItems: "center", gap: 6 }}
                         className="bk-format-chip"
-                        title={`Download ${f.file_type}${f.file_size_bytes ? ` · ${fileSize(f.file_size_bytes)}` : ""}`}
-                      >
+                        title={`Download ${f.file_type}${f.file_size_bytes ? ` · ${fileSize(f.file_size_bytes)}` : ""}`}>
                         <span>{f.file_type}</span>
                         <span style={{ opacity: 0.5 }}>↓</span>
                       </a>
                     ))}
                   </div>
-                )}
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                  <MarkStage url={preview.file_url} fileType={preview.file_type} name={group.name} background={lightStageBg} borderColor={LINE} captionColor={MUTED} captionText="Mark preview" isImg={isImg} invert={false} scale={group.displayScale} />
+                </div>
               </div>
-
-              {/* RIGHT: two-stage display — light bg + dark bg */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                {/* Light stage — dark mark on lightest palette swatch */}
-                <MarkStage
-                  url={lightStage.file_url}
-                  fileType={lightStage.file_type}
-                  name={group.name}
-                  background={lightStageBg}
-                  borderColor={LINE}
-                  captionColor={MUTED}
-                  captionText={lightStageCaption}
-                  isImg={lightStageIsImg}
-                  invert={false}
-                  scale={group.displayScale}
-                />
-                {/* Dark stage — light mark on darkest palette swatch */}
-                <MarkStage
-                  url={darkStage.file_url}
-                  fileType={darkStage.file_type}
-                  name={group.name}
-                  background={darkStageBg}
-                  borderColor="rgba(255,255,255,0.08)"
-                  captionColor="rgba(245,241,234,0.55)"
-                  captionText={darkStageCaption}
-                  isImg={darkStageIsImg}
-                  invert={darkStageInvert}
-                  scale={group.displayScale}
-                />
-              </div>
-            </div>
+            )}
           </section>
         )
       })}
