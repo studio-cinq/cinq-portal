@@ -51,6 +51,60 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
   const guideAssets = assets.filter(a => a.category === "guidelines")
   const otherAssets = assets.filter(a => !["logo", "guidelines"].includes(a.category))
 
+  // ─── Group logo files by display name so different formats of the
+  // same mark show as one tile with download chips ─────────────────
+  type LogoGroup = {
+    name: string                 // display name (the basename, kept as-uploaded)
+    preview: any                 // the file used for the preview tile
+    files: any[]                 // all files in this group, ordered for chips
+    minSort: number              // smallest sort_order in the group (for ordering groups)
+  }
+
+  // Format preference for which file becomes the preview tile
+  const PREVIEW_RANK: Record<string, number> = {
+    svg: 0, png: 1, webp: 2, jpg: 3, jpeg: 3, pdf: 4,
+  }
+  // Format preference for the order of download chips beneath each tile
+  const CHIP_RANK: Record<string, number> = {
+    svg: 0, png: 1, jpg: 2, jpeg: 2, webp: 3, pdf: 4, eps: 5, ai: 6,
+  }
+
+  const logoGroupMap = new Map<string, LogoGroup>()
+  for (const a of logoAssets) {
+    // Normalize the basename for grouping (lowercase, collapse separators).
+    // The displayed name preserves the original casing of the first file
+    // we encounter for that group.
+    const normKey = (a.name ?? "").toString().trim().toLowerCase().replace(/[\s_]+/g, "-")
+    const existing = logoGroupMap.get(normKey)
+    if (!existing) {
+      logoGroupMap.set(normKey, {
+        name: a.name ?? "Mark",
+        preview: a,
+        files: [a],
+        minSort: a.sort_order ?? 0,
+      })
+    } else {
+      existing.files.push(a)
+      if ((a.sort_order ?? 0) < existing.minSort) existing.minSort = a.sort_order ?? 0
+      // If this file ranks higher as a preview candidate, swap it in
+      const incoming = PREVIEW_RANK[(a.file_type ?? "").toLowerCase()] ?? 99
+      const current = PREVIEW_RANK[(existing.preview.file_type ?? "").toLowerCase()] ?? 99
+      if (incoming < current) existing.preview = a
+    }
+  }
+
+  const logoGroups: LogoGroup[] = Array.from(logoGroupMap.values())
+    .map(g => ({
+      ...g,
+      files: [...g.files].sort((a, b) => {
+        const ar = CHIP_RANK[(a.file_type ?? "").toLowerCase()] ?? 99
+        const br = CHIP_RANK[(b.file_type ?? "").toLowerCase()] ?? 99
+        if (ar !== br) return ar - br
+        return (a.file_type ?? "").localeCompare(b.file_type ?? "")
+      }),
+    }))
+    .sort((a, b) => a.minSort - b.minSort)
+
   const client = (project as any).clients
   const hasAnything = assets.length > 0 || colors.length > 0 || typefaces.length > 0
 
@@ -96,7 +150,7 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
       )}
 
       {/* ─── Marks ─────────────────────────────────────────────── */}
-      {logoAssets.length > 0 && (
+      {logoGroups.length > 0 && (
         <section style={{ padding: "clamp(80px, 10vw, 140px) clamp(28px, 6vw, 80px)", maxWidth: 1200, margin: "0 auto" }}>
           <SectionHeader number="01" label="Marks" lede="The wordmark and supporting marks. Use these files exactly as supplied — do not recreate or modify." />
 
@@ -106,50 +160,79 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
             gap: "clamp(16px, 2vw, 24px)",
             marginTop: 56,
           }}>
-            {logoAssets.map((asset: any) => {
-              const dark = pickDarkFlag(asset.name)
+            {logoGroups.map(group => {
+              const dark = pickDarkFlag(group.name)
+              const preview = group.preview
               return (
-                <a
-                  key={asset.id}
-                  href={asset.file_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  download
-                  style={{ textDecoration: "none", color: "inherit", display: "block" }}
-                >
-                  <div style={{
-                    background: dark ? INK : "rgba(28,25,22,0.04)",
-                    border: dark ? "0.5px solid rgba(255,255,255,0.08)" : "0.5px solid rgba(28,25,22,0.08)",
-                    aspectRatio: "4/3",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    padding: "clamp(20px, 3vw, 36px)",
-                    transition: "background 0.2s",
-                  }}>
-                    {/(svg|png|jpg|jpeg|webp)$/i.test(asset.file_type ?? "") ? (
-                      <img src={asset.file_url} alt={asset.name} style={{ maxWidth: "60%", maxHeight: "70%", objectFit: "contain", filter: dark ? "invert(0)" : "none" }} />
-                    ) : (
-                      <div style={{ ...mono, fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", opacity: dark ? 0.6 : 0.4 }}>
-                        {asset.file_type?.toUpperCase()}
-                      </div>
-                    )}
-                  </div>
-                  <div style={{ marginTop: 12, display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                    <div style={{ ...sans, fontSize: 13, opacity: 0.85 }}>{asset.name}</div>
-                    <div style={{ ...mono, fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.4 }}>
-                      {asset.file_type} {asset.file_size_bytes ? `· ${fileSize(asset.file_size_bytes)}` : ""}
+                <div key={group.name} style={{ display: "block" }}>
+                  <a
+                    href={preview.file_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    download
+                    style={{ textDecoration: "none", color: "inherit", display: "block" }}
+                  >
+                    <div style={{
+                      background: dark ? INK : "rgba(28,25,22,0.04)",
+                      border: dark ? "0.5px solid rgba(255,255,255,0.08)" : "0.5px solid rgba(28,25,22,0.08)",
+                      aspectRatio: "4/3",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      padding: "clamp(20px, 3vw, 36px)",
+                      transition: "background 0.2s",
+                    }}>
+                      {/(svg|png|jpg|jpeg|webp)$/i.test(preview.file_type ?? "") ? (
+                        <img src={preview.file_url} alt={group.name} style={{ maxWidth: "60%", maxHeight: "70%", objectFit: "contain" }} />
+                      ) : (
+                        <div style={{ ...mono, fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", opacity: dark ? 0.6 : 0.4 }}>
+                          {preview.file_type?.toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                  </a>
+
+                  {/* Title + per-format download chips */}
+                  <div style={{ marginTop: 12 }}>
+                    <div style={{ ...sans, fontSize: 13, opacity: 0.85, marginBottom: 8 }}>{group.name}</div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                      {group.files.map(f => (
+                        <a
+                          key={f.id}
+                          href={f.file_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          download
+                          style={{
+                            ...mono,
+                            fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase",
+                            opacity: 0.55, textDecoration: "none", color: "inherit",
+                            border: "0.5px solid rgba(28,25,22,0.18)",
+                            padding: "4px 8px",
+                            display: "inline-flex", alignItems: "center", gap: 6,
+                            transition: "opacity 0.15s, border-color 0.15s",
+                          }}
+                          className="bk-format-chip"
+                          title={`Download ${f.file_type}${f.file_size_bytes ? ` · ${fileSize(f.file_size_bytes)}` : ""}`}
+                        >
+                          <span>{f.file_type}</span>
+                          <span style={{ opacity: 0.5 }}>↓</span>
+                        </a>
+                      ))}
                     </div>
                   </div>
-                </a>
+                </div>
               )
             })}
           </div>
+          <style>{`
+            .bk-format-chip:hover { opacity: 0.9 !important; border-color: rgba(28,25,22,0.4) !important; }
+          `}</style>
         </section>
       )}
 
       {/* ─── Color ─────────────────────────────────────────────── */}
       {colors.length > 0 && (
         <section style={{ padding: "clamp(80px, 10vw, 140px) clamp(28px, 6vw, 80px)", maxWidth: 1200, margin: "0 auto", borderTop: "0.5px solid rgba(28,25,22,0.08)" }}>
-          <SectionHeader number={logoAssets.length > 0 ? "02" : "01"} label="Colour" lede="Click any swatch to copy its hex value." />
+          <SectionHeader number={logoGroups.length > 0 ? "02" : "01"} label="Colour" lede="Click any swatch to copy its hex value." />
 
           <SwatchCopyClient swatches={colors.map(c => ({ id: c.id, name: c.name, hex: c.hex }))} />
         </section>
@@ -159,7 +242,7 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
       {typefaces.length > 0 && (
         <section style={{ padding: "clamp(80px, 10vw, 140px) clamp(28px, 6vw, 80px)", maxWidth: 1200, margin: "0 auto", borderTop: "0.5px solid rgba(28,25,22,0.08)" }}>
           <SectionHeader
-            number={String((logoAssets.length > 0 ? 1 : 0) + (colors.length > 0 ? 1 : 0) + 1).padStart(2, "0")}
+            number={String((logoGroups.length > 0 ? 1 : 0) + (colors.length > 0 ? 1 : 0) + 1).padStart(2, "0")}
             label="Type"
             lede="The typefaces that carry the brand voice."
           />
@@ -202,7 +285,7 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
       {(guideAssets.length > 0 || otherAssets.length > 0) && (
         <section style={{ padding: "clamp(80px, 10vw, 140px) clamp(28px, 6vw, 80px)", maxWidth: 1200, margin: "0 auto", borderTop: "0.5px solid rgba(28,25,22,0.08)" }}>
           <SectionHeader
-            number={String((logoAssets.length > 0 ? 1 : 0) + (colors.length > 0 ? 1 : 0) + (typefaces.length > 0 ? 1 : 0) + 1).padStart(2, "0")}
+            number={String((logoGroups.length > 0 ? 1 : 0) + (colors.length > 0 ? 1 : 0) + (typefaces.length > 0 ? 1 : 0) + 1).padStart(2, "0")}
             label="Files"
             lede="Source files, guidelines, and supporting materials."
           />
