@@ -166,6 +166,11 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
 
   // Auto-build contrast matrix for swatches with valid hex
   const validColors = colors.filter(c => typeof c.hex === "string" && /^#?[0-9a-f]{6}$/i.test(c.hex.trim()))
+
+  // Lightest & darkest palette swatches drive the mark spread backgrounds + captions.
+  const swatchesByLuma = [...validColors].sort((a, b) => relativeLuminance(a.hex) - relativeLuminance(b.hex))
+  const darkestSwatch = swatchesByLuma[0] ?? null
+  const lightestSwatch = swatchesByLuma[swatchesByLuma.length - 1] ?? null
   const contrastPairs: { fg: any; bg: any; ratio: number; rating: string }[] = []
   for (const fg of validColors) {
     for (const bg of validColors) {
@@ -302,6 +307,18 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
         // Only fall back to the invert hack if we couldn't find a light-coloured file.
         const darkStageInvert = !darkStageFile
 
+        // Stage backgrounds + captions come from the lightest & darkest palette swatches.
+        const lightStageBg = lightestSwatch?.hex ?? PAPER
+        const darkStageBg = darkestSwatch?.hex ?? INK
+        const lightStageMarkColor = lightStageFile ? colorById.get(lightStageFile.color_id!) : null
+        const darkStageMarkColor = darkStageFile ? colorById.get(darkStageFile.color_id!) : null
+        const lightStageCaption = lightestSwatch
+          ? `${lightStageMarkColor?.name ?? "Ink"} on ${lightestSwatch.name}`
+          : "Ink on Light"
+        const darkStageCaption = darkestSwatch
+          ? `${darkStageMarkColor?.name ?? "Light"} on ${darkestSwatch.name}`
+          : "Light on Ink"
+
         // Preserve the project's swatch sort order so pills always read in palette sequence.
         const colorways = colors.filter(c => groupColorIds.has(c.id))
         const sectionNumber = `${marksNum} · ${String(idx + 1).padStart(2, "0")}`
@@ -398,27 +415,27 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
 
               {/* RIGHT: two-stage display — light bg + dark bg */}
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                {/* Light stage — dark mark on cream */}
+                {/* Light stage — dark mark on lightest palette swatch */}
                 <MarkStage
                   url={lightStage.file_url}
                   fileType={lightStage.file_type}
                   name={group.name}
-                  background={PAPER}
+                  background={lightStageBg}
                   borderColor={LINE}
                   captionColor={MUTED}
-                  captionText="Ink on Light"
+                  captionText={lightStageCaption}
                   isImg={lightStageIsImg}
                   invert={false}
                 />
-                {/* Dark stage — light mark on ink */}
+                {/* Dark stage — light mark on darkest palette swatch */}
                 <MarkStage
                   url={darkStage.file_url}
                   fileType={darkStage.file_type}
                   name={group.name}
-                  background={INK}
+                  background={darkStageBg}
                   borderColor="rgba(255,255,255,0.08)"
                   captionColor="rgba(245,241,234,0.55)"
-                  captionText="Light on Ink"
+                  captionText={darkStageCaption}
                   isImg={darkStageIsImg}
                   invert={darkStageInvert}
                 />
