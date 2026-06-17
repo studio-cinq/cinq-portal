@@ -207,18 +207,35 @@ export default function AdminProjectBrandKitPage({ params }: { params: { id: str
   }
 
   // ─── Typeface CRUD ────────────────────────────────────────────
+
+  // Uploads a font file to the brand-assets bucket and returns the public URL.
+  // Returns null + shows toast on failure so the caller knows.
+  async function uploadFontFile(file: File): Promise<string | null> {
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_")
+    const path = `${projectId}/fonts/${Date.now()}-${safeName}`
+    const { error: uploadErr } = await supabase.storage.from("brand-assets").upload(path, file, {
+      contentType: file.type || "application/octet-stream",
+    })
+    if (uploadErr) {
+      console.error("[font upload]", uploadErr)
+      showToast(`Font upload failed — ${uploadErr.message}`)
+      return null
+    }
+    const { data: urlData } = supabase.storage.from("brand-assets").getPublicUrl(path)
+    return urlData.publicUrl
+  }
+
   async function addTypeface() {
-    if (!typeForm.name.trim()) return
+    if (!typeForm.name.trim()) {
+      showToast("Typeface name is required")
+      return
+    }
     let file_url: string | null = null
     if (typeFile) {
-      const path = `${projectId}/fonts/${Date.now()}-${typeFile.name}`
-      const { error: uploadErr } = await supabase.storage.from("brand-assets").upload(path, typeFile)
-      if (!uploadErr) {
-        const { data: urlData } = supabase.storage.from("brand-assets").getPublicUrl(path)
-        file_url = urlData.publicUrl
-      }
+      file_url = await uploadFontFile(typeFile)
+      if (!file_url) return // upload failure already toasted
     }
-    const { data } = await supabase.from("typeface_entries").insert({
+    const { data, error } = await supabase.from("typeface_entries").insert({
       project_id: projectId,
       name: typeForm.name.trim(),
       weight: typeForm.weight.trim() || null,
@@ -226,10 +243,30 @@ export default function AdminProjectBrandKitPage({ params }: { params: { id: str
       file_url,
       sort_order: typefaces.length,
     } as any).select().single()
-    if (data) setTypefaces(prev => [...prev, data as Typeface])
+    if (error || !data) {
+      console.error("[typeface insert]", error)
+      showToast(`Couldn't save typeface — ${error?.message ?? "unknown error"}`)
+      return
+    }
+    setTypefaces(prev => [...prev, data as Typeface])
     setTypeForm({ name: "", weight: "", role: "" })
     setTypeFile(null)
-    showToast("Typeface added")
+    showToast(file_url ? "Typeface added with font file ✓" : "Typeface added")
+  }
+
+  // Attach (or replace) a font file on an existing typeface row
+  async function attachFontToTypeface(id: string, file: File) {
+    const url = await uploadFontFile(file)
+    if (!url) return
+    await supabase.from("typeface_entries").update({ file_url: url }).eq("id", id)
+    setTypefaces(prev => prev.map(t => t.id === id ? { ...t, file_url: url } : t))
+    showToast("Font file uploaded ✓")
+  }
+
+  async function clearFontFromTypeface(id: string) {
+    await supabase.from("typeface_entries").update({ file_url: null }).eq("id", id)
+    setTypefaces(prev => prev.map(t => t.id === id ? { ...t, file_url: null } : t))
+    showToast("Font file cleared")
   }
 
   async function patchTypeface(id: string, patch: Partial<Typeface>) {
@@ -454,11 +491,32 @@ export default function AdminProjectBrandKitPage({ params }: { params: { id: str
                     </div>
                     <input defaultValue={tf.sample_text ?? ""} onBlur={e => patchTypeface(tf.id, { sample_text: e.target.value || null })} placeholder='Specimen sample text (e.g. "Shops, Studios & Flexible Space")' style={{ ...input, marginBottom: 8 }} />
                     <input defaultValue={tf.weights_note ?? ""} onBlur={e => patchTypeface(tf.id, { weights_note: e.target.value || null })} placeholder='Weights note (e.g. "Thin 100, Light 200, Book 300, Regular 400...")' style={input} />
-                    {tf.file_url && (
-                      <div style={{ ...mono, fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.4, marginTop: 8 }}>
-                        Font file uploaded ✓
-                      </div>
-                    )}
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 10, paddingTop: 10, borderTop: "0.5px solid rgba(15,15,14,0.06)" }}>
+                      <label style={{ ...mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.65, cursor: "pointer", border: "0.5px solid rgba(15,15,14,0.2)", padding: "6px 10px" }}>
+                        {tf.file_url ? "Replace font file ↑" : "Upload font file ↑"}
+                        <input
+                          type="file"
+                          accept=".woff,.woff2,.otf,.ttf"
+                          onChange={e => { const f = e.target.files?.[0]; if (f) attachFontToTypeface(tf.id, f); e.target.value = "" }}
+                          style={{ display: "none" }}
+                        />
+                      </label>
+                      {tf.file_url ? (
+                        <>
+                          <span style={{ ...mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--sage)", opacity: 0.85 }}>
+                            Font attached ✓
+                          </span>
+                          <span style={{ flex: 1 }} />
+                          <button onClick={() => clearFontFromTypeface(tf.id)} style={{ ...mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", background: "none", border: "none", color: "var(--ink)", opacity: 0.4, cursor: "pointer" }}>
+                            Clear font
+                          </button>
+                        </>
+                      ) : (
+                        <span style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 12, opacity: 0.5 }}>
+                          .woff2 / .otf / .ttf — leave blank if licensed
+                        </span>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
