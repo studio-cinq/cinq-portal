@@ -145,8 +145,27 @@ export default function AdminProjectBrandKitPage({ params }: { params: { id: str
   }
 
   // ─── Asset upload + per-asset field edits ─────────────────────
+  /**
+   * Pull a swatch name out of the filename if present. Matches `iron`,
+   * `-iron-`, `_iron_`, ` iron `, etc. — anywhere a colour name appears
+   * as its own token. Strips the matched token (and adjacent separators)
+   * from the returned name so groups still merge by base mark name.
+   */
+  function detectColorway(filename: string, palette: Color[]): { color_id: string | null; cleanName: string } {
+    const base = filename.replace(/\.[^.]+$/, "")
+    for (const c of palette) {
+      const re = new RegExp(`(^|[-_\\s.])${c.name.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&")}(?=$|[-_\\s.])`, "i")
+      if (re.test(base)) {
+        const cleanName = base.replace(re, "$1").replace(/[-_\s.]{2,}/g, "-").replace(/^[-_\s.]+|[-_\s.]+$/g, "").trim()
+        return { color_id: c.id, cleanName: cleanName || base }
+      }
+    }
+    return { color_id: null, cleanName: base }
+  }
+
   async function uploadAssets(files: FileList, category: string) {
     let uploaded = 0
+    let tagged = 0
     const startOrder = assets.length
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
@@ -155,18 +174,26 @@ export default function AdminProjectBrandKitPage({ params }: { params: { id: str
       const { error: uploadErr } = await supabase.storage.from("brand-assets").upload(path, file)
       if (uploadErr) { console.error("[upload]", uploadErr); showToast("Upload failed"); continue }
       const { data: urlData } = supabase.storage.from("brand-assets").getPublicUrl(path)
+
+      // Auto-detect colourway for logo uploads so per-color files tag themselves.
+      const { color_id, cleanName } =
+        category === "logo" ? detectColorway(file.name, colors) : { color_id: null, cleanName: file.name.replace(/\.[^.]+$/, "") }
+
       const { data: asset } = await supabase.from("brand_assets").insert({
         project_id: projectId,
-        name: file.name.replace(/\.[^.]+$/, ""),
+        name: cleanName,
         file_url: urlData.publicUrl,
         file_type: ext.toUpperCase(),
         file_size_bytes: file.size,
         category,
         sort_order: startOrder + i,
+        color_id,
       } as any).select().single()
-      if (asset) { setAssets(prev => [...prev, asset as Asset]); uploaded++ }
+      if (asset) { setAssets(prev => [...prev, asset as Asset]); uploaded++; if (color_id) tagged++ }
     }
-    if (uploaded > 0) showToast(`${uploaded} file${uploaded > 1 ? "s" : ""} added`)
+    if (uploaded > 0) {
+      showToast(`${uploaded} file${uploaded > 1 ? "s" : ""} added${tagged > 0 ? ` · ${tagged} auto-tagged by colourway` : ""}`)
+    }
   }
 
   async function patchAsset(id: string, patch: Partial<Asset>) {
