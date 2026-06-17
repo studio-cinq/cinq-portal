@@ -18,7 +18,7 @@ const sectionLabel: React.CSSProperties = {
   marginBottom: 14,
 }
 
-type Asset = { id: string; name: string; file_url: string; file_type: string; file_size_bytes?: number; category: string; sort_order: number; description?: string | null; usage?: string | null; primary_use?: string | null; available_color_ids?: string[] | null; color_id?: string | null }
+type Asset = { id: string; name: string; file_url: string; file_type: string; file_size_bytes?: number; category: string; sort_order: number; description?: string | null; usage?: string | null; primary_use?: string | null; available_color_ids?: string[] | null; color_id?: string | null; display_scale?: number | null }
 type Color = { id: string; name: string; hex: string; sort_order: number; rgb?: string | null; usage_note?: string | null; cmyk?: string | null; pms?: string | null; tier?: string | null }
 type Typeface = { id: string; name: string; weight?: string | null; role?: string | null; file_url?: string | null; sort_order: number; sample_text?: string | null; weights_note?: string | null }
 type MisuseRule = { tag: string; note: string }
@@ -714,18 +714,38 @@ function AssetEditCard({ asset, onPatch, onDelete, showVisual = false, colorways
               style={{ ...input, ...sans, fontSize: 14, resize: "vertical", lineHeight: 1.6, marginBottom: 12 }}
             />
             {colorways.length > 0 && (
-              <div>
-                <div style={{ ...mono, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.5, marginBottom: 6 }}>
-                  Colorway
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 120px", gap: 12, alignItems: "flex-start" }}>
+                <div>
+                  <div style={{ ...mono, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.5, marginBottom: 6 }}>
+                    Colorway
+                  </div>
+                  <select
+                    defaultValue={asset.color_id ?? ""}
+                    onChange={e => onPatch({ color_id: e.target.value || null })}
+                    style={{ ...input, cursor: "pointer", padding: "6px 8px" }}
+                  >
+                    <option value="">— Any / source file (shows under every colorway)</option>
+                    {colorways.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
                 </div>
-                <select
-                  defaultValue={asset.color_id ?? ""}
-                  onChange={e => onPatch({ color_id: e.target.value || null })}
-                  style={{ ...input, cursor: "pointer", padding: "6px 8px" }}
-                >
-                  <option value="">— Any / source file (shows under every colorway)</option>
-                  {colorways.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
+                <div>
+                  <div style={{ ...mono, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.5, marginBottom: 6 }}>
+                    Stage size
+                  </div>
+                  <input
+                    type="number"
+                    step="0.05" min="0.2" max="1.5"
+                    defaultValue={asset.display_scale ?? ""}
+                    onBlur={e => {
+                      const v = e.target.value.trim()
+                      const n = v === "" ? null : parseFloat(v)
+                      onPatch({ display_scale: (n != null && Number.isFinite(n) && n > 0) ? n : null })
+                    }}
+                    placeholder="1.0"
+                    style={{ ...input, ...mono, fontSize: 12, padding: "6px 8px", textAlign: "right" }}
+                    title="Scale of the mark inside its stage. 1 = default. Try 0.6 for chunky marks."
+                  />
+                </div>
               </div>
             )}
           </>

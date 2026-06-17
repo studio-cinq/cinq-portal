@@ -111,6 +111,7 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
     preview: any
     files: any[]
     minSort: number
+    displayScale: number
   }
   const PREVIEW_RANK: Record<string, number> = { svg: 0, png: 1, webp: 2, jpg: 3, jpeg: 3, pdf: 4 }
   const CHIP_RANK: Record<string, number> = { svg: 0, png: 1, jpg: 2, jpeg: 2, webp: 3, pdf: 4, eps: 5, ai: 6 }
@@ -128,6 +129,7 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
         preview: a,
         files: [a],
         minSort: a.sort_order ?? 0,
+        displayScale: 1,
       })
     } else {
       existing.files.push(a)
@@ -151,9 +153,16 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
           for (const id of f.available_color_ids) colorIds.add(id)
         }
       }
+      // Pick the smallest non-default display_scale present on any file in the
+      // group — set it once on any sibling and the spread shrinks for the whole mark.
+      const scales = g.files
+        .map(f => typeof f.display_scale === "number" ? f.display_scale : null)
+        .filter((v): v is number => v != null && v > 0)
+      const displayScale = scales.length ? Math.min(...scales) : 1
       return {
         ...g,
         colorwayIds: Array.from(colorIds),
+        displayScale,
         files: [...g.files].sort((a, b) => {
           const ar = CHIP_RANK[(a.file_type ?? "").toLowerCase()] ?? 99
           const br = CHIP_RANK[(b.file_type ?? "").toLowerCase()] ?? 99
@@ -426,6 +435,7 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
                   captionText={lightStageCaption}
                   isImg={lightStageIsImg}
                   invert={false}
+                  scale={group.displayScale}
                 />
                 {/* Dark stage — light mark on darkest palette swatch */}
                 <MarkStage
@@ -438,6 +448,7 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
                   captionText={darkStageCaption}
                   isImg={darkStageIsImg}
                   invert={darkStageInvert}
+                  scale={group.displayScale}
                 />
               </div>
             </div>
@@ -740,7 +751,7 @@ function SectionHeader({ number, label, lede }: { number: string; label: string;
 }
 
 function MarkStage({
-  url, fileType, name, background, borderColor, captionColor, captionText, isImg, invert,
+  url, fileType, name, background, borderColor, captionColor, captionText, isImg, invert, scale = 1,
 }: {
   url: string
   fileType: string | null | undefined
@@ -751,7 +762,10 @@ function MarkStage({
   captionText: string
   isImg: boolean
   invert: boolean
+  scale?: number
 }) {
+  const widthPct = Math.max(10, Math.min(95, 60 * scale))
+  const heightPct = Math.max(10, Math.min(95, 75 * scale))
   return (
     <div style={{
       background,
@@ -766,7 +780,7 @@ function MarkStage({
           src={url}
           alt={name}
           style={{
-            maxWidth: "60%", maxHeight: "75%", objectFit: "contain",
+            maxWidth: `${widthPct}%`, maxHeight: `${heightPct}%`, objectFit: "contain",
             // Invert mono marks for the dark stage. Works perfectly for ink-on-
             // transparent SVGs and PNGs; multi-color illustrations may look off
             // (upload a separate reverse version if needed).
