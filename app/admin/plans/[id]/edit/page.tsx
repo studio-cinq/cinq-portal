@@ -467,7 +467,7 @@ function SectionCard({ section, items, first, last, onPatch, onDelete, onMove, o
       <div style={{ display: "grid", gridTemplateColumns: "80px 1fr 1fr 90px", gap: 14, alignItems: "center", marginBottom: 14 }}>
         <input defaultValue={section.number_label ?? ""} onBlur={e => onPatch({ number_label: e.target.value })} placeholder="00" style={{ ...input, ...mono, textAlign: "center" }} />
         <input defaultValue={section.title} onBlur={e => onPatch({ title: e.target.value })} placeholder="Section title" style={{ ...input, fontSize: 16 }} />
-        <input defaultValue={section.aside ?? ""} onBlur={e => onPatch({ aside: e.target.value || null })} placeholder="TOC aside (the shared kit)" style={input} />
+        <input defaultValue={section.aside ?? ""} onBlur={e => onPatch({ aside: e.target.value || null })} placeholder="Contents tagline (e.g. the shared kit)" style={input} />
         <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
           <button onClick={() => onMove(-1)} disabled={first} style={moveBtn(first)} aria-label="Move up">↑</button>
           <button onClick={() => onMove(1)} disabled={last} style={moveBtn(last)} aria-label="Move down">↓</button>
