@@ -100,8 +100,17 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
   const guideAssets = assets.filter(a => a.category === "guidelines")
   const otherAssets = assets.filter(a => !["logo", "guidelines"].includes(a.category))
 
-  // Group logos by basename so 5 formats of the same mark = 1 tile with chips
-  type LogoGroup = { name: string; description: string | null; usage: string | null; preview: any; files: any[]; minSort: number }
+  // Group logos by basename so 5 formats of the same mark = 1 spread w/ chips
+  type LogoGroup = {
+    name: string
+    description: string | null
+    usage: string | null
+    primary_use: string | null
+    colorwayIds: string[]
+    preview: any
+    files: any[]
+    minSort: number
+  }
   const PREVIEW_RANK: Record<string, number> = { svg: 0, png: 1, webp: 2, jpg: 3, jpeg: 3, pdf: 4 }
   const CHIP_RANK: Record<string, number> = { svg: 0, png: 1, jpg: 2, jpeg: 2, webp: 3, pdf: 4, eps: 5, ai: 6 }
   const groupMap = new Map<string, LogoGroup>()
@@ -113,6 +122,8 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
         name: a.name ?? "Mark",
         description: a.description ?? null,
         usage: a.usage ?? null,
+        primary_use: a.primary_use ?? null,
+        colorwayIds: Array.isArray(a.available_color_ids) ? a.available_color_ids : [],
         preview: a,
         files: [a],
         minSort: a.sort_order ?? 0,
@@ -120,9 +131,12 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
     } else {
       existing.files.push(a)
       if ((a.sort_order ?? 0) < existing.minSort) existing.minSort = a.sort_order ?? 0
-      // Promote description/usage if not already set on the group
       if (!existing.description && a.description) existing.description = a.description
       if (!existing.usage && a.usage) existing.usage = a.usage
+      if (!existing.primary_use && a.primary_use) existing.primary_use = a.primary_use
+      if (existing.colorwayIds.length === 0 && Array.isArray(a.available_color_ids) && a.available_color_ids.length > 0) {
+        existing.colorwayIds = a.available_color_ids
+      }
       const incoming = PREVIEW_RANK[(a.file_type ?? "").toLowerCase()] ?? 99
       const current = PREVIEW_RANK[(existing.preview.file_type ?? "").toLowerCase()] ?? 99
       if (incoming < current) existing.preview = a
@@ -239,78 +253,157 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
 
       {/* ─── Marks ─────────────────────────────────────────────── */}
       {logoGroups.length > 0 && (
-        <section style={{ padding: "clamp(80px, 10vw, 140px) clamp(28px, 6vw, 80px)", maxWidth: 1100, margin: "0 auto" }}>
+        <section style={{ padding: "clamp(80px, 10vw, 140px) clamp(28px, 6vw, 80px) clamp(40px, 5vw, 80px)", maxWidth: 1200, margin: "0 auto" }}>
           <SectionHeader number={marksNum!} label="Marks" lede={kit?.marks_intro ?? "The wordmark and supporting marks. Use these files exactly as supplied — do not recreate or modify."} />
-
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-            gap: "clamp(20px, 2.5vw, 28px)",
-            marginTop: 56,
-          }}>
-            {logoGroups.map(group => {
-              const dark = pickDarkFlag(group.name)
-              const preview = group.preview
-              return (
-                <div key={group.name} style={{
-                  background: PAPER, border: `0.5px solid ${LINE}`, padding: 22,
-                }}>
-                  <a href={preview.file_url} target="_blank" rel="noopener noreferrer" download style={{ display: "block", textDecoration: "none" }}>
-                    <div style={{
-                      background: dark ? INK : "transparent",
-                      border: dark ? "0.5px solid rgba(255,255,255,0.08)" : "none",
-                      aspectRatio: "5/3",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      padding: 24, marginBottom: 18,
-                    }}>
-                      {/(svg|png|jpg|jpeg|webp)$/i.test(preview.file_type ?? "") ? (
-                        <img src={preview.file_url} alt={group.name} style={{ maxWidth: "65%", maxHeight: "70%", objectFit: "contain" }} />
-                      ) : (
-                        <div style={{ ...mono, fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", opacity: dark ? 0.6 : 0.4 }}>
-                          {preview.file_type?.toUpperCase()}
-                        </div>
-                      )}
-                    </div>
-                  </a>
-                  <div style={{ ...mono, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.78, marginBottom: 8 }}>
-                    {group.name}
-                  </div>
-                  {group.description && (
-                    <div style={{ ...sans, fontSize: 13.5, opacity: 0.7, lineHeight: 1.55, marginBottom: 14 }}>
-                      {group.description}
-                    </div>
-                  )}
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
-                    {group.files.map((f: any) => (
-                      <a
-                        key={f.id}
-                        href={f.file_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        download
-                        style={{
-                          ...mono, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase",
-                          opacity: 0.6, textDecoration: "none", color: "inherit",
-                          border: `0.5px solid ${LINE}`,
-                          padding: "4px 8px",
-                          display: "inline-flex", alignItems: "center", gap: 6,
-                          transition: "opacity 0.15s, border-color 0.15s",
-                        }}
-                        className="bk-format-chip"
-                        title={`Download ${f.file_type}${f.file_size_bytes ? ` · ${fileSize(f.file_size_bytes)}` : ""}`}
-                      >
-                        <span>{f.file_type}</span>
-                        <span style={{ opacity: 0.5 }}>↓</span>
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-          <style>{`.bk-format-chip:hover { opacity: 0.95 !important; border-color: rgba(28,25,22,0.4) !important; }`}</style>
         </section>
       )}
+
+      {/* Each mark gets its own page-style spread — left text column, right
+          two-stage stage (mark on light + mark on dark) */}
+      {logoGroups.map((group, idx) => {
+        const preview = group.preview
+        const isImg = /(svg|png|jpg|jpeg|webp)$/i.test(preview.file_type ?? "")
+        const colorways = group.colorwayIds
+          .map(id => colors.find(c => c.id === id))
+          .filter(Boolean)
+        const sectionNumber = `${marksNum} · ${String(idx + 1).padStart(2, "0")}`
+
+        return (
+          <section
+            key={group.name}
+            style={{
+              padding: "clamp(40px, 6vw, 80px) clamp(28px, 6vw, 80px) clamp(60px, 8vw, 100px)",
+              maxWidth: 1200, margin: "0 auto",
+              borderTop: `0.5px solid ${LINE}`,
+            }}
+          >
+            {/* Running header: number · mark name */}
+            <div style={{ ...mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.5, marginBottom: 32, display: "flex", gap: 36 }}>
+              <span>{String(idx + 1).padStart(2, "0")}</span>
+              <span style={{ opacity: 0.85 }}>{(group.name ?? "").toUpperCase()}</span>
+            </div>
+
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "minmax(280px, 1fr) minmax(0, 1.5fr)",
+              gap: "clamp(28px, 4vw, 56px)",
+              alignItems: "flex-start",
+            }} className="bk-mark-spread">
+
+              {/* LEFT: text column */}
+              <div>
+                <h3 style={{
+                  ...serif, margin: 0, fontWeight: 400,
+                  fontSize: "clamp(34px, 4vw, 50px)",
+                  letterSpacing: "-0.01em", lineHeight: 1.05,
+                  opacity: 0.95,
+                }}>
+                  {group.name}
+                </h3>
+
+                {group.description && (
+                  <div style={{ ...serif, fontSize: "clamp(15px, 1.5vw, 17px)", opacity: 0.78, lineHeight: 1.55, marginTop: 22, maxWidth: 420 }}>
+                    {group.description}
+                  </div>
+                )}
+
+                {group.primary_use && (
+                  <div style={{ marginTop: 28 }}>
+                    <div style={{ ...mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.55, marginBottom: 8 }}>
+                      Primary Use
+                    </div>
+                    <div style={{ ...serif, fontSize: "clamp(15px, 1.5vw, 17px)", opacity: 0.78, lineHeight: 1.55, maxWidth: 420 }}>
+                      {group.primary_use}
+                    </div>
+                  </div>
+                )}
+
+                {colorways.length > 0 && (
+                  <div style={{ marginTop: 28 }}>
+                    <div style={{ ...mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.55, marginBottom: 12 }}>
+                      Colorways
+                    </div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 18px" }}>
+                      {colorways.map((c: any) => {
+                        const light = c.hex && relativeLuminance(c.hex) > 0.85
+                        return (
+                          <div key={c.id} style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                            <span style={{
+                              display: "inline-block", width: 16, height: 16, borderRadius: "50%",
+                              background: c.hex || "transparent",
+                              border: light ? `0.5px solid ${LINE}` : "0.5px solid transparent",
+                            }} />
+                            <span style={{ ...sans, fontSize: 13, opacity: 0.82 }}>{c.name}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Format download chips */}
+                <div style={{ marginTop: 32, display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {group.files.map((f: any) => (
+                    <a
+                      key={f.id}
+                      href={f.file_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      download
+                      style={{
+                        ...mono, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase",
+                        opacity: 0.6, textDecoration: "none", color: "inherit",
+                        border: `0.5px solid ${LINE}`,
+                        padding: "4px 8px",
+                        display: "inline-flex", alignItems: "center", gap: 6,
+                      }}
+                      className="bk-format-chip"
+                      title={`Download ${f.file_type}${f.file_size_bytes ? ` · ${fileSize(f.file_size_bytes)}` : ""}`}
+                    >
+                      <span>{f.file_type}</span>
+                      <span style={{ opacity: 0.5 }}>↓</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+
+              {/* RIGHT: two-stage display — light bg + dark bg */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                {/* Light stage */}
+                <MarkStage
+                  url={preview.file_url}
+                  fileType={preview.file_type}
+                  name={group.name}
+                  background={PAPER}
+                  borderColor={LINE}
+                  captionColor={MUTED}
+                  captionText="Ink on Light"
+                  isImg={isImg}
+                  invert={false}
+                />
+                {/* Dark stage */}
+                <MarkStage
+                  url={preview.file_url}
+                  fileType={preview.file_type}
+                  name={group.name}
+                  background={INK}
+                  borderColor="rgba(255,255,255,0.08)"
+                  captionColor="rgba(245,241,234,0.55)"
+                  captionText="Light on Ink"
+                  isImg={isImg}
+                  invert={true}
+                />
+              </div>
+            </div>
+          </section>
+        )
+      })}
+      <style>{`
+        .bk-format-chip:hover { opacity: 0.95 !important; border-color: rgba(28,25,22,0.4) !important; }
+        @media (max-width: 720px) {
+          .bk-mark-spread { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
 
       {/* ─── Colour ────────────────────────────────────────────── */}
       {colors.length > 0 && (
@@ -486,7 +579,7 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
                       {g.files.map(f => f.file_type).join(" · ")}
                     </td>
                     <td style={{ padding: "12px 16px", borderBottom: `0.5px solid ${LINE}`, ...sans, fontSize: 13, color: MUTED }}>
-                      {g.usage || "—"}
+                      {g.primary_use || g.usage || "—"}
                     </td>
                   </tr>
                 ))}
@@ -586,6 +679,56 @@ function SectionHeader({ number, label, lede }: { number: string; label: string;
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+function MarkStage({
+  url, fileType, name, background, borderColor, captionColor, captionText, isImg, invert,
+}: {
+  url: string
+  fileType: string | null | undefined
+  name: string
+  background: string
+  borderColor: string
+  captionColor: string
+  captionText: string
+  isImg: boolean
+  invert: boolean
+}) {
+  return (
+    <div style={{
+      background,
+      border: `0.5px solid ${borderColor}`,
+      aspectRatio: "16/9",
+      position: "relative",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: "32px 24px",
+    }}>
+      {isImg ? (
+        <img
+          src={url}
+          alt={name}
+          style={{
+            maxWidth: "60%", maxHeight: "75%", objectFit: "contain",
+            // Invert mono marks for the dark stage. Works perfectly for ink-on-
+            // transparent SVGs and PNGs; multi-color illustrations may look off
+            // (upload a separate reverse version if needed).
+            filter: invert ? "invert(1) brightness(1.05)" : undefined,
+          }}
+        />
+      ) : (
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: captionColor }}>
+          {fileType?.toUpperCase()}
+        </div>
+      )}
+      <span style={{
+        position: "absolute", left: 16, bottom: 12,
+        fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase",
+        color: captionColor,
+      }}>
+        {captionText}
+      </span>
     </div>
   )
 }

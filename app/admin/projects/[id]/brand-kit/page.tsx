@@ -18,7 +18,7 @@ const sectionLabel: React.CSSProperties = {
   marginBottom: 14,
 }
 
-type Asset = { id: string; name: string; file_url: string; file_type: string; file_size_bytes?: number; category: string; sort_order: number; description?: string | null; usage?: string | null }
+type Asset = { id: string; name: string; file_url: string; file_type: string; file_size_bytes?: number; category: string; sort_order: number; description?: string | null; usage?: string | null; primary_use?: string | null; available_color_ids?: string[] | null }
 type Color = { id: string; name: string; hex: string; sort_order: number; rgb?: string | null; usage_note?: string | null }
 type Typeface = { id: string; name: string; weight?: string | null; role?: string | null; file_url?: string | null; sort_order: number; sample_text?: string | null; weights_note?: string | null }
 type MisuseRule = { tag: string; note: string }
@@ -413,6 +413,7 @@ export default function AdminProjectBrandKitPage({ params }: { params: { id: str
                   onPatch={patch => patchAsset(a.id, patch)}
                   onDelete={() => deleteAsset(a.id)}
                   showVisual
+                  colorways={colors}
                 />
               ))}
             </div>
@@ -604,9 +605,15 @@ export default function AdminProjectBrandKitPage({ params }: { params: { id: str
   )
 }
 
-function AssetEditCard({ asset, onPatch, onDelete, showVisual = false }: { asset: Asset; onPatch: (patch: Partial<Asset>) => void; onDelete: () => void; showVisual?: boolean }) {
+function AssetEditCard({ asset, onPatch, onDelete, showVisual = false, colorways }: { asset: Asset; onPatch: (patch: Partial<Asset>) => void; onDelete: () => void; showVisual?: boolean; colorways?: Color[] }) {
   const dark = /reverse|dark|white|inverse/i.test(asset.name)
   const isImg = /^(svg|png|jpg|jpeg|webp|gif)$/i.test(asset.file_type)
+  const selected = new Set(asset.available_color_ids ?? [])
+  function toggleColor(id: string) {
+    const next = new Set(selected)
+    if (next.has(id)) next.delete(id); else next.add(id)
+    onPatch({ available_color_ids: Array.from(next) })
+  }
   return (
     <div style={{ display: "grid", gridTemplateColumns: showVisual ? "160px 1fr 50px" : "1fr 50px", gap: 14, background: "rgba(255,255,255,0.35)", border: "0.5px solid rgba(15,15,14,0.08)", padding: 14 }}>
       {showVisual && (
@@ -634,7 +641,44 @@ function AssetEditCard({ asset, onPatch, onDelete, showVisual = false }: { asset
           <div style={{ ...mono, fontSize: 9, letterSpacing: "0.08em", opacity: 0.5 }}>{fileSize(asset.file_size_bytes)}</div>
         </div>
         <textarea defaultValue={asset.description ?? ""} onBlur={e => onPatch({ description: e.target.value || null })} placeholder="Description (e.g. The default brand signature. Single word, no space.)" rows={2} style={{ ...input, resize: "vertical", lineHeight: 1.5, marginBottom: 8 }} />
-        <input defaultValue={asset.usage ?? ""} onBlur={e => onPatch({ usage: e.target.value || null })} placeholder="Primary use (e.g. Web, signage, headers)" style={input} />
+        {colorways ? (
+          <>
+            <textarea defaultValue={asset.primary_use ?? asset.usage ?? ""} onBlur={e => onPatch({ primary_use: e.target.value || null })} placeholder="Primary use (e.g. Used in all main signage, headers, and external print collateral.)" rows={2} style={{ ...input, resize: "vertical", lineHeight: 1.5, marginBottom: 10 }} />
+            {colorways.length > 0 && (
+              <div>
+                <div style={{ ...mono, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.5, marginBottom: 6 }}>
+                  Colorways · tap to toggle
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {colorways.map(c => {
+                    const on = selected.has(c.id)
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => toggleColor(c.id)}
+                        style={{
+                          display: "inline-flex", alignItems: "center", gap: 6,
+                          padding: "5px 10px 5px 6px",
+                          background: on ? "rgba(28,25,22,0.06)" : "transparent",
+                          border: on ? "0.5px solid rgba(28,25,22,0.4)" : "0.5px solid rgba(28,25,22,0.15)",
+                          cursor: "pointer",
+                          ...mono, fontSize: 10, letterSpacing: "0.06em", color: "var(--ink)",
+                          opacity: on ? 1 : 0.6,
+                        }}
+                      >
+                        <span style={{ width: 12, height: 12, background: c.hex, border: "0.5px solid rgba(28,25,22,0.18)", display: "inline-block" }} />
+                        {c.name}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <input defaultValue={asset.usage ?? ""} onBlur={e => onPatch({ usage: e.target.value || null })} placeholder="Primary use (e.g. Web, signage, headers)" style={input} />
+        )}
       </div>
       <button onClick={onDelete} style={{ ...mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", background: "transparent", border: "none", color: "var(--ink)", opacity: 0.4, cursor: "pointer", padding: 0, alignSelf: "flex-start" }}>
         Remove
