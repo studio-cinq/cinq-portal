@@ -178,7 +178,7 @@ export default function MarkSpreadClient({
         )}
 
         <div style={{ ...mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.55, marginBottom: 12, marginTop: 32 }}>
-          Colorways <span style={{ opacity: 0.55 }}>· tap to preview</span>
+          Colorways <span style={{ opacity: 0.55 }} data-print-hide="true">· tap to preview</span>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 14px" }}>
           {colorways.map(c => {
@@ -212,7 +212,7 @@ export default function MarkSpreadClient({
 
         {/* Download CTA for selected colorway */}
         {selected && (
-          <div style={{ marginTop: 14 }}>
+          <div style={{ marginTop: 14 }} data-print-hide="true">
             <button
               type="button"
               onClick={() => setOpenDownloads(openDownloads === selected.id ? null : selected.id)}
@@ -233,7 +233,7 @@ export default function MarkSpreadClient({
           if (!c) return null
           const bundle = bundleForColor(files, openDownloads)
           return (
-            <div style={{ marginTop: 14, padding: "14px 16px", background: "rgba(28,25,22,0.03)", border: `0.5px solid ${LINE}` }}>
+            <div data-print-hide="true" style={{ marginTop: 14, padding: "14px 16px", background: "rgba(28,25,22,0.03)", border: `0.5px solid ${LINE}` }}>
               <div style={{ ...mono, fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.55, marginBottom: 10 }}>
                 {markName} · {c.name}
               </div>

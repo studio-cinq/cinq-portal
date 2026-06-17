@@ -406,13 +406,23 @@ export default function AdminProjectBrandKitPage({ params }: { params: { id: str
               Edit the cover, marks, colour, type, and rules for {project.title}. Saved changes appear on the client&apos;s brand kit page.
             </div>
           </div>
-          <Link href={`/brand-kit/${projectId}`} target="_blank" style={{
-            ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase",
-            color: "var(--ink)", opacity: 0.65, textDecoration: "none",
-            border: "0.5px solid rgba(15,15,14,0.2)", padding: "10px 16px",
-          }}>
-            View client kit ↗
-          </Link>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <Link href={`/brand-kit/${projectId}`} target="_blank" style={{
+              ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase",
+              color: "var(--ink)", opacity: 0.65, textDecoration: "none",
+              border: "0.5px solid rgba(15,15,14,0.2)", padding: "10px 16px",
+            }}>
+              View client kit ↗
+            </Link>
+            <a href={`/api/pdf/brand-kit/${projectId}`} target="_blank" rel="noopener noreferrer" style={{
+              ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase",
+              color: "var(--cream)", background: "var(--ink)",
+              textDecoration: "none",
+              border: "0.5px solid var(--ink)", padding: "10px 16px",
+            }}>
+              Download PDF ↓
+            </a>
+          </div>
         </header>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 56 }}>

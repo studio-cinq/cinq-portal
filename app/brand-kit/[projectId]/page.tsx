@@ -77,8 +77,15 @@ function isLight(hex: string): boolean {
   return relativeLuminance(hex) > 0.55
 }
 
-export default async function BrandKitPage({ params }: { params: { projectId: string } }) {
+export default async function BrandKitPage({
+  params,
+  searchParams,
+}: {
+  params: { projectId: string }
+  searchParams?: { print?: string }
+}) {
   const supabase = await createServerComponentClient()
+  const isPrint = searchParams?.print === "1"
 
   // The route param can be either the project UUID or a slug — try both so old
   // UUID links keep working alongside the pretty /brand-kit/loom-house form.
@@ -235,7 +242,19 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
   return (
     <div style={{ background: CREAM, minHeight: "100vh" }}>
 
-      <TrackBrandKitView projectId={projectId} alreadyViewed={!!kit?.viewed_at} />
+      {!isPrint && <TrackBrandKitView projectId={projectId} alreadyViewed={!!kit?.viewed_at} />}
+
+      {isPrint && (
+        <style>{`
+          /* PDF render mode — hide interactive affordances and tighten
+             vertical rhythm so each section reads as a printed page. */
+          [data-print-hide="true"] { display: none !important; }
+          a[download], button { cursor: default !important; }
+          section { page-break-inside: avoid; break-inside: avoid; }
+          .bk-mark-spread > * { page-break-inside: avoid; break-inside: avoid; }
+          html, body { background: #F5F1EA !important; }
+        `}</style>
+      )}
 
       {/* ─── Cover ─────────────────────────────────────────────── */}
       <section style={{
