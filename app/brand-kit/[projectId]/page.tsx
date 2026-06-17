@@ -456,7 +456,19 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
         <section style={{ padding: "clamp(80px, 10vw, 140px) clamp(28px, 6vw, 80px)", maxWidth: 1100, margin: "0 auto", borderTop: `0.5px solid ${LINE}` }}>
           <SectionHeader number={colorNum!} label="Colour" lede={kit?.color_intro ?? "Click any swatch to copy its hex value."} />
 
-          <SwatchCopyClient swatches={colors.map(c => ({ id: c.id, name: c.name, hex: c.hex, rgb: c.rgb || hexToRgbTriplet(c.hex, null), usage_note: c.usage_note }))} />
+          <SwatchCopyClient
+            panelColor={lightestSwatch?.hex}
+            swatches={colors.map(c => ({
+              id: c.id,
+              name: c.name,
+              hex: c.hex,
+              rgb: c.rgb || hexToRgbTriplet(c.hex, null),
+              cmyk: (c as any).cmyk ?? null,
+              pms: (c as any).pms ?? null,
+              tier: (c as any).tier ?? null,
+              usage_note: c.usage_note,
+            }))}
+          />
 
           {dedupedContrast.length > 0 && (
             <div style={{ marginTop: 64 }}>

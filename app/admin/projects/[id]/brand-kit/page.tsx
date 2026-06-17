@@ -19,7 +19,7 @@ const sectionLabel: React.CSSProperties = {
 }
 
 type Asset = { id: string; name: string; file_url: string; file_type: string; file_size_bytes?: number; category: string; sort_order: number; description?: string | null; usage?: string | null; primary_use?: string | null; available_color_ids?: string[] | null; color_id?: string | null }
-type Color = { id: string; name: string; hex: string; sort_order: number; rgb?: string | null; usage_note?: string | null }
+type Color = { id: string; name: string; hex: string; sort_order: number; rgb?: string | null; usage_note?: string | null; cmyk?: string | null; pms?: string | null; tier?: string | null }
 type Typeface = { id: string; name: string; weight?: string | null; role?: string | null; file_url?: string | null; sort_order: number; sample_text?: string | null; weights_note?: string | null }
 type MisuseRule = { tag: string; note: string }
 type Kit = {
@@ -486,12 +486,27 @@ export default function AdminProjectBrandKitPage({ params }: { params: { id: str
             {colors.length > 0 && (
               <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 14 }}>
                 {colors.map(c => (
-                  <div key={c.id} style={{ display: "grid", gridTemplateColumns: "60px 1fr 1fr 1.5fr 50px", gap: 10, alignItems: "center", padding: "10px 12px", background: "rgba(255,255,255,0.35)", border: "0.5px solid rgba(15,15,14,0.08)" }}>
-                    <div style={{ background: c.hex, height: 40, border: "0.5px solid rgba(15,15,14,0.1)" }} />
-                    <input defaultValue={c.name} onBlur={e => patchColor(c.id, { name: e.target.value })} placeholder="Name" style={input} />
-                    <input defaultValue={c.hex.toUpperCase()} onBlur={e => patchColor(c.id, { hex: e.target.value, rgb: hexToRgb(e.target.value) })} placeholder="#HEX" style={{ ...input, ...mono, letterSpacing: "0.04em" }} />
-                    <input defaultValue={c.usage_note ?? ""} onBlur={e => patchColor(c.id, { usage_note: e.target.value || null })} placeholder="Usage note (Primary canvas / backgrounds)" style={input} />
-                    <button onClick={() => deleteColor(c.id)} style={{ ...mono, fontSize: 10, background: "none", border: "none", color: "var(--ink)", opacity: 0.4, cursor: "pointer", padding: 0 }} aria-label="Remove">✕</button>
+                  <div key={c.id} style={{ display: "grid", gridTemplateColumns: "60px 1fr 50px", gap: 12, alignItems: "flex-start", padding: "12px 14px", background: "rgba(255,255,255,0.35)", border: "0.5px solid rgba(15,15,14,0.08)" }}>
+                    <div style={{ background: c.hex, height: 60, border: "0.5px solid rgba(15,15,14,0.1)" }} />
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "1.4fr 0.9fr 0.9fr", gap: 10 }}>
+                        <input defaultValue={c.name} onBlur={e => patchColor(c.id, { name: e.target.value })} placeholder="Name" style={input} />
+                        <input defaultValue={c.hex.toUpperCase()} onBlur={e => patchColor(c.id, { hex: e.target.value, rgb: hexToRgb(e.target.value) })} placeholder="#HEX" style={{ ...input, ...mono, letterSpacing: "0.04em" }} />
+                        <select defaultValue={c.tier ?? ""} onChange={e => patchColor(c.id, { tier: e.target.value || null })} style={{ ...input, cursor: "pointer", padding: "6px 0" }}>
+                          <option value="">Tier (none)</option>
+                          <option value="Primary">Primary</option>
+                          <option value="Secondary">Secondary</option>
+                          <option value="Neutral">Neutral</option>
+                          <option value="Accent">Accent</option>
+                        </select>
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.4fr", gap: 10 }}>
+                        <input defaultValue={c.cmyk ?? ""} onBlur={e => patchColor(c.id, { cmyk: e.target.value || null })} placeholder="CMYK (0 / 39 / 80 / 27)" style={{ ...input, ...mono, fontSize: 12 }} />
+                        <input defaultValue={c.pms ?? ""} onBlur={e => patchColor(c.id, { pms: e.target.value || null })} placeholder="PMS (153 C)" style={{ ...input, ...mono, fontSize: 12 }} />
+                        <input defaultValue={c.usage_note ?? ""} onBlur={e => patchColor(c.id, { usage_note: e.target.value || null })} placeholder="Usage note (Primary canvas / backgrounds)" style={input} />
+                      </div>
+                    </div>
+                    <button onClick={() => deleteColor(c.id)} style={{ ...mono, fontSize: 10, background: "none", border: "none", color: "var(--ink)", opacity: 0.4, cursor: "pointer", padding: 0, alignSelf: "flex-start" }} aria-label="Remove">✕</button>
                   </div>
                 ))}
               </div>

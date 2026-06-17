@@ -7,6 +7,9 @@ type Swatch = {
   name: string
   hex: string
   rgb?: string | null
+  cmyk?: string | null
+  pms?: string | null
+  tier?: string | null
   usage_note?: string | null
 }
 
@@ -23,95 +26,150 @@ function relativeLuminance(hex: string): number {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b
 }
 
-function isLight(hex: string): boolean {
-  return relativeLuminance(hex) > 0.55
+const mono: React.CSSProperties = { fontFamily: "var(--font-mono)" }
+const serif: React.CSSProperties = { fontFamily: "var(--font-serif)" }
+
+const INK = "#282320"
+const PLASTER_FALLBACK = "#EBE4D5"
+const HAIRLINE = "rgba(40,35,32,0.1)"
+
+function formatRgb(s?: string | null): string | null {
+  if (!s) return null
+  // Stored as "r, g, b" or "r/g/b"; render as "R / G / B"
+  return s
+    .split(/[,/]/)
+    .map(p => p.trim())
+    .filter(Boolean)
+    .join(" / ")
 }
 
-const mono: React.CSSProperties = { fontFamily: "var(--font-mono)" }
-const sans: React.CSSProperties = { fontFamily: "var(--font-sans)" }
-
-const LINE = "rgba(28,25,22,0.1)"
-const PAPER = "#FBF7EE"
-
-export default function SwatchCopyClient({ swatches }: { swatches: Swatch[] }) {
+export default function SwatchCopyClient({
+  swatches, panelColor,
+}: {
+  swatches: Swatch[]
+  panelColor?: string
+}) {
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const panel = panelColor || PLASTER_FALLBACK
 
   async function copy(swatch: Swatch) {
     try {
       await navigator.clipboard.writeText(swatch.hex.toUpperCase())
       setCopiedId(swatch.id)
       setTimeout(() => setCopiedId(null), 1500)
-    } catch {
-      // ignore
-    }
+    } catch {}
   }
 
   return (
     <div style={{
       display: "grid",
-      gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-      gap: 16,
+      gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+      gap: 20,
       marginTop: 56,
     }}>
       {swatches.map(s => {
-        const light = isLight(s.hex)
+        const blockDark = relativeLuminance(s.hex) < 0.55
+        const onBlockColor = blockDark ? panel : INK
+        const onBlockMuted = blockDark ? "rgba(235,228,213,0.65)" : "rgba(40,35,32,0.55)"
+        const rgb = formatRgb(s.rgb)
+        const rows: Array<[string, string | null | undefined]> = [
+          ["HEX",  s.hex?.toUpperCase()],
+          ["RGB",  rgb],
+          ["CMYK", s.cmyk],
+          ["PMS",  s.pms],
+        ]
+
         return (
           <button
             key={s.id}
             onClick={() => copy(s)}
+            className="bk-swatch-card"
+            aria-label={`Copy ${s.name} ${s.hex.toUpperCase()}`}
             style={{
-              background: PAPER,
-              border: `0.5px solid ${LINE}`,
+              background: "transparent",
+              border: `0.5px solid ${HAIRLINE}`,
               padding: 0,
               cursor: "pointer",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "stretch",
               textAlign: "left",
-              transition: "transform 0.15s, border-color 0.15s",
               fontFamily: "inherit",
+              display: "flex", flexDirection: "column",
+              aspectRatio: "3 / 4",
+              position: "relative",
+              transition: "border-color 0.15s, transform 0.15s",
             }}
-            className="bk-swatch"
-            aria-label={`Copy ${s.name} ${s.hex.toUpperCase()}`}
           >
-            {/* Chip — solid block of color, no text inside */}
+            {/* Color block — 62.5% */}
             <div style={{
               background: s.hex,
-              height: 130,
-              borderBottom: `0.5px solid ${light ? LINE : "rgba(255,255,255,0.05)"}`,
+              flex: "0 0 62.5%",
               position: "relative",
+              padding: "20px 22px",
+              display: "flex", flexDirection: "column", justifyContent: "space-between",
             }}>
+              {s.tier && (
+                <div style={{
+                  ...mono, fontSize: 10, fontWeight: 500, letterSpacing: "0.2em",
+                  textTransform: "uppercase", color: onBlockColor,
+                }}>
+                  {s.tier}
+                </div>
+              )}
+              <div style={{
+                ...serif, fontWeight: 300, fontSize: "clamp(30px, 3vw, 40px)",
+                lineHeight: 1, color: onBlockColor,
+                letterSpacing: "-0.005em",
+              }}>
+                {s.name || "Swatch"}
+              </div>
+
               {copiedId === s.id && (
                 <div style={{
                   position: "absolute", inset: 0,
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  ...mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase",
-                  color: light ? "rgba(28,25,22,0.85)" : "rgba(245,241,234,0.95)",
+                  ...mono, fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase",
+                  color: onBlockColor, background: blockDark ? "rgba(40,35,32,0.35)" : "rgba(235,228,213,0.5)",
+                  pointerEvents: "none",
                 }}>
                   Copied
                 </div>
               )}
             </div>
-            {/* Info pane */}
-            <div style={{ padding: "14px 16px 16px" }}>
-              <div style={{ ...sans, fontSize: 14, opacity: 0.92, letterSpacing: "-0.005em" }}>
-                {s.name || "Swatch"}
-              </div>
-              <div style={{ ...mono, fontSize: 11, letterSpacing: "0.04em", opacity: 0.6, marginTop: 4 }}>
-                {s.hex.toUpperCase()}{s.rgb ? ` · rgb(${s.rgb})` : ""}
-              </div>
-              {s.usage_note && (
-                <div style={{ ...sans, fontSize: 12, color: "rgba(28,25,22,0.55)", marginTop: 8, lineHeight: 1.5 }}>
-                  {s.usage_note}
+
+            {/* Plaster panel — 37.5% */}
+            <div style={{
+              background: panel,
+              flex: "1 1 37.5%",
+              padding: "16px 22px 18px",
+              display: "flex", flexDirection: "column", justifyContent: "space-between",
+              borderTop: `0.5px solid rgba(40,35,32,0.2)`,
+              color: INK,
+            }}>
+              {rows.map(([label, value], i) => (
+                <div key={label} style={{
+                  display: "flex", justifyContent: "space-between", alignItems: "baseline",
+                  paddingTop: i === 0 ? 0 : 8,
+                  paddingBottom: 8,
+                  borderBottom: i === rows.length - 1 ? "none" : "0.5px solid rgba(40,35,32,0.1)",
+                  minHeight: 18,
+                }}>
+                  <span style={{
+                    ...mono, fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase",
+                    color: "rgba(40,35,32,0.6)",
+                  }}>
+                    {label}
+                  </span>
+                  <span style={{ ...mono, fontSize: 12, color: INK, textAlign: "right" }}>
+                    {value || <span style={{ opacity: 0.3 }}>—</span>}
+                  </span>
                 </div>
-              )}
+              ))}
             </div>
           </button>
         )
       })}
 
       <style>{`
-        .bk-swatch:hover { transform: translateY(-2px); border-color: rgba(28,25,22,0.25) !important; }
+        .bk-swatch-card:hover { transform: translateY(-2px); border-color: rgba(40,35,32,0.3) !important; }
       `}</style>
     </div>
   )
