@@ -647,6 +647,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                             <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.4 }}>
                               {projDeliverables.filter((d: any) => d.status === "complete" || d.status === "approved").length}/{projDeliverables.length} done
                             </span>
+                            <Link href={`/admin/projects/${proj.id}`} onClick={e => e.stopPropagation()} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.45, textDecoration: "none" }}>Open</Link>
                             <Link href={`/admin/projects/${proj.id}/edit`} onClick={e => e.stopPropagation()} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.35, textDecoration: "none" }}>Edit</Link>
                             <button onClick={e => { e.stopPropagation(); deleteProject(proj.id, proj.title) }} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.25, background: "none", border: "none", cursor: "pointer", color: "var(--ink)", padding: 0 }}>Delete</button>
                             <ProjectStatusBadge status={proj.status} />
