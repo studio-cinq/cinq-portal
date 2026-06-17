@@ -253,7 +253,7 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
 
       {/* ─── Marks ─────────────────────────────────────────────── */}
       {logoGroups.length > 0 && (
-        <section style={{ padding: "clamp(80px, 10vw, 140px) clamp(28px, 6vw, 80px) clamp(40px, 5vw, 80px)", maxWidth: 1200, margin: "0 auto" }}>
+        <section style={{ padding: "clamp(80px, 10vw, 140px) clamp(28px, 6vw, 80px) clamp(40px, 5vw, 80px)", maxWidth: 1200, margin: "0 auto", borderTop: `0.5px solid ${LINE}` }}>
           <SectionHeader number={marksNum!} label="Marks" lede={kit?.marks_intro ?? "The wordmark and supporting marks. Use these files exactly as supplied — do not recreate or modify."} />
         </section>
       )}
@@ -665,20 +665,18 @@ export default async function BrandKitPage({ params }: { params: { projectId: st
 
 function SectionHeader({ number, label, lede }: { number: string; label: string; lede?: string }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "70px minmax(0, 1fr)", gap: 28, alignItems: "baseline" }}>
-      <div style={{ ...mono, fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", opacity: 0.5 }}>
+    <div>
+      <div style={{ ...mono, fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", opacity: 0.5, marginBottom: 24 }}>
         {number}
       </div>
-      <div>
-        <h2 style={{ ...sans, fontSize: "clamp(28px, 3.8vw, 40px)", letterSpacing: "-0.02em", margin: 0, opacity: 0.95, lineHeight: 1.1, fontWeight: 400 }}>
-          {label}
-        </h2>
-        {lede && (
-          <div style={{ ...sans, fontSize: 16, color: "rgba(28,25,22,0.7)", lineHeight: 1.6, marginTop: 16, maxWidth: 620 }}>
-            {lede}
-          </div>
-        )}
-      </div>
+      <h2 style={{ ...sans, fontSize: "clamp(28px, 3.8vw, 40px)", letterSpacing: "-0.02em", margin: 0, opacity: 0.95, lineHeight: 1.1, fontWeight: 400 }}>
+        {label}
+      </h2>
+      {lede && (
+        <div style={{ ...sans, fontSize: 16, color: "rgba(28,25,22,0.7)", lineHeight: 1.6, marginTop: 16, maxWidth: 620 }}>
+          {lede}
+        </div>
+      )}
     </div>
   )
 }
