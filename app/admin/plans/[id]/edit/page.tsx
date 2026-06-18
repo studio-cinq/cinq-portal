@@ -574,10 +574,10 @@ function PriorityCycler({ value, onChange }: { value: Priority; onChange: (p: Pr
   const label = value ? PRIORITY_LABELS[value] : "—"
   // Visual styles mirror the public PriorityPill so the admin preview matches.
   const styles: Record<"now" | "next" | "later" | "done", React.CSSProperties> = {
-    now:   { background: "rgba(28,25,22,0.92)",  borderColor: "rgba(28,25,22,0.92)",  color: "#F5F1EA" },
-    next:  { background: "transparent",           borderColor: "rgba(28,25,22,0.45)",  color: "var(--ink)" },
-    later: { background: "transparent",           borderColor: "rgba(28,25,22,0.2)",   color: "rgba(28,25,22,0.5)" },
-    done:  { background: "rgba(143,167,181,0.9)", borderColor: "rgba(143,167,181,0.9)", color: "#F5F1EA" },
+    now:   { background: "#A7B49B",     borderColor: "#A7B49B",             color: "#F5F1EA" },
+    next:  { background: "transparent", borderColor: "rgba(28,25,22,0.45)", color: "var(--ink)" },
+    later: { background: "transparent", borderColor: "rgba(28,25,22,0.2)",  color: "rgba(28,25,22,0.5)" },
+    done:  { background: "transparent", borderColor: "#A7B49B",             color: "rgba(106,127,93,0.95)" },
   }
   const s = value ? styles[value] : { background: "transparent", borderColor: "rgba(28,25,22,0.18)", color: "var(--ink)" }
   return (
