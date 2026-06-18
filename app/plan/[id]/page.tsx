@@ -28,17 +28,17 @@ const PRIORITY_LABELS: Record<PriorityValue, string> = {
   done:  "Complete",
 }
 
-// Color story (sage = #A7B49B threads through the "positive" states):
-//   Active   — sage filled, strongest emphasis
-//   On Deck  — outlined ink, medium presence
-//   Parked   — faint outline, quiet neutral
-//   Complete — sage outlined, calm confirmation
+// Color story — each filled state has its own hue:
+//   Active   — sage green, strongest "go"
+//   On Deck  — warm muted ochre, queued
+//   Parked   — faint outline, dormant
+//   Complete — slate blue, calm confirmation
 function PriorityPill({ value }: { value: PriorityValue }) {
   const styles: Record<PriorityValue, { bg: string; border: string; color: string }> = {
-    now:   { bg: "#A7B49B",      border: "#A7B49B",              color: "#F5F1EA" },
-    next:  { bg: "transparent",  border: "rgba(28,25,22,0.45)",  color: "rgba(28,25,22,0.9)" },
-    later: { bg: "transparent",  border: "rgba(28,25,22,0.2)",   color: "rgba(28,25,22,0.5)" },
-    done:  { bg: "transparent",  border: "#A7B49B",              color: "rgba(106,127,93,0.95)" },
+    now:   { bg: "#A7B49B",                  border: "#A7B49B",                  color: "#F5F1EA" },
+    next:  { bg: "rgba(212,165,103,0.9)",    border: "rgba(212,165,103,0.9)",    color: "rgba(28,25,22,0.88)" },
+    later: { bg: "transparent",               border: "rgba(28,25,22,0.2)",       color: "rgba(28,25,22,0.5)" },
+    done:  { bg: "rgba(143,167,181,0.92)",   border: "rgba(143,167,181,0.92)",   color: "#F5F1EA" },
   }
   const s = styles[value]
   return (
