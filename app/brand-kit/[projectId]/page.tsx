@@ -478,8 +478,12 @@ export default async function BrandKitPage({
                           const ext = (tf.file_url.split(".").pop() ?? "").toLowerCase()
                           formats.push({ label: ext === "woff" || ext === "woff2" ? ext.toUpperCase() : "Web", url: tf.file_url })
                         }
-                        if (tf.otf_url) formats.push({ label: "OTF", url: tf.otf_url })
-                        if (tf.ttf_url) formats.push({ label: "TTF", url: tf.ttf_url })
+                        if (tf.desktop_zip_url) formats.push({ label: "Desktop", url: tf.desktop_zip_url })
+                        // Legacy fields — only surface if no desktop zip exists yet.
+                        if (!tf.desktop_zip_url) {
+                          if (tf.otf_url) formats.push({ label: "OTF", url: tf.otf_url })
+                          if (tf.ttf_url) formats.push({ label: "TTF", url: tf.ttf_url })
+                        }
                         if (formats.length === 0) {
                           return (
                             <div style={{ ...mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: MUTED }}>
