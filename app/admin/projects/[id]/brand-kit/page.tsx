@@ -324,6 +324,62 @@ export default function AdminProjectBrandKitPage({ params }: { params: { id: str
     showToast("Font file uploaded ✓")
   }
 
+  // Unpacks a font foundry zip (web/, desktop/, readme.txt) and routes the
+  // first .woff2, .otf, and .ttf inside into the corresponding URL columns.
+  // Skips formats already represented; the user can clear+re-run to swap.
+  async function attachFontZipToTypeface(id: string, zipFile: File) {
+    const JSZip = (await import("jszip")).default
+    let zip: any
+    try {
+      zip = await JSZip.loadAsync(zipFile)
+    } catch (err) {
+      console.error("[font zip parse]", err)
+      showToast("Couldn't read that zip")
+      return
+    }
+
+    type Slot = "file_url" | "otf_url" | "ttf_url"
+    const want: Record<Slot, RegExp> = {
+      file_url: /\.woff2$/i,
+      otf_url: /\.otf$/i,
+      ttf_url: /\.ttf$/i,
+    }
+
+    // Sort entries so "regular" / "normal" variants land first when a family
+    // ships every weight in one zip.
+    const entries = Object.values(zip.files as Record<string, any>)
+      .filter((f: any) => !f.dir)
+      .sort((a: any, b: any) => {
+        const score = (name: string) => /regular|normal|book(?!plate)/i.test(name) ? 0 : 1
+        return score(a.name) - score(b.name) || a.name.localeCompare(b.name)
+      })
+
+    const picked: Partial<Record<Slot, { name: string; url: string }>> = {}
+    for (const slot of Object.keys(want) as Slot[]) {
+      const match = entries.find((f: any) => want[slot].test(f.name) && !/__MACOSX/i.test(f.name))
+      if (!match) continue
+      const blob = await match.async("blob")
+      const innerName = match.name.split("/").pop() || match.name
+      const synthetic = new File([blob], innerName, { type: blob.type || "application/octet-stream" })
+      const url = await uploadFontFile(synthetic)
+      if (!url) continue
+      picked[slot] = { name: innerName, url }
+    }
+
+    const patch: any = {}
+    for (const [slot, v] of Object.entries(picked)) if (v) patch[slot] = v.url
+
+    if (Object.keys(patch).length === 0) {
+      showToast("No .woff2 / .otf / .ttf files found in that zip")
+      return
+    }
+
+    await supabase.from("typeface_entries").update(patch).eq("id", id)
+    setTypefaces(prev => prev.map(t => t.id === id ? { ...t, ...patch } : t))
+    const slotLabels: Record<string, string> = { file_url: "Web", otf_url: "OTF", ttf_url: "TTF" }
+    showToast(`Loaded ${Object.keys(patch).map(k => slotLabels[k]).join(" · ")} from zip ✓`)
+  }
+
   async function clearFontFromTypeface(id: string, column: "file_url" | "otf_url" | "ttf_url" = "file_url") {
     await supabase.from("typeface_entries").update({ [column]: null }).eq("id", id)
     setTypefaces(prev => prev.map(t => t.id === id ? { ...t, [column]: null } : t))
@@ -571,8 +627,19 @@ export default function AdminProjectBrandKitPage({ params }: { params: { id: str
                     <input defaultValue={tf.sample_text ?? ""} onBlur={e => patchTypeface(tf.id, { sample_text: e.target.value || null })} placeholder='Specimen sample text (e.g. "Shops, Studios & Flexible Space")' style={{ ...input, marginBottom: 8 }} />
                     <input defaultValue={tf.weights_note ?? ""} onBlur={e => patchTypeface(tf.id, { weights_note: e.target.value || null })} placeholder='Weights note (e.g. "Thin 100, Light 200, Book 300, Regular 400...")' style={input} />
                     <div style={{ marginTop: 10, paddingTop: 10, borderTop: "0.5px solid rgba(15,15,14,0.06)" }}>
-                      <div style={{ ...mono, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.5, marginBottom: 8 }}>
-                        Font files <span style={{ opacity: 0.7 }}>· Web renders the specimen; OTF / TTF are extra download formats for the client</span>
+                      <div style={{ ...mono, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.5, marginBottom: 8, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                        <span>
+                          Font files <span style={{ opacity: 0.7 }}>· Web renders the specimen; OTF / TTF are extra download formats for the client</span>
+                        </span>
+                        <label style={{ ...mono, fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.85, cursor: "pointer", border: "0.5px solid rgba(15,15,14,0.25)", padding: "4px 9px", flexShrink: 0 }}>
+                          Upload zip ↑
+                          <input
+                            type="file"
+                            accept=".zip,application/zip,application/x-zip-compressed"
+                            onChange={e => { const f = e.target.files?.[0]; if (f) attachFontZipToTypeface(tf.id, f); e.target.value = "" }}
+                            style={{ display: "none" }}
+                          />
+                        </label>
                       </div>
                       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8 }}>
                         {([
