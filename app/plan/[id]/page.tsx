@@ -35,10 +35,10 @@ const PRIORITY_LABELS: Record<PriorityValue, string> = {
 //   Complete — slate blue, calm confirmation
 function PriorityPill({ value }: { value: PriorityValue }) {
   const styles: Record<PriorityValue, { bg: string; border: string; color: string }> = {
-    now:   { bg: "#A7B49B",                  border: "#A7B49B",                  color: "#F5F1EA" },
-    next:  { bg: "rgba(212,165,103,0.9)",    border: "rgba(212,165,103,0.9)",    color: "rgba(28,25,22,0.88)" },
-    later: { bg: "transparent",               border: "rgba(28,25,22,0.2)",       color: "rgba(28,25,22,0.5)" },
-    done:  { bg: "rgba(143,167,181,0.92)",   border: "rgba(143,167,181,0.92)",   color: "#F5F1EA" },
+    now:   { bg: "#A7B49B",                border: "#A7B49B",                color: "#F5F1EA" },
+    next:  { bg: "#BB7225",                border: "#BB7225",                color: "#F5F1EA" },
+    later: { bg: "transparent",             border: "rgba(28,25,22,0.2)",     color: "rgba(28,25,22,0.5)" },
+    done:  { bg: "rgba(143,167,181,0.92)", border: "rgba(143,167,181,0.92)", color: "#F5F1EA" },
   }
   const s = styles[value]
   return (
