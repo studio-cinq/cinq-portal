@@ -20,13 +20,25 @@ function fmt$(cents?: number | null) {
   return `$${(cents / 100).toLocaleString("en-US")}`
 }
 
-const PRIORITY_LABELS = { now: "In Motion", next: "On Deck", later: "Parked" } as const
+type PriorityValue = "now" | "next" | "later" | "done"
+const PRIORITY_LABELS: Record<PriorityValue, string> = {
+  now:   "Active",
+  next:  "On Deck",
+  later: "Parked",
+  done:  "Complete",
+}
 
-function PriorityPill({ value }: { value: "now" | "next" | "later" }) {
-  const styles: Record<typeof value, { bg: string; border: string; color: string }> = {
-    now:   { bg: "rgba(28,25,22,0.92)", border: "rgba(28,25,22,0.92)", color: "#F5F1EA" },
-    next:  { bg: "transparent",          border: "rgba(28,25,22,0.45)", color: "rgba(28,25,22,0.9)" },
-    later: { bg: "transparent",          border: "rgba(28,25,22,0.2)",  color: "rgba(28,25,22,0.5)" },
+// Color story:
+//   Active   — main ink, full bleed, strongest emphasis
+//   On Deck  — outlined ink, medium presence
+//   Parked   — faint outline, quiet neutral
+//   Complete — sage filled, calm confirmation
+function PriorityPill({ value }: { value: PriorityValue }) {
+  const styles: Record<PriorityValue, { bg: string; border: string; color: string }> = {
+    now:   { bg: "rgba(28,25,22,0.92)",  border: "rgba(28,25,22,0.92)",  color: "#F5F1EA" },
+    next:  { bg: "transparent",           border: "rgba(28,25,22,0.45)",  color: "rgba(28,25,22,0.9)" },
+    later: { bg: "transparent",           border: "rgba(28,25,22,0.2)",   color: "rgba(28,25,22,0.5)" },
+    done:  { bg: "rgba(143,167,181,0.9)", border: "rgba(143,167,181,0.9)", color: "#F5F1EA" },
   }
   const s = styles[value]
   return (

@@ -58,7 +58,7 @@ type Plan = {
 }
 
 type Section = { id: string; plan_id: string; sort_order: number; number_label?: string | null; title: string; lede?: string | null; aside?: string | null }
-type Priority = "now" | "next" | "later" | null
+type Priority = "now" | "next" | "later" | "done" | null
 type Item = { id: string; section_id: string; sort_order: number; title: string; description?: string | null; estimate_cents?: number | null; estimate_note?: string | null; priority?: Priority }
 
 export default function EditPlanPage({ params }: { params: { id: string } }) {
@@ -563,23 +563,35 @@ function CoverImagePicker({ currentUrl, onUpload, onClear }: { currentUrl: strin
   )
 }
 
-const PRIORITY_LABELS: Record<"now" | "next" | "later", string> = { now: "In Motion", next: "On Deck", later: "Parked" }
+const PRIORITY_LABELS: Record<"now" | "next" | "later" | "done", string> = {
+  now: "Active", next: "On Deck", later: "Parked", done: "Complete",
+}
 
 function PriorityCycler({ value, onChange }: { value: Priority; onChange: (p: Priority) => void }) {
-  const next: Record<string, Priority> = { "null": "now", "now": "next", "next": "later", "later": null }
+  const next: Record<string, Priority> = {
+    "null": "now", "now": "next", "next": "later", "later": "done", "done": null,
+  }
   const label = value ? PRIORITY_LABELS[value] : "—"
-  const opacity = value === "now" ? 1 : value === "next" ? 0.7 : value === "later" ? 0.4 : 0.3
+  // Visual styles mirror the public PriorityPill so the admin preview matches.
+  const styles: Record<"now" | "next" | "later" | "done", React.CSSProperties> = {
+    now:   { background: "rgba(28,25,22,0.92)",  borderColor: "rgba(28,25,22,0.92)",  color: "#F5F1EA" },
+    next:  { background: "transparent",           borderColor: "rgba(28,25,22,0.45)",  color: "var(--ink)" },
+    later: { background: "transparent",           borderColor: "rgba(28,25,22,0.2)",   color: "rgba(28,25,22,0.5)" },
+    done:  { background: "rgba(143,167,181,0.9)", borderColor: "rgba(143,167,181,0.9)", color: "#F5F1EA" },
+  }
+  const s = value ? styles[value] : { background: "transparent", borderColor: "rgba(28,25,22,0.18)", color: "var(--ink)" }
   return (
     <button
       type="button"
       onClick={() => onChange(next[value ?? "null"])}
-      title="Cycle priority: In Motion → On Deck → Parked → none"
+      title="Cycle: Active → On Deck → Parked → Complete → none"
       style={{
         ...mono, fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase",
         padding: "5px 6px",
-        background: value ? "rgba(28,25,22,0.04)" : "transparent",
-        border: "0.5px solid rgba(28,25,22,0.18)",
-        color: "var(--ink)", opacity,
+        background: s.background,
+        border: `0.5px solid ${s.borderColor}`,
+        color: s.color,
+        opacity: value ? 1 : 0.5,
         cursor: "pointer", textAlign: "center",
         whiteSpace: "nowrap",
       }}
