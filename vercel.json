@@ -4,5 +4,8 @@
       "includeFiles": "node_modules/@sparticuz/chromium/**",
       "maxDuration": 60
     }
-  }
+  },
+  "crons": [
+    { "path": "/api/cron/invoice-overdue", "schedule": "0 7 * * *" }
+  ]
 }
