@@ -553,20 +553,41 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
             </button>
           </div>
 
-          {/* Send reminder — only visible for unpaid invoices that have been sent */}
-          {(form.status === "sent" || form.status === "overdue") && (
-            <div style={{ marginTop: 28, paddingTop: 24, borderTop: "0.5px solid rgba(15,15,14,0.08)", display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap" }}>
-              <SendInvoiceReminderButton invoiceId={params.id} remindersSent={remindersSent} />
-              {lastSentAt && (
-                <div style={{ ...mono, fontSize: 10, letterSpacing: "0.1em", opacity: 0.55 }}>
-                  Sent {new Date(lastSentAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+          {/* Send reminder + sent-date control — only visible for invoices past draft */}
+          {(form.status === "sent" || form.status === "overdue" || form.status === "paid") && (
+            <div style={{ marginTop: 28, paddingTop: 24, borderTop: "0.5px solid rgba(15,15,14,0.08)" }}>
+              {(form.status === "sent" || form.status === "overdue") && (
+                <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap", marginBottom: 14 }}>
+                  <SendInvoiceReminderButton invoiceId={params.id} remindersSent={remindersSent} />
+                  {remindersSent > 0 && lastReminderAt && (
+                    <div style={{ ...mono, fontSize: 10, letterSpacing: "0.1em", opacity: 0.5 }}>
+                      {remindersSent} reminder{remindersSent === 1 ? "" : "s"} sent · last on {new Date(lastReminderAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                    </div>
+                  )}
                 </div>
               )}
-              {remindersSent > 0 && lastReminderAt && (
-                <div style={{ ...mono, fontSize: 10, letterSpacing: "0.1em", opacity: 0.5 }}>
-                  {remindersSent} reminder{remindersSent === 1 ? "" : "s"} sent · last on {new Date(lastReminderAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                </div>
-              )}
+              <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+                <label style={{ ...mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.55 }}>
+                  Sent on
+                </label>
+                <input
+                  type="date"
+                  value={lastSentAt ? lastSentAt.slice(0, 10) : ""}
+                  onChange={async e => {
+                    const v = e.target.value
+                    // Stamp at 5pm UTC so it's the same day across US/Europe
+                    const iso = v ? `${v}T17:00:00Z` : null
+                    setLastSentAt(iso)
+                    await supabase.from("invoices").update({ last_sent_at: iso } as any).eq("id", params.id)
+                  }}
+                  style={{ ...mono, fontSize: 11, padding: "5px 8px", background: "transparent", border: "0.5px solid rgba(15,15,14,0.18)", color: "var(--ink)" }}
+                />
+                {!lastSentAt && (
+                  <span style={{ ...serif, fontStyle: "italic", fontSize: 12, opacity: 0.5 }}>
+                    Leave blank if it was never sent — fill in for past sends.
+                  </span>
+                )}
+              </div>
             </div>
           )}
 
