@@ -1,6 +1,7 @@
 import { createServerComponentClient } from "@/lib/supabase-server"
 import Link from "next/link"
 import PortalNav from "@/components/portal/Nav"
+import { computeAttention } from "@/lib/needs-attention"
 
 /* ─── Activity event type ─── */
 
@@ -49,6 +50,7 @@ export default async function AdminStudioPage() {
     { data: invoicesOpenRaw },
     { data: messagesRaw },
     { data: proposalsPendingRaw },
+    { data: foundationsPublishedRaw },
     { data: reviewSessionsRaw },
   ] = await Promise.all([
     supabase.from("clients").select("*").order("created_at", { ascending: false }),
@@ -56,6 +58,7 @@ export default async function AdminStudioPage() {
     supabase.from("invoices").select("*, clients(name)").in("status", ["sent", "overdue"]).order("due_date"),
     supabase.from("messages").select("*, projects(title, client_id, clients(name))").eq("from_client", true).eq("read", false),
     supabase.from("proposals").select("*, clients(name)").eq("status", "sent").order("created_at", { ascending: false }),
+    supabase.from("brand_foundations").select("id, title, updated_at, client_id, clients(name)").eq("status", "published"),
     supabase.from("review_sessions").select("*, projects(title, client_id, clients(name))").in("status", ["in_review", "revising"]),
   ])
 
@@ -64,6 +67,7 @@ export default async function AdminStudioPage() {
   const invoicesOpen = invoicesOpenRaw as any[] ?? []
   const messages = messagesRaw as any[] ?? []
   const proposalsPending = proposalsPendingRaw as any[] ?? []
+  const foundationsPublished = foundationsPublishedRaw as any[] ?? []
   const reviewSessions = reviewSessionsRaw as any[] ?? []
 
   /* ─── Stats (parallel) ─── */
@@ -82,74 +86,34 @@ export default async function AdminStudioPage() {
 
   /* ─── "Needs your attention" items ─── */
 
-  type AttentionItem = {
-    id: string
-    client: string
-    clientId: string
-    tag: string
-    tagColor: string
-    urgency: number
-    text: string
-    href: string
+  // Canonical computation — shared with /admin/focus via lib/needs-attention.
+  // Studio used to include every sent invoice + every pending proposal as
+  // attention, which inflated the count well past Focus's. The two pages
+  // now derive from the same rules and can't disagree.
+  const attentionCanonical = computeAttention({
+    invoicesOverdue: invoicesOpen.filter(i => i.status === "overdue"),
+    foundationsPublished,
+    proposalsSent: proposalsPending,
+    unreadMessages: messages,
+  })
+
+  const TAG_FOR_KIND: Record<string, { tag: string; tagColor: string }> = {
+    "overdue":            { tag: "Overdue",            tagColor: "var(--alarm)" },
+    "foundation-stalled": { tag: "Awaiting approval",  tagColor: "var(--pending)" },
+    "proposal-stalled":   { tag: "Proposal stalled",   tagColor: "var(--pending)" },
+    "message":            { tag: "Message",            tagColor: "var(--pending)" },
   }
 
-  const attention: AttentionItem[] = []
-
-  for (const inv of invoicesOpen.filter(i => i.status === "overdue")) {
-    attention.push({
-      id: `inv-${inv.id}`, client: (inv.clients as any)?.name ?? "", clientId: inv.client_id,
-      tag: "Overdue", tagColor: "var(--amber)", urgency: 1,
-      text: `$${(inv.amount / 100).toLocaleString()} — due ${inv.due_date ? new Date(inv.due_date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "now"}`,
-      href: `/admin/clients/${inv.client_id}`,
-    })
-  }
-
-  // Review attention rows hidden for now — keep the data fetch in case
-  // we resurface them later; just don't surface them in the feed.
-
-  for (const msg of messages) {
-    const proj = msg.projects as any
-    attention.push({
-      id: `msg-${msg.id}`, client: proj?.clients?.name ?? "", clientId: proj?.client_id ?? "",
-      tag: "Message", tagColor: "var(--amber)", urgency: 3,
-      text: (msg.body ?? "").slice(0, 80) + ((msg.body ?? "").length > 80 ? "…" : ""),
-      href: `/admin/clients/${proj?.client_id}`,
-    })
-  }
-
-  for (const inv of invoicesOpen.filter(i => i.status === "sent")) {
-    attention.push({
-      id: `inv-${inv.id}`, client: (inv.clients as any)?.name ?? "", clientId: inv.client_id,
-      tag: "Invoice sent", tagColor: "var(--sage)", urgency: 4,
-      text: `$${(inv.amount / 100).toLocaleString()} — due ${inv.due_date ? new Date(inv.due_date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "upon receipt"}`,
-      href: `/admin/clients/${inv.client_id}`,
-    })
-  }
-
-  for (const prop of proposalsPending) {
-    const daysSent = prop.created_at ? Math.floor((Date.now() - new Date(prop.created_at).getTime()) / 86400000) : 0
-    attention.push({
-      id: `prop-${prop.id}`, client: (prop.clients as any)?.name ?? "", clientId: prop.client_id,
-      tag: daysSent > 5 ? "Proposal aging" : "Proposal sent",
-      tagColor: daysSent > 5 ? "var(--amber)" : "var(--sage)", urgency: daysSent > 5 ? 2 : 5,
-      text: `Sent ${daysSent}d ago${prop.viewed_at ? " · viewed" : " · not opened"}`,
-      href: `/admin/proposals/${prop.id}`,
-    })
-  }
-
-  for (const project of projects) {
-    const awaiting = (project.deliverables ?? []).filter((d: any) => d.status === "awaiting_approval")
-    if (awaiting.length > 0) {
-      attention.push({
-        id: `del-${project.id}`, client: (project.clients as any)?.name ?? "", clientId: project.client_id,
-        tag: "Awaiting approval", tagColor: "rgba(15,15,14,0.45)", urgency: 6,
-        text: `${awaiting.length} deliverable${awaiting.length > 1 ? "s" : ""} out for review`,
-        href: `/admin/clients/${project.client_id}`,
-      })
-    }
-  }
-
-  attention.sort((a, b) => a.urgency - b.urgency)
+  const attention = attentionCanonical.map(item => ({
+    id: item.id,
+    client: item.clientName,
+    clientId: item.clientId ?? "",
+    tag: TAG_FOR_KIND[item.kind]?.tag ?? "—",
+    tagColor: TAG_FOR_KIND[item.kind]?.tagColor ?? "var(--pending)",
+    urgency: item.urgency,
+    text: item.detail,
+    href: item.href,
+  }))
 
   /* ─── "Recent activity" feed (all queries in parallel) ─── */
 

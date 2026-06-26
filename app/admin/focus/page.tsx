@@ -1,6 +1,7 @@
 import { createServerComponentClient } from "@/lib/supabase-server"
 import PortalNav from "@/components/portal/Nav"
 import FocusClient from "./FocusClient"
+import { computeAttention } from "@/lib/needs-attention"
 
 /* ─── Shared styles ─── */
 const mono = { fontFamily: "var(--font-mono)" } as const
@@ -88,72 +89,24 @@ export default async function FocusPage() {
   ])
 
   /* ─── Build "Needs your attention" list ─── */
-  type Attention = {
-    id: string
-    icon: "amber" | "sage" | "muted"
-    label: string
-    detail: string
-    href?: string
-  }
-  const attention: Attention[] = []
+  // Computation lives in lib/needs-attention.ts so /admin/studio reads
+  // from the same source and can't disagree on the count.
+  const attentionCanonical = computeAttention({
+    invoicesOverdue: invoicesOverdue as any[],
+    foundationsPublished: foundationsPublished as any[],
+    proposalsSent: proposalsSent as any[],
+    unreadMessages: unreadMessages as any[],
+  })
 
-  // 1. Overdue invoices
-  for (const inv of invoicesOverdue as any[]) {
-    const age = inv.due_date ? daysSince(inv.due_date) : 0
-    attention.push({
-      id: `inv-${inv.id}`,
-      icon: "amber",
-      label: `Overdue invoice — ${inv.clients?.name ?? "—"}`,
-      detail: `#${inv.invoice_number} · $${(inv.amount / 100).toLocaleString()} · ${age}d past due`,
-      href: `/admin/invoices/${inv.id}/edit`,
-    })
-  }
-
-  // 2. Foundations published > 5 days ago, no approval
-  for (const f of foundationsPublished as any[]) {
-    const age = daysSince(f.updated_at)
-    if (age > 5) {
-      attention.push({
-        id: `found-${f.id}`,
-        icon: "amber",
-        label: `Foundation awaiting approval — ${f.clients?.name ?? "—"}`,
-        detail: `${f.title || "Brand Foundations"} · ${age}d since sent`,
-        href: `/admin/foundations/${f.id}/edit`,
-      })
-    }
-  }
-
-  // 3. Proposals viewed but no response > 3 days
-  for (const p of proposalsSent as any[]) {
-    const viewedRef = p.last_viewed_at || p.viewed_at
-    if (!viewedRef) continue
-    const age = daysSince(viewedRef)
-    if (age > 3) {
-      attention.push({
-        id: `prop-${p.id}`,
-        icon: "amber",
-        label: `Proposal viewed, no response — ${p.clients?.name ?? "—"}`,
-        detail: `${p.title} · last seen ${age}d ago`,
-        href: `/admin/proposals`,
-      })
-    }
-  }
-
-  // 4. Unread client messages
-  for (const m of unreadMessages as any[]) {
-    const proj = m.projects as any
-    attention.push({
-      id: `msg-${m.id}`,
-      icon: "sage",
-      label: `New message — ${proj?.clients?.name ?? "—"}`,
-      detail: (m.body ?? "").slice(0, 80),
-      href: `/admin/clients/${proj?.clients?.id ?? ""}`,
-    })
-  }
-
-  // (Quiet project items removed — they were noise pretending to be signal.
-  // Activity tracking still happens in the background; freshness will show up
-  // organically once you start using the portal more.)
+  // Focus renders with a tone hint (amber/sage/muted) — derive from kind
+  // so this page keeps its softer visual language.
+  const attention = attentionCanonical.map(item => ({
+    id: item.id,
+    label: item.label,
+    detail: item.detail,
+    href: item.href,
+    icon: item.kind === "message" ? "sage" as const : "amber" as const,
+  }))
 
   /* ─── This week ─── */
   type WeekItem = { id: string; label: string; detail: string; when: string; sortKey: number }
