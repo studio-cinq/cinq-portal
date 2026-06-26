@@ -16,6 +16,7 @@ export default function InvoiceOverflowMenu({
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [copied, setCopied] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -37,6 +38,42 @@ export default function InvoiceOverflowMenu({
   async function handleDownload() {
     setOpen(false)
     window.open(`/api/pdf/invoice/${invoiceId}`, "_blank", "noopener,noreferrer")
+  }
+
+  async function handleCopyLink() {
+    const base = typeof window !== "undefined" ? window.location.origin : "https://portal.studiocinq.com"
+    try {
+      await navigator.clipboard.writeText(`${base}/invoice/${invoiceId}`)
+      setCopied(true)
+      setTimeout(() => {
+        setCopied(false)
+        setOpen(false)
+      }, 1100)
+    } catch {
+      // clipboard not available (insecure context) — fall back silently
+      setOpen(false)
+    }
+  }
+
+  async function handleDuplicate() {
+    if (busy) return
+    setBusy(true)
+    try {
+      const res = await fetch("/api/admin/duplicate/invoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: invoiceId }),
+      })
+      const json = await res.json()
+      if (!res.ok || !json.id) throw new Error(json.error ?? "Duplicate failed")
+      setOpen(false)
+      // Land on the edit page so Kacie can set the new invoice_number + due date.
+      window.location.href = `/admin/invoices/${json.id}/edit`
+    } catch (err) {
+      console.error("[invoice duplicate]", err)
+      alert("Couldn't duplicate that invoice.")
+      setBusy(false)
+    }
   }
 
   async function handleDelete() {
@@ -116,8 +153,30 @@ export default function InvoiceOverflowMenu({
           >
             Edit
           </Link>
+          <Link
+            href={`/invoice/${invoiceId}`}
+            role="menuitem"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setOpen(false)}
+            style={itemStyle()}
+          >
+            View as client ↗
+          </Link>
+          <button role="menuitem" onClick={handleCopyLink} style={itemStyle()}>
+            {copied ? "Link copied ✓" : "Copy client link"}
+          </button>
           <button role="menuitem" onClick={handleDownload} style={itemStyle()}>
             Download PDF
+          </button>
+          <div style={{ height: 1, background: "rgba(15,15,14,0.08)", margin: "4px 0" }} />
+          <button
+            role="menuitem"
+            onClick={handleDuplicate}
+            disabled={busy}
+            style={itemStyle()}
+          >
+            {busy ? "Duplicating…" : "Duplicate as draft"}
           </button>
           <div style={{ height: 1, background: "rgba(15,15,14,0.08)", margin: "4px 0" }} />
           <button
