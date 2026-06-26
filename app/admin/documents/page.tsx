@@ -3,6 +3,7 @@ import Link from "next/link"
 import PortalNav from "@/components/portal/Nav"
 import CopyLinkButton from "@/components/portal/CopyLinkButton"
 import RowOverflowMenu from "@/components/portal/RowOverflowMenu"
+import FilterTabs from "@/components/portal/FilterTabs"
 import { statusColor } from "@/lib/status-tokens"
 
 /**
@@ -167,35 +168,17 @@ export default async function AdminDocumentsPage({
           </div>
         </div>
 
-        {/* Filter tabs — type filter */}
-        <div role="tablist" style={{ display: "flex", alignItems: "center", gap: 26, borderBottom: "0.5px solid rgba(15,15,14,0.1)", paddingBottom: 0, marginBottom: 4 }}>
-          {(["all", ...TYPES] as const).map(tab => {
-            const active = tab === activeType
-            const href = tab === "all" ? "/admin/documents" : `/admin/documents?type=${tab}`
-            const label = tab === "all" ? "All" : `${TYPE_LABEL[tab]}s`
-            return (
-              <Link
-                key={tab}
-                role="tab"
-                aria-selected={active}
-                href={href}
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 11,
-                  letterSpacing: "0.14em",
-                  textTransform: "uppercase",
-                  color: active ? "var(--ink)" : "rgba(15,15,14,0.45)",
-                  textDecoration: "none",
-                  padding: "10px 0",
-                  borderBottom: active ? "2px solid var(--ink)" : "2px solid transparent",
-                  marginBottom: -1,
-                }}
-              >
-                {label} <span style={{ opacity: 0.5 }}>· {counts[tab]}</span>
-              </Link>
-            )
-          })}
-        </div>
+        <FilterTabs
+          basePath="/admin/documents"
+          paramName="type"
+          activeValue={activeType === "all" ? null : activeType}
+          tabs={[
+            { value: null,       label: "All",       count: counts.all },
+            { value: "proposal", label: "Proposals", count: counts.proposal },
+            { value: "quote",    label: "Quotes",    count: counts.quote },
+            { value: "plan",     label: "Plans",     count: counts.plan },
+          ]}
+        />
 
         {/* Header */}
         <div className="admin-table-header" style={{ display: "grid", gridTemplateColumns: "1fr 100px 130px 100px 110px 100px 60px", gap: 16, paddingTop: 16, paddingBottom: 10, borderBottom: "0.5px solid rgba(15,15,14,0.12)" }}>

@@ -4,6 +4,7 @@ import PortalNav from "@/components/portal/Nav"
 import MarkPaidButton from "@/components/portal/MarkPaidButton"
 import SendInvoiceReminderButton from "@/components/portal/SendInvoiceReminderButton"
 import InvoiceOverflowMenu from "./InvoiceOverflowMenu"
+import FilterTabs from "@/components/portal/FilterTabs"
 import { getStatusLine, type AgingTone } from "./get-status-line"
 
 const TAB_VALUES = ["outstanding", "paid", "all"] as const
@@ -78,50 +79,28 @@ export default async function AdminInvoicesPage({
           <SummaryCard label="Collected" value={fmtMoney(collectedTotal)} />
         </div>
 
-        {/* Filter tabs */}
-        <div role="tablist" style={{ display: "flex", alignItems: "center", gap: 26, borderBottom: "0.5px solid rgba(15,15,14,0.1)", paddingBottom: 0, marginBottom: 4 }}>
-          {(TAB_VALUES).map(tab => {
-            const active = tab === activeTab
-            return (
-              <Link
-                key={tab}
-                role="tab"
-                aria-selected={active}
-                href={tab === "outstanding" ? "/admin/invoices" : `/admin/invoices?tab=${tab}`}
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 11,
-                  letterSpacing: "0.14em",
-                  textTransform: "uppercase",
-                  color: active ? "var(--ink)" : "rgba(15,15,14,0.45)",
-                  textDecoration: "none",
-                  padding: "10px 0",
-                  borderBottom: active ? "2px solid var(--ink)" : "2px solid transparent",
-                  marginBottom: -1,
-                }}
-              >
-                {TAB_LABELS[tab]}
-              </Link>
-            )
-          })}
-          {draftCount > 0 && (
+        <FilterTabs
+          basePath="/admin/invoices"
+          paramName="tab"
+          activeValue={activeTab === "outstanding" ? null : activeTab}
+          tabs={[
+            { value: null,    label: TAB_LABELS.outstanding },
+            { value: "paid",  label: TAB_LABELS.paid },
+            { value: "all",   label: TAB_LABELS.all },
+          ]}
+          trailing={draftCount > 0 ? (
             <Link
               href="/admin/invoices?tab=all"
               style={{
-                marginLeft: "auto",
-                fontFamily: "var(--font-mono)",
-                fontSize: 11,
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                color: "rgba(15,15,14,0.5)",
-                textDecoration: "none",
-                padding: "10px 0",
+                fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.12em",
+                textTransform: "uppercase", color: "rgba(15,15,14,0.5)",
+                textDecoration: "none", padding: "10px 0",
               }}
             >
               {draftCount} draft{draftCount === 1 ? "" : "s"} →
             </Link>
-          )}
-        </div>
+          ) : null}
+        />
 
         {/* Invoice list */}
         <div>

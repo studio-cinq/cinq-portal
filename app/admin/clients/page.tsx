@@ -2,23 +2,46 @@ import { createServerComponentClient } from "@/lib/supabase-server"
 import Link from "next/link"
 import PortalNav from "@/components/portal/Nav"
 import RowOverflowMenu from "@/components/portal/RowOverflowMenu"
+import FilterTabs from "@/components/portal/FilterTabs"
 
-export default async function AdminClientsPage() {
+type ClientFilter = "all" | "active" | "past"
+
+export default async function AdminClientsPage({
+  searchParams,
+}: {
+  searchParams?: { filter?: string }
+}) {
   const supabase = await createServerComponentClient()
+  const requested = (searchParams?.filter ?? "all") as ClientFilter
+  const activeFilter: ClientFilter = (["all", "active", "past"] as const).includes(requested) ? requested : "all"
 
   const { data: clientsRaw } = await supabase
     .from("clients").select("*, projects(id, status)")
     .order("created_at", { ascending: false })
-  const clients = clientsRaw as any[] | null
+  const allClients = (clientsRaw ?? []) as any[]
+
+  function hasActive(client: any) {
+    return (client.projects ?? []).some((p: any) => p.status === "active")
+  }
+
+  const counts = {
+    all:    allClients.length,
+    active: allClients.filter(hasActive).length,
+    past:   allClients.filter(c => !hasActive(c)).length,
+  }
+
+  const clients = activeFilter === "all"    ? allClients
+                : activeFilter === "active" ? allClients.filter(hasActive)
+                : allClients.filter(c => !hasActive(c))
 
   return (
     <>
       <PortalNav isAdmin />
       <main className="admin-page-pad" style={{ maxWidth: 1200, margin: "0 auto", padding: "40px 48px" }}>
 
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 36 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 28 }}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.5 }}>
-            All clients — {clients?.length ?? 0}
+            Clients
           </div>
           <Link href="/admin/clients/new" style={{
             fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
@@ -30,7 +53,18 @@ export default async function AdminClientsPage() {
           </Link>
         </div>
 
-        <div className="admin-table-header" style={{ display: "grid", gridTemplateColumns: "1fr 160px 120px 80px 60px", gap: 24, paddingBottom: 10, borderBottom: "0.5px solid rgba(15,15,14,0.12)" }}>
+        <FilterTabs
+          basePath="/admin/clients"
+          paramName="filter"
+          activeValue={activeFilter === "all" ? null : activeFilter}
+          tabs={[
+            { value: null,     label: "All",    count: counts.all },
+            { value: "active", label: "Active", count: counts.active },
+            { value: "past",   label: "Past",   count: counts.past },
+          ]}
+        />
+
+        <div className="admin-table-header" style={{ display: "grid", gridTemplateColumns: "1fr 160px 120px 80px 60px", gap: 24, paddingTop: 16, paddingBottom: 10, borderBottom: "0.5px solid rgba(15,15,14,0.12)" }}>
           {["Client", "Contact", "Projects", "", ""].map((h, i) => (
             <div key={`${h}-${i}`} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.45 }}>{h}</div>
           ))}
