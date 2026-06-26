@@ -53,15 +53,41 @@
 }
 
 /* -- Cinq Portal Design Tokens -- */
+/*
+ * Palette is the locked Cinq brand system. Warm ground, warm ink, three
+ * earth accents, one French-blue editorial note. Never pure black, never
+ * pure white.
+ *
+ * BACK-COMPAT: --sage / --amber / --danger keep their names but now resolve
+ * to the brand's olive-bronze / ochre / oxblood. Every existing page that
+ * reads them maps cleanly to the new role (complete / pending / alarm) so
+ * no page-level changes are needed for the visual shift.
+ */
 :root {
-  /* Colors */
-  --ink:        #0F0F0E;
-  --cream:      #F4F1EC;
-  --cream-dark: #E8E0D4;
-  --sage:       #8fa7b5;
-  --amber:      #c95a3b;
-  --danger:     #c0392b;
-  --bg-grad:    linear-gradient(160deg, #F4F1EC 0%, #E8E0D4 100%);
+  /* Ground + ink */
+  --warm:       #EDE5D6;  /* page background, warm ivory */
+  --cream:      #EDE5D6;  /* alias — old name, new value */
+  --cream-dark: #E5DBCA;  /* a notch deeper for tints / 2nd-layer surfaces */
+  --ink:        #1A1815;  /* primary text + hairline-dark UI. Never #000. */
+  --bone:       #ECE3D2;  /* text on dark surfaces. Never #FFF. */
+  --olive-dark: #1B1A14;  /* rare dark-moment surfaces + CTAs (client pages) */
+  --hairline:   rgba(26,24,21,0.22);
+
+  /* Accents — locked roles, do not redeploy outside their role */
+  --alarm:    #9E3528;  /* overdue / error / urgent / destructive */
+  --pending:  #C4943A;  /* pending / draft / awaiting / in-progress. Fill only. */
+  --complete: #6F7444;  /* paid / complete / accepted / approved */
+  --link:     #0072BB;  /* French blue — links + focus rings ONLY.
+                           Never a fill block, never a button, never a status.
+                           One element per view at most. */
+
+  /* Legacy aliases — kept so existing pages render in the new palette
+     without rewrites. Each maps to its matching brand role. */
+  --sage:   var(--complete);
+  --amber:  var(--pending);
+  --danger: var(--alarm);
+
+  --bg-grad:    linear-gradient(160deg, #EDE5D6 0%, #E5DBCA 100%);
 
   /* Typography */
   --font-serif: 'PP Writer', 'Cormorant Garamond', Georgia, serif;
