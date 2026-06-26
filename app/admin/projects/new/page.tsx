@@ -30,6 +30,8 @@ function NewProjectPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const preselectedClient = searchParams.get("client") ?? ""
+  const prefillTitle      = searchParams.get("title") ?? ""
+  const prefillScope      = searchParams.get("scope") ?? ""
 
   const [clients, setClients]   = useState<any[]>([])
   const [contacts, setContacts] = useState<any[]>([])
@@ -39,8 +41,8 @@ function NewProjectPageInner() {
   const [form, setForm] = useState({
     client_id:    preselectedClient,
     contact_id:   "",
-    title:        "",
-    scope:        "",
+    title:        prefillTitle,
+    scope:        prefillScope,
     status:       "active",
     start_date:   "",
     end_date:     "",

@@ -105,6 +105,45 @@ export default async function AdminQuoteDetailPage({ params }: { params: { id: s
           </div>
         </div>
 
+        {/* Accepted → spin up the next artifact (Ticket 10) */}
+        {(quote as any).status === "accepted" && (
+          <div style={{
+            display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10,
+            marginBottom: 24,
+            paddingTop: 18, paddingBottom: 18,
+            borderTop: "0.5px solid var(--hairline, rgba(26,24,21,0.12))",
+            borderBottom: "0.5px solid var(--hairline, rgba(26,24,21,0.12))",
+          }}>
+            <span style={{ ...mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--complete)", opacity: 0.8, marginRight: 6 }}>
+              Accepted — spin up
+            </span>
+            <Link
+              href={`/admin/projects/new?client=${(quote as any).client_id}&title=${encodeURIComponent((quote as any).title ?? "")}`}
+              style={{
+                ...mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase",
+                color: "var(--cream)", background: "var(--ink)",
+                border: "0.5px solid var(--ink)",
+                padding: "9px 14px", textDecoration: "none",
+              }}
+            >
+              Create project →
+            </Link>
+            {!invoice && (
+              <Link
+                href={`/admin/invoices/new?client=${(quote as any).client_id}&title=${encodeURIComponent((quote as any).title ?? "")}&amount=${(total / 100).toFixed(2)}&line=${encodeURIComponent((quote as any).title ?? "")}`}
+                style={{
+                  ...mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase",
+                  color: "var(--ink)", background: "transparent",
+                  border: "0.5px solid rgba(26,24,21,0.25)",
+                  padding: "9px 14px", textDecoration: "none",
+                }}
+              >
+                Create invoice (${Math.round(total / 100).toLocaleString()})
+              </Link>
+            )}
+          </div>
+        )}
+
         {/* Meta */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 28, paddingTop: 22, borderTop: "0.5px solid rgba(15,15,14,0.1)" }}>
           <MetaRow label="Payment" value={scheduleLabel} />

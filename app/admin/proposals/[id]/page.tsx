@@ -103,6 +103,43 @@ export default async function AdminProposalDetailPage({ params }: { params: { id
           </div>
         </div>
 
+        {/* Accepted → spin up the next artifact (Ticket 10) */}
+        {isAccepted && (
+          <div style={{
+            display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10,
+            marginTop: -32, marginBottom: 36,
+            paddingTop: 18, borderTop: "0.5px solid var(--hairline, rgba(26,24,21,0.12))",
+          }}>
+            <span style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--complete)", opacity: 0.8, marginRight: 6 }}>
+              Accepted — spin up
+            </span>
+            <Link
+              href={`/admin/projects/new?client=${proposal.client_id}&title=${encodeURIComponent(proposal.title ?? "")}&scope=${encodeURIComponent(proposal.overview ?? "")}`}
+              style={{
+                fontFamily: "'Matter SemiMono', monospace",
+                fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase",
+                color: "var(--cream)", background: "var(--ink)",
+                border: "0.5px solid var(--ink)",
+                padding: "9px 14px", textDecoration: "none",
+              }}
+            >
+              Create project →
+            </Link>
+            <Link
+              href={`/admin/invoices/new?client=${proposal.client_id}&title=${encodeURIComponent(`${proposal.title ?? "Project"} — ${depositPct}% deposit`)}&amount=${(deposit / 100).toFixed(2)}&line=${encodeURIComponent(`${proposal.title ?? "Project"} — ${depositPct}% deposit`)}`}
+              style={{
+                fontFamily: "'Matter SemiMono', monospace",
+                fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase",
+                color: "var(--ink)", background: "transparent",
+                border: "0.5px solid rgba(26,24,21,0.25)",
+                padding: "9px 14px", textDecoration: "none",
+              }}
+            >
+              Create invoice ({depositPct}% deposit · ${Math.round(deposit / 100).toLocaleString()})
+            </Link>
+          </div>
+        )}
+
         {/* PDF upload */}
         <div style={{ marginBottom: 24, display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{ fontFamily: "'Matter SemiMono', monospace", fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.35 }}>

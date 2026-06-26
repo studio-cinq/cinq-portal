@@ -16,6 +16,9 @@ function NewInvoicePageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const preselectedClient = searchParams.get("client") ?? ""
+  const prefillTitle      = searchParams.get("title") ?? ""
+  const prefillAmount     = searchParams.get("amount") ?? ""   // dollar amount, e.g. "1500.00"
+  const prefillLineLabel  = searchParams.get("line") ?? ""     // line item description
 
   const [clients, setClients]   = useState<any[]>([])
   const [projects, setProjects] = useState<any[]>([])
@@ -26,7 +29,7 @@ function NewInvoicePageInner() {
     client_id:      preselectedClient,
     project_id:     "",
     invoice_number: "",
-    description:    "",
+    description:    prefillTitle,
     due_date:       "",
     status:         "sent",
     unlocks_files:  false,
@@ -37,9 +40,11 @@ function NewInvoicePageInner() {
     skip_email:     false,
   })
 
-  const [lineItems, setLineItems] = useState<LineItem[]>([
-    { description: "", amount: "" },
-  ])
+  const [lineItems, setLineItems] = useState<LineItem[]>(
+    prefillAmount
+      ? [{ description: prefillLineLabel || prefillTitle || "", amount: prefillAmount }]
+      : [{ description: "", amount: "" }]
+  )
 
   const total = lineItems.reduce((sum, item) => {
     const val = parseFloat(item.amount)
