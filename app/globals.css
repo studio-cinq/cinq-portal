@@ -77,7 +77,7 @@
   --alarm:    #9E3528;  /* overdue / error / urgent / destructive */
   --pending:  #C4943A;  /* pending / draft / awaiting / in-progress. Fill only. */
   --complete: #6F7444;  /* paid / complete / accepted / approved */
-  --link:     #0072BB;  /* French blue — links + focus rings ONLY.
+  --link:     #3C6E8E;  /* Muted French blue — links + focus rings ONLY.
                            Never a fill block, never a button, never a status.
                            One element per view at most. */
 
