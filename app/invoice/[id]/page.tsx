@@ -251,6 +251,13 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
             { label: "From", value: "Studio Cinq", subline: "Kacie Yates" },
             { label: "To", value: client?.name ?? "—", subline: client?.contact_name || undefined },
             { label: "Project", value: project?.title ?? "—" },
+            {
+              label: "Issued",
+              value: (() => {
+                const d = (invoice as any).last_sent_at ?? invoice.created_at
+                return d ? new Date(d).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : "—"
+              })(),
+            },
             { label: "Due", value: invoice.due_date ? new Date(invoice.due_date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : "Upon receipt" },
           ].map(row => (
             <div key={row.label}>
