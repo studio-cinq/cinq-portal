@@ -1,17 +1,12 @@
 import { createServerComponentClient } from "@/lib/supabase-server"
 import Link from "next/link"
 import PortalNav from "@/components/portal/Nav"
+import CopyLinkButton from "@/components/portal/CopyLinkButton"
 import DeleteButton from "@/components/portal/DeleteButton"
+import { statusColor } from "@/lib/status-tokens"
 
 const mono = { fontFamily: "var(--font-mono)" } as const
 const sans = { fontFamily: "var(--font-sans)" } as const
-
-const STATUS_COLOR: Record<string, string> = {
-  draft:    "rgba(15,15,14,0.45)",
-  sent:     "var(--amber)",
-  viewed:   "var(--sage)",
-  archived: "rgba(15,15,14,0.35)",
-}
 
 export default async function AdminPlansPage() {
   const supabase = await createServerComponentClient()
@@ -52,27 +47,31 @@ export default async function AdminPlansPage() {
           </div>
         ) : (
           <>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 180px 120px 110px 70px", gap: 16, paddingBottom: 10, borderBottom: "0.5px solid rgba(15,15,14,0.12)" }}>
-              {["Plan", "Client", "Status", "Sent", ""].map((h, i) => (
+            <div className="admin-table-header" style={{ display: "grid", gridTemplateColumns: "1fr 180px 120px 110px 100px 60px", gap: 16, paddingBottom: 10, borderBottom: "0.5px solid rgba(15,15,14,0.12)" }}>
+              {["Plan", "Client", "Status", "Sent", "", ""].map((h, i) => (
                 <div key={i} style={{ ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.45 }}>{h}</div>
               ))}
             </div>
             {plans.map(p => (
-              <div key={p.id} style={{
-                display: "grid", gridTemplateColumns: "1fr 180px 120px 110px 70px", gap: 16,
+              <div key={p.id} className="admin-proposal-row" style={{
+                display: "grid", gridTemplateColumns: "1fr 180px 120px 110px 100px 60px", gap: 16,
                 alignItems: "center", padding: "16px 0",
                 borderBottom: "0.5px solid rgba(15,15,14,0.08)",
               }}>
-                <Link href={`/admin/plans/${p.id}/edit`} style={{ ...sans, fontSize: "var(--text-body)", opacity: 0.88, textDecoration: "none", color: "inherit" }}>
+                <Link href={`/admin/plans/${p.id}/edit`} style={{
+                  ...sans, fontSize: "var(--text-body)", opacity: 0.88, textDecoration: "none", color: "inherit",
+                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0,
+                }}>
                   {p.title}
                 </Link>
-                <div style={{ ...sans, fontSize: "var(--text-sm)", opacity: 0.6 }}>{p.clients?.name ?? "—"}</div>
-                <div style={{ ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", color: STATUS_COLOR[p.status] }}>
+                <div className="admin-client-col-hide" style={{ ...sans, fontSize: "var(--text-sm)", opacity: 0.6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.clients?.name ?? "—"}</div>
+                <div style={{ ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", color: statusColor(p.status) }}>
                   {p.status}
                 </div>
                 <div style={{ ...mono, fontSize: 10, letterSpacing: "0.08em", opacity: 0.5 }}>
                   {p.last_sent_at ? new Date(p.last_sent_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
                 </div>
+                <CopyLinkButton id={p.id} basePath="/plan" />
                 <DeleteButton endpoint="/api/admin/delete/plan" id={p.id} confirm={`Delete "${p.title}"? This cannot be undone.`} />
               </div>
             ))}

@@ -143,7 +143,7 @@ export default function ClientQuotePage({ params }: { params: { id: string } }) 
           <div style={{ ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.42, marginBottom: 10 }}>
             Quote
           </div>
-          <h1 style={{ ...sans, fontWeight: 400, fontSize: isMobile ? 26 : 32, letterSpacing: "-0.02em", margin: "0 0 18px", opacity: 0.95, lineHeight: 1.15 }}>
+          <h1 style={{ ...sans, fontWeight: 400, fontSize: "clamp(26px, 3.5vw, 32px)", letterSpacing: "-0.02em", margin: "0 0 18px", opacity: 0.95, lineHeight: 1.15 }}>
             {quote.title}
           </h1>
           {quote.description && (

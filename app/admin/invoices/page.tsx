@@ -68,7 +68,7 @@ export default async function AdminInvoicesPage({
         </div>
 
         {/* Summary cards — always all three; Overdue greys at $0 */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 32 }}>
+        <div className="admin-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 32 }}>
           <SummaryCard label="Outstanding" value={fmtMoney(outstandingTotal)} />
           <SummaryCard
             label={overdueCount > 0 ? `Overdue · ${overdueCount}` : "Overdue"}

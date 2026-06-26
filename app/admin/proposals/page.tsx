@@ -3,6 +3,7 @@ import Link from "next/link"
 import PortalNav from "@/components/portal/Nav"
 import CopyLinkButton from "@/components/portal/CopyLinkButton"
 import DeleteButton from "@/components/portal/DeleteButton"
+import { statusColor } from "@/lib/status-tokens"
 
 export default async function AdminProposalsPage() {
   const supabase = await createServerComponentClient()
@@ -51,11 +52,11 @@ export default async function AdminProposalsPage() {
                 borderBottom: "0.5px solid rgba(15,15,14,0.08)",
               }}
             >
-              <Link href={`/admin/proposals/${proposal.id}`} style={{ textDecoration: "none" }}>
-                <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-full)" as any }}>{proposal.title}</div>
-                {proposal.subtitle && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-eyebrow)", opacity: "var(--op-muted)" as any, marginTop: 2 }}>{proposal.subtitle}</div>}
+              <Link href={`/admin/proposals/${proposal.id}`} style={{ textDecoration: "none", minWidth: 0, overflow: "hidden" }}>
+                <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-full)" as any, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{proposal.title}</div>
+                {proposal.subtitle && <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-eyebrow)", opacity: "var(--op-muted)" as any, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{proposal.subtitle}</div>}
               </Link>
-              <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: "var(--op-muted)" as any }}>{proposal.clients?.name}</div>
+              <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: "var(--op-muted)" as any, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{proposal.clients?.name}</div>
               <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-body)" as any }}>${Math.round(total / 100).toLocaleString()}</div>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: isExpired ? 0.35 : "var(--op-muted)" as any, color: isExpired ? "var(--danger)" : "var(--ink)" }}>
                 {proposal.expires_at ? new Date(proposal.expires_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
@@ -84,14 +85,8 @@ export default async function AdminProposalsPage() {
 }
 
 function ProposalStatus({ status }: { status: string }) {
-  const colors: Record<string, string> = {
-    draft:    "rgba(15,15,14,0.35)",
-    sent:     "var(--amber)",
-    accepted: "var(--sage)",
-    declined: "var(--danger)",
-  }
   return (
-    <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.08em", textTransform: "uppercase", color: colors[status] ?? "rgba(15,15,14,0.4)" }}>
+    <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.08em", textTransform: "uppercase", color: statusColor(status) }}>
       {status}
     </span>
   )

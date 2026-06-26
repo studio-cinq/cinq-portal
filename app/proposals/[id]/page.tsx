@@ -540,7 +540,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
               <div style={{ ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.38, marginBottom: 12 }}>
                 Proposal · Studio Cinq
               </div>
-              <h1 style={{ ...serif, fontWeight: 400, fontSize: 26, opacity: 0.9, letterSpacing: "-0.015em", marginBottom: 8, lineHeight: 1.2 }}>
+              <h1 style={{ ...serif, fontWeight: 400, fontSize: "clamp(26px, 3.5vw, 32px)", opacity: 0.9, letterSpacing: "-0.015em", marginBottom: 8, lineHeight: 1.2 }}>
                 {proposal.title}
               </h1>
               {proposal.subtitle && <p style={{ ...serif, fontSize: "var(--text-body)", opacity: 0.55, lineHeight: 1.65 }}>{proposal.subtitle}</p>}
@@ -572,7 +572,7 @@ export default function ProposalPage({ params }: { params: { id: string } }) {
               <div style={{ ...mono, fontSize: "var(--text-eyebrow)", letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.38, marginBottom: 14 }}>
                 Proposal · Studio Cinq
               </div>
-              <h1 style={{ ...serif, fontWeight: 400, fontSize: "var(--text-display)", opacity: 0.9, letterSpacing: "-0.015em", marginBottom: 10, lineHeight: 1.2 }}>
+              <h1 style={{ ...serif, fontWeight: 400, fontSize: "clamp(26px, 3.5vw, 32px)", opacity: 0.9, letterSpacing: "-0.015em", marginBottom: 10, lineHeight: 1.2 }}>
                 {proposal.title}
               </h1>
               {proposal.subtitle && <p style={{ ...serif, fontSize: "var(--text-lg)", opacity: 0.55, lineHeight: 1.65 }}>{proposal.subtitle}</p>}
