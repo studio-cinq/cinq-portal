@@ -41,6 +41,10 @@ export async function POST(req: Request) {
       notes:    invoice.notes ?? undefined,
     })
 
+    await (supabaseAdmin.from("invoices") as any)
+      .update({ last_sent_at: new Date().toISOString() })
+      .eq("id", invoice.id)
+
     return NextResponse.json({ ok: true })
   } catch (err) {
     console.error("[send-invoice-by-number]", err)

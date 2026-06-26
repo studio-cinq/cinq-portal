@@ -12,6 +12,18 @@
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-m", "http.server", "8099", "--directory", "/Users/kacieyates/.hb-preview"],
       "port": 8099
+    },
+    {
+      "name": "cinq-website",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "/Users/kacieyates/cinq-website", "run", "dev", "--", "-p", "3100"],
+      "port": 3100
+    },
+    {
+      "name": "sheepish-wolf",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "/Users/kacieyates/sheepish-wolf", "run", "dev", "--", "--port", "3200", "--path", "/Users/kacieyates/sheepish-wolf"],
+      "port": 3200
     }
   ]
 }

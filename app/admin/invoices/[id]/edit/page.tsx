@@ -41,6 +41,7 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
   const [emailSent, setEmailSent] = useState(false)
   const [remindersSent, setRemindersSent] = useState(0)
   const [lastReminderAt, setLastReminderAt] = useState<string | null>(null)
+  const [lastSentAt, setLastSentAt] = useState<string | null>(null)
 
   const [form, setForm] = useState({
     client_id:      "",
@@ -95,6 +96,7 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
 
         setRemindersSent(inv.reminders_sent_count ?? 0)
         setLastReminderAt(inv.last_reminder_sent_at ?? null)
+        setLastSentAt(inv.last_sent_at ?? null)
 
         // Load line items from DB
         if (Array.isArray(inv.line_items) && inv.line_items.length > 0) {
@@ -553,8 +555,13 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
 
           {/* Send reminder — only visible for unpaid invoices that have been sent */}
           {(form.status === "sent" || form.status === "overdue") && (
-            <div style={{ marginTop: 28, paddingTop: 24, borderTop: "0.5px solid rgba(15,15,14,0.08)", display: "flex", alignItems: "center", gap: 18 }}>
+            <div style={{ marginTop: 28, paddingTop: 24, borderTop: "0.5px solid rgba(15,15,14,0.08)", display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap" }}>
               <SendInvoiceReminderButton invoiceId={params.id} remindersSent={remindersSent} />
+              {lastSentAt && (
+                <div style={{ ...mono, fontSize: 10, letterSpacing: "0.1em", opacity: 0.55 }}>
+                  Sent {new Date(lastSentAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                </div>
+              )}
               {remindersSent > 0 && lastReminderAt && (
                 <div style={{ ...mono, fontSize: 10, letterSpacing: "0.1em", opacity: 0.5 }}>
                   {remindersSent} reminder{remindersSent === 1 ? "" : "s"} sent · last on {new Date(lastReminderAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
