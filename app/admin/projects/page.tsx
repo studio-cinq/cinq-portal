@@ -7,19 +7,21 @@ const sans: React.CSSProperties = { fontFamily: "var(--font-sans)" }
 const serif: React.CSSProperties = { fontFamily: "var(--font-serif)" }
 
 const STATUS_LABELS: Record<string, string> = {
-  proposal_sent:   "Proposal sent",
-  active:          "Active",
-  awaiting_client: "Awaiting client",
-  on_hold:         "On hold",
-  complete:        "Complete",
+  proposal_sent:    "Proposal sent",
+  active:           "Active",
+  awaiting_client:  "Awaiting client",
+  awaiting_payment: "Awaiting payment",
+  on_hold:          "On hold",
+  complete:         "Complete",
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  proposal_sent:   "var(--amber)",
-  active:          "var(--sage)",
-  awaiting_client: "var(--amber)",
-  on_hold:         "var(--amber)",
-  complete:        "rgba(15,15,14,0.4)",
+  proposal_sent:    "var(--amber)",
+  active:           "var(--sage)",
+  awaiting_client:  "var(--amber)",
+  awaiting_payment: "var(--amber)",
+  on_hold:          "var(--amber)",
+  complete:         "rgba(15,15,14,0.4)",
 }
 
 const FOCUS_LABELS: Record<string, string> = {

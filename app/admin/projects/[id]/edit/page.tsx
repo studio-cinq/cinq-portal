@@ -142,6 +142,7 @@ export default function EditProjectPage() {
                 <option value="proposal_sent">Proposal sent</option>
                 <option value="active">Active</option>
                 <option value="awaiting_client">Awaiting client</option>
+                <option value="awaiting_payment">Awaiting payment</option>
                 <option value="on_hold">On hold</option>
                 <option value="complete">Complete</option>
               </select>
