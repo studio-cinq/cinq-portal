@@ -26,7 +26,8 @@ const ADMIN_LINKS = [
   { href: "/admin/plans",     label: "Plans"     },
   { href: "/admin/invoices",  label: "Invoices"  },
   { href: "/admin/calendar",  label: "Calendar"  },
-  { href: "/admin/reviews",   label: "Reviews"   },
+  // Reviews removed from nav for now — routes + data still exist at
+  // /admin/reviews and /review/[id] if we want to surface them again.
 ]
 
 export default function PortalNav({ clientName, isAdmin }: NavProps) {

@@ -104,15 +104,8 @@ export default async function AdminStudioPage() {
     })
   }
 
-  for (const session of reviewSessions.filter(s => s.submitted_at && s.status === "revising")) {
-    const proj = session.projects as any
-    attention.push({
-      id: `rev-${session.id}`, client: proj?.clients?.name ?? "", clientId: proj?.client_id ?? "",
-      tag: "Feedback received", tagColor: "var(--amber)", urgency: 2,
-      text: `${proj?.title ?? "Review"} — client submitted feedback`,
-      href: `/admin/reviews/${session.id}`,
-    })
-  }
+  // Review attention rows hidden for now — keep the data fetch in case
+  // we resurface them later; just don't surface them in the feed.
 
   for (const msg of messages) {
     const proj = msg.projects as any
@@ -194,12 +187,8 @@ export default async function AdminStudioPage() {
   for (const inv of (invoiceViewsRaw ?? []) as any[]) {
     if (inv.viewed_at) activity.push({ id: `invview-${inv.id}`, client: inv.clients?.name ?? "", clientId: inv.client_id, label: "Viewed invoice", timestamp: new Date(inv.viewed_at), icon: "viewed" })
   }
-  for (const session of (approvedReviewsRaw ?? []) as any[]) {
-    if (session.approved_at) { const proj = session.projects as any; activity.push({ id: `revapprove-${session.id}`, client: proj?.clients?.name ?? "", clientId: proj?.client_id ?? "", label: `Approved ${proj?.title ?? "review"}`, timestamp: new Date(session.approved_at), icon: "approved" }) }
-  }
-  for (const session of (submittedReviewsRaw ?? []) as any[]) {
-    if (session.submitted_at) { const proj = session.projects as any; activity.push({ id: `revfeedback-${session.id}`, client: proj?.clients?.name ?? "", clientId: proj?.client_id ?? "", label: `Submitted feedback on ${proj?.title ?? "review"}`, timestamp: new Date(session.submitted_at), icon: "feedback" }) }
-  }
+  // Review activity rows hidden for now (approved + submitted feedback).
+  // Data still loaded above so re-enabling later is a one-block change.
   for (const f of (approvedFoundationsRaw ?? []) as any[]) {
     if (f.approved_at) activity.push({ id: `foundapprove-${f.id}`, client: f.clients?.name ?? "", clientId: f.client_id, label: `Approved brand direction${f.title ? ` — ${f.title}` : ""}`, timestamp: new Date(f.approved_at), icon: "approved" })
   }

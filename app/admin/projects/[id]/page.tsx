@@ -228,24 +228,8 @@ export default async function ProjectOverviewPage({ params }: { params: { id: st
     })
   }
 
-  for (const r of reviews) {
-    if (r.submitted_at) activity.push({
-      id: `rev-submitted-${r.id}`,
-      kind: "review_submitted",
-      timestamp: new Date(r.submitted_at),
-      label: `Review round ${r.current_round ?? ""} feedback submitted`,
-      icon: "amber",
-      href: `/admin/reviews`,
-    })
-    if (r.approved_at) activity.push({
-      id: `rev-approved-${r.id}`,
-      kind: "review_approved",
-      timestamp: new Date(r.approved_at),
-      label: "Site approved",
-      icon: "sage",
-      href: `/admin/reviews`,
-    })
-  }
+  // Review activity rows hidden for now — data still loaded so this is a
+  // one-block restore when we resurface Reviews in the portal.
 
   for (const sc of statusChanges as any[]) {
     const info = statusChangeLabel(sc.from_status, sc.to_status)
