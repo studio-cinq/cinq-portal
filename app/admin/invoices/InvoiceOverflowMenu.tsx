@@ -1,19 +1,21 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
-import DownloadPDFButton from "@/components/portal/DownloadPDFButton"
-import DeleteButton from "@/components/portal/DeleteButton"
 
 /**
  * Per-row overflow popover for the invoices index. Holds the rare actions
- * (Edit, Download PDF, Delete) so the inline row keeps only Mark paid +
- * Send reminder + View, depending on status.
+ * (Edit, Download PDF, Delete). Menu items are plain rows that share one
+ * visual treatment; we don't reuse the standalone button components here
+ * because their built-in styling fights the menu layout.
  */
 export default function InvoiceOverflowMenu({
   invoiceId, invoiceNumber,
 }: { invoiceId: string; invoiceNumber: string }) {
+  const router = useRouter()
   const [open, setOpen] = useState(false)
+  const [busy, setBusy] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -32,8 +34,42 @@ export default function InvoiceOverflowMenu({
     }
   }, [open])
 
+  async function handleDownload() {
+    setOpen(false)
+    window.open(`/api/pdf/invoice/${invoiceId}`, "_blank", "noopener,noreferrer")
+  }
+
+  async function handleDelete() {
+    if (busy) return
+    if (!confirm(`Delete invoice #${invoiceNumber}? This cannot be undone.`)) return
+    setBusy(true)
+    try {
+      const res = await fetch("/api/admin/delete/invoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: invoiceId }),
+      })
+      if (!res.ok) throw new Error("Delete failed")
+      setOpen(false)
+      router.refresh()
+    } catch (err) {
+      console.error("[invoice delete]", err)
+      alert("Couldn't delete that invoice.")
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
-    <div ref={ref} style={{ position: "relative" }}>
+    <div
+      ref={ref}
+      style={{
+        position: "relative",
+        // Raise the row this menu lives in above sibling rows while the
+        // popover is open so absolutely-positioned items render on top.
+        zIndex: open ? 20 : "auto",
+      }}
+    >
       <button
         onClick={() => setOpen(o => !o)}
         aria-label={`More actions for invoice #${invoiceNumber}`}
@@ -63,48 +99,58 @@ export default function InvoiceOverflowMenu({
             top: "calc(100% + 4px)",
             right: 0,
             minWidth: 180,
-            background: "var(--cream, #F5F1EA)",
+            // Solid surface — distinct from the page cream so rows behind
+            // don't bleed through.
+            background: "#FFFCF4",
             border: "0.5px solid rgba(15,15,14,0.18)",
-            boxShadow: "0 4px 16px rgba(15,15,14,0.08)",
-            padding: "6px 0",
-            zIndex: 10,
+            boxShadow: "0 8px 24px rgba(15,15,14,0.12)",
+            padding: "4px 0",
+            zIndex: 30,
           }}
         >
           <Link
             href={`/admin/invoices/${invoiceId}/edit`}
             role="menuitem"
             onClick={() => setOpen(false)}
-            style={menuItemStyle}
+            style={itemStyle()}
           >
             Edit
           </Link>
-          <div role="menuitem" style={{ ...menuItemStyle, padding: 0 }}>
-            <DownloadPDFButton type="invoice" id={invoiceId} label="Download PDF" />
-          </div>
+          <button role="menuitem" onClick={handleDownload} style={itemStyle()}>
+            Download PDF
+          </button>
           <div style={{ height: 1, background: "rgba(15,15,14,0.08)", margin: "4px 0" }} />
-          <div role="menuitem" style={{ ...menuItemStyle, padding: "8px 14px" }}>
-            <DeleteButton
-              endpoint="/api/admin/delete/invoice"
-              id={invoiceId}
-              confirm={`Delete invoice #${invoiceNumber}? This cannot be undone.`}
-              label="Delete"
-            />
-          </div>
+          <button
+            role="menuitem"
+            onClick={handleDelete}
+            disabled={busy}
+            style={itemStyle("danger")}
+          >
+            {busy ? "Deleting…" : "Delete"}
+          </button>
         </div>
       )}
     </div>
   )
 }
 
-const menuItemStyle: React.CSSProperties = {
-  display: "block",
-  padding: "8px 14px",
-  fontFamily: "var(--font-mono)",
-  fontSize: 11,
-  letterSpacing: "0.1em",
-  textTransform: "uppercase",
-  color: "var(--ink)",
-  opacity: 0.75,
-  textDecoration: "none",
-  cursor: "pointer",
+function itemStyle(tone?: "danger"): React.CSSProperties {
+  return {
+    display: "block",
+    width: "100%",
+    textAlign: "left",
+    boxSizing: "border-box",
+    padding: "8px 14px",
+    fontFamily: "var(--font-mono)",
+    fontSize: 11,
+    letterSpacing: "0.1em",
+    textTransform: "uppercase",
+    color: tone === "danger" ? "var(--danger)" : "var(--ink)",
+    opacity: tone === "danger" ? 0.95 : 0.78,
+    background: "transparent",
+    border: "none",
+    textDecoration: "none",
+    cursor: "pointer",
+    lineHeight: 1.4,
+  }
 }
