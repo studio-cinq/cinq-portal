@@ -1,7 +1,7 @@
 import { createServerComponentClient } from "@/lib/supabase-server"
 import Link from "next/link"
 import PortalNav from "@/components/portal/Nav"
-import DeleteButton from "@/components/portal/DeleteButton"
+import RowOverflowMenu from "@/components/portal/RowOverflowMenu"
 
 export default async function AdminClientsPage() {
   const supabase = await createServerComponentClient()
@@ -77,7 +77,19 @@ export default async function AdminClientsPage() {
               </div>
 
               <Link href={`/admin/clients/${client.id}`} style={{ textAlign: "right", fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: "var(--op-ghost)" as any, textDecoration: "none" }}>&rarr;</Link>
-              <DeleteButton endpoint="/api/admin/delete/client" id={client.id} confirm={`Delete ${client.name}? This will also delete all their projects, invoices, and proposals. This cannot be undone.`} />
+              <RowOverflowMenu
+                ariaLabel={`More actions for ${client.name}`}
+                items={[
+                  { kind: "link", label: "Edit", href: `/admin/clients/${client.id}/edit` },
+                  { kind: "divider" },
+                  {
+                    kind: "delete",
+                    endpoint: "/api/admin/delete/client",
+                    id: client.id,
+                    confirm: `Delete ${client.name}? This will also delete all their projects, invoices, and proposals. This cannot be undone.`,
+                  },
+                ]}
+              />
             </div>
           )
         })}

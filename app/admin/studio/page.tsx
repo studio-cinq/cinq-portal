@@ -328,18 +328,21 @@ export default async function AdminStudioPage() {
           </section>
         )}
 
-        {/* ━━━ Other clients ━━━ */}
+        {/* ━━━ Other clients link (full roster lives at /admin/clients) ━━━ */}
         {otherClients.length > 0 && (
           <section style={{ marginBottom: 40 }}>
-            <div style={{ ...sectionLabel, opacity: 0.35 }}>
-              {activeClients.length > 0 ? `Other clients (${otherClients.length})` : `All clients (${otherClients.length})`}
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 2, marginTop: 14 }}>
-              {otherClients.map(client => (
-                <ClientRow key={client.id} client={client} projects={client._projects} invoicesOpen={invoicesOpen} compact />
-              ))}
-            </div>
+            <Link
+              href="/admin/clients"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 8,
+                fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
+                letterSpacing: "0.14em", textTransform: "uppercase",
+                color: "var(--ink)", opacity: 0.45, textDecoration: "none",
+                padding: "10px 0",
+              }}
+            >
+              See all {clients.length} clients →
+            </Link>
           </section>
         )}
 

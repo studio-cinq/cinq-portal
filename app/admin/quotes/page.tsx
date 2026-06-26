@@ -2,7 +2,7 @@ import { createServerComponentClient } from "@/lib/supabase-server"
 import Link from "next/link"
 import PortalNav from "@/components/portal/Nav"
 import CopyLinkButton from "@/components/portal/CopyLinkButton"
-import DeleteButton from "@/components/portal/DeleteButton"
+import RowOverflowMenu from "@/components/portal/RowOverflowMenu"
 import { statusColor } from "@/lib/status-tokens"
 
 export default async function AdminQuotesPage() {
@@ -74,7 +74,14 @@ export default async function AdminQuotesPage() {
               </div>
               <QuoteStatus status={q.status} />
               <CopyLinkButton id={q.id} basePath="/quotes" />
-              <DeleteButton endpoint="/api/admin/delete/quote" id={q.id} confirm={confirmMsg} />
+              <RowOverflowMenu
+                ariaLabel={`More actions for ${q.title}`}
+                items={[
+                  { kind: "link", label: "Edit", href: `/admin/quotes/${q.id}` },
+                  { kind: "divider" },
+                  { kind: "delete", endpoint: "/api/admin/delete/quote", id: q.id, confirm: confirmMsg },
+                ]}
+              />
             </div>
           )
         })}

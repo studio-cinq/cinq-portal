@@ -2,7 +2,7 @@ import { createServerComponentClient } from "@/lib/supabase-server"
 import Link from "next/link"
 import PortalNav from "@/components/portal/Nav"
 import CopyLinkButton from "@/components/portal/CopyLinkButton"
-import DeleteButton from "@/components/portal/DeleteButton"
+import RowOverflowMenu from "@/components/portal/RowOverflowMenu"
 import { statusColor } from "@/lib/status-tokens"
 
 const mono = { fontFamily: "var(--font-mono)" } as const
@@ -72,7 +72,19 @@ export default async function AdminPlansPage() {
                   {p.last_sent_at ? new Date(p.last_sent_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
                 </div>
                 <CopyLinkButton id={p.id} basePath="/plan" />
-                <DeleteButton endpoint="/api/admin/delete/plan" id={p.id} confirm={`Delete "${p.title}"? This cannot be undone.`} />
+                <RowOverflowMenu
+                  ariaLabel={`More actions for ${p.title}`}
+                  items={[
+                    { kind: "link", label: "Edit", href: `/admin/plans/${p.id}/edit` },
+                    { kind: "divider" },
+                    {
+                      kind: "delete",
+                      endpoint: "/api/admin/delete/plan",
+                      id: p.id,
+                      confirm: `Delete "${p.title}"? This cannot be undone.`,
+                    },
+                  ]}
+                />
               </div>
             ))}
           </>

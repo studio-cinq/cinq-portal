@@ -2,7 +2,7 @@ import { createServerComponentClient } from "@/lib/supabase-server"
 import Link from "next/link"
 import PortalNav from "@/components/portal/Nav"
 import CopyLinkButton from "@/components/portal/CopyLinkButton"
-import DeleteButton from "@/components/portal/DeleteButton"
+import RowOverflowMenu from "@/components/portal/RowOverflowMenu"
 import { statusColor } from "@/lib/status-tokens"
 
 export default async function AdminProposalsPage() {
@@ -69,7 +69,14 @@ export default async function AdminProposalsPage() {
               </div>
               <ProposalStatus status={proposal.status} />
               <CopyLinkButton id={proposal.id} />
-              <DeleteButton endpoint="/api/admin/delete/proposal" id={proposal.id} confirm={`Delete "${proposal.title}"? This cannot be undone.`} />
+              <RowOverflowMenu
+                ariaLabel={`More actions for ${proposal.title}`}
+                items={[
+                  { kind: "link", label: "Edit", href: `/admin/proposals/${proposal.id}` },
+                  { kind: "divider" },
+                  { kind: "delete", endpoint: "/api/admin/delete/proposal", id: proposal.id, confirm: `Delete "${proposal.title}"? This cannot be undone.` },
+                ]}
+              />
             </div>
           )
         })}
