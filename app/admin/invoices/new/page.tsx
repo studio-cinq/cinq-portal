@@ -25,6 +25,11 @@ function NewInvoicePageInner() {
   const [saving, setSaving]     = useState(false)
   const [error, setError]       = useState<string | null>(null)
 
+  // Inline "+ New project" — when active, project_id stays empty and we
+  // create a project on submit using newProjectTitle.
+  const [newProjectMode, setNewProjectMode]   = useState(false)
+  const [newProjectTitle, setNewProjectTitle] = useState("")
+
   const [form, setForm] = useState({
     client_id:      preselectedClient,
     project_id:     "",
@@ -102,9 +107,36 @@ function NewInvoicePageInner() {
     }))
     const totalCents = items.reduce((sum, item) => sum + item.amount, 0)
 
+    // Inline "+ New project" — spin up a lightweight project first so the
+    // invoice can carry a project_id. Silently skips if the input is empty.
+    let projectIdForInvoice: string | null = form.project_id || null
+    if (newProjectMode && newProjectTitle.trim()) {
+      const clientName = clients.find(c => c.id === form.client_id)?.name ?? "project"
+      const baseSlug = `${clientName} ${newProjectTitle}`.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
+      const { data: takenRows } = await supabase.from("projects").select("slug").ilike("slug", `${baseSlug}%`)
+      const taken = new Set(((takenRows ?? []) as any[]).map(r => r.slug).filter(Boolean))
+      let slug = baseSlug
+      let n = 2
+      while (taken.has(slug)) { slug = `${baseSlug}-${n}`; n++ }
+
+      const { data: newProject, error: projectErr } = await supabase.from("projects").insert({
+        client_id: form.client_id,
+        title:     newProjectTitle.trim(),
+        status:    "active",
+        slug,
+      } as any).select("id").single()
+
+      if (projectErr || !newProject) {
+        setSaving(false)
+        setError(`Couldn't create project — ${projectErr?.message ?? "unknown error"}`)
+        return
+      }
+      projectIdForInvoice = (newProject as any).id
+    }
+
     const { error: dbError } = await supabase.from("invoices").insert({
       client_id:      form.client_id,
-      project_id:     form.project_id || null,
+      project_id:     projectIdForInvoice,
       invoice_number: form.invoice_number.trim(),
       description:    form.description.trim(),
       amount:         totalCents,
@@ -162,17 +194,67 @@ function NewInvoicePageInner() {
           <div className="form-grid-2col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
             <div>
               <label style={labelStyle}>Client *</label>
-              <select value={form.client_id} onChange={e => { set("client_id", e.target.value); set("project_id", "") }} style={{ ...inputStyle, cursor: "pointer" }}>
+              <select
+                value={form.client_id}
+                onChange={e => {
+                  set("client_id", e.target.value)
+                  set("project_id", "")
+                  setNewProjectMode(false)
+                  setNewProjectTitle("")
+                }}
+                style={{ ...inputStyle, cursor: "pointer" }}
+              >
                 <option value="">Select client…</option>
                 {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
             <div>
               <label style={labelStyle}>Project <span style={{ opacity: 0.5 }}>(optional)</span></label>
-              <select value={form.project_id} onChange={e => set("project_id", e.target.value)} disabled={!form.client_id} style={{ ...inputStyle, cursor: form.client_id ? "pointer" : "default", opacity: form.client_id ? 1 : 0.4 }}>
-                <option value="">No project</option>
-                {projects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
-              </select>
+              {newProjectMode ? (
+                <div style={{ display: "flex", alignItems: "flex-end", gap: 8 }}>
+                  <input
+                    type="text"
+                    value={newProjectTitle}
+                    onChange={e => setNewProjectTitle(e.target.value)}
+                    placeholder="Project title…"
+                    autoFocus
+                    style={{ ...inputStyle, flex: 1 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => { setNewProjectMode(false); setNewProjectTitle("") }}
+                    style={{
+                      fontFamily: "var(--font-mono)", fontSize: 9,
+                      letterSpacing: "0.12em", textTransform: "uppercase",
+                      color: "var(--ink)", opacity: 0.45,
+                      background: "transparent", border: "none",
+                      cursor: "pointer", padding: "8px 0",
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <select
+                  value={form.project_id}
+                  onChange={e => {
+                    if (e.target.value === "__new__") {
+                      setNewProjectMode(true)
+                      set("project_id", "")
+                    } else {
+                      set("project_id", e.target.value)
+                    }
+                  }}
+                  disabled={!form.client_id}
+                  style={{ ...inputStyle, cursor: form.client_id ? "pointer" : "default", opacity: form.client_id ? 1 : 0.4 }}
+                >
+                  <option value="">No project</option>
+                  {projects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
+                  {form.client_id && (
+                    <option value="__new__" style={{ fontStyle: "italic" }}>+ New project…</option>
+                  )}
+                </select>
+              )}
             </div>
           </div>
 
