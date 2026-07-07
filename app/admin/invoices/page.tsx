@@ -7,12 +7,13 @@ import InvoiceOverflowMenu from "./InvoiceOverflowMenu"
 import FilterTabs from "@/components/portal/FilterTabs"
 import { getStatusLine, type AgingTone } from "./get-status-line"
 
-const TAB_VALUES = ["outstanding", "paid", "all"] as const
+const TAB_VALUES = ["outstanding", "paid", "drafts", "all"] as const
 type TabValue = typeof TAB_VALUES[number]
 
 const TAB_LABELS: Record<TabValue, string> = {
   outstanding: "Outstanding",
   paid: "Paid",
+  drafts: "Drafts",
   all: "All",
 }
 
@@ -43,8 +44,9 @@ export default async function AdminInvoicesPage({
 
   const visible = invoices.filter(inv => {
     if (activeTab === "outstanding") return UNPAID_STATUSES.includes(inv.status)
-    if (activeTab === "paid") return inv.status === "paid"
-    return inv.status !== "draft"
+    if (activeTab === "paid")        return inv.status === "paid"
+    if (activeTab === "drafts")      return inv.status === "draft"
+    return true // "all" now means all — drafts included
   })
 
   const today = new Date()
@@ -90,7 +92,7 @@ export default async function AdminInvoicesPage({
           ]}
           trailing={draftCount > 0 ? (
             <Link
-              href="/admin/invoices?tab=all"
+              href="/admin/invoices?tab=drafts"
               style={{
                 fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.12em",
                 textTransform: "uppercase", color: "rgba(15,15,14,0.5)",
@@ -109,6 +111,7 @@ export default async function AdminInvoicesPage({
             <div style={{ padding: "72px 0", textAlign: "center", fontFamily: "var(--font-sans)", fontSize: 14, color: "rgba(15,15,14,0.5)" }}>
               {activeTab === "outstanding" && "All caught up — nothing outstanding."}
               {activeTab === "paid"        && "No paid invoices yet."}
+              {activeTab === "drafts"      && "No drafts."}
               {activeTab === "all"         && "No invoices yet."}
             </div>
           )}
