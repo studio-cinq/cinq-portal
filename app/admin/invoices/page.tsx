@@ -102,7 +102,8 @@ export default async function AdminInvoicesPage({
           ) : null}
         />
 
-        {/* Invoice list */}
+        {/* Invoice list — Outstanding groups by client so one nudge covers
+             the whole batch. Paid + All stay as a flat chronological list. */}
         <div>
           {visible.length === 0 && (
             <div style={{ padding: "72px 0", textAlign: "center", fontFamily: "var(--font-sans)", fontSize: 14, color: "rgba(15,15,14,0.5)" }}>
@@ -111,9 +112,33 @@ export default async function AdminInvoicesPage({
               {activeTab === "all"         && "No invoices yet."}
             </div>
           )}
-          {visible.map(inv => (
-            <InvoiceRow key={inv.id} inv={inv} today={today} />
-          ))}
+          {activeTab === "outstanding"
+            ? groupByClient(visible, today).map(group => (
+                <div key={group.clientId} style={{ marginTop: 24 }}>
+                  <div style={{
+                    display: "flex", justifyContent: "space-between", alignItems: "baseline",
+                    padding: "10px 0 8px",
+                    borderBottom: "0.5px solid rgba(15,15,14,0.16)",
+                  }}>
+                    <div style={{ ...clientHeaderStyle }}>
+                      {group.clientName}
+                    </div>
+                    <div style={{
+                      fontFamily: "var(--font-mono)",
+                      fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase",
+                      color: "var(--ink)", opacity: 0.55,
+                      fontVariantNumeric: "tabular-nums",
+                    }}>
+                      ${Math.round(group.totalCents / 100).toLocaleString()} · {group.invoices.length} {group.invoices.length === 1 ? "invoice" : "invoices"}
+                    </div>
+                  </div>
+                  {group.invoices.map(inv => (
+                    <InvoiceRow key={inv.id} inv={inv} today={today} />
+                  ))}
+                </div>
+              ))
+            : visible.map(inv => <InvoiceRow key={inv.id} inv={inv} today={today} />)
+          }
         </div>
       </main>
     </>
@@ -294,4 +319,68 @@ function SummaryCard({ label, value, tone }: { label: string; value: string; ton
       </div>
     </div>
   )
+}
+
+const clientHeaderStyle: React.CSSProperties = {
+  fontFamily: "var(--font-mono)",
+  fontSize: 11,
+  letterSpacing: "0.14em",
+  textTransform: "uppercase",
+  color: "var(--ink)",
+  opacity: 0.85,
+}
+
+/**
+ * Groups the outstanding-tab invoices by client and orders each group so
+ * the most urgent invoice (oldest days-past-due, or oldest days-waiting)
+ * sits at the top of its client bucket. Client buckets themselves sort by
+ * total outstanding descending so cash flow drives the scan.
+ */
+function groupByClient(invoices: any[], today: Date): Array<{
+  clientId: string
+  clientName: string
+  totalCents: number
+  invoices: any[]
+}> {
+  const map = new Map<string, {
+    clientId: string
+    clientName: string
+    totalCents: number
+    invoices: any[]
+  }>()
+
+  for (const inv of invoices) {
+    const key = inv.client_id ?? "__no-client__"
+    const existing = map.get(key)
+    if (existing) {
+      existing.invoices.push(inv)
+      existing.totalCents += inv.amount ?? 0
+    } else {
+      map.set(key, {
+        clientId: key,
+        clientName: inv.clients?.name ?? "—",
+        totalCents: inv.amount ?? 0,
+        invoices: [inv],
+      })
+    }
+  }
+
+  function urgency(inv: any): number {
+    // Higher number = more urgent = should sort first.
+    // Overdue: use days past due date, or days since sent if no due date.
+    // Waiting: use days since sent (positive number, but lower than any overdue).
+    const sent = inv.last_sent_at ? new Date(inv.last_sent_at) : (inv.created_at ? new Date(inv.created_at) : today)
+    const due = inv.due_date ? new Date(inv.due_date) : null
+    const isOverdue = inv.status === "overdue" || (due != null && due < today)
+    const daysSince = (from: Date) => Math.max(0, Math.floor((today.getTime() - from.getTime()) / 86400000))
+    if (isOverdue) return 10_000 + daysSince(due ?? sent)  // overdue always beats waiting
+    return daysSince(sent)
+  }
+
+  const groups = Array.from(map.values())
+  for (const group of groups) {
+    group.invoices.sort((a: any, b: any) => urgency(b) - urgency(a))
+  }
+
+  return groups.sort((a, b) => b.totalCents - a.totalCents)
 }
