@@ -72,6 +72,30 @@ function NewInvoicePageInner() {
       .then(({ data }) => setProjects(data ?? []))
   }, [form.client_id])
 
+  // Suggest the next invoice number based on the client's most recent one.
+  // Finds the last run of digits at the tail (e.g. "NEU-2602", "4W-26001",
+  // "SC-001") and increments it, preserving zero-padding width. Only fills
+  // if the field is still empty — never overwrites something typed.
+  useEffect(() => {
+    if (!form.client_id) return
+    supabase
+      .from("invoices")
+      .select("invoice_number")
+      .eq("client_id", form.client_id)
+      .not("invoice_number", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .then(({ data }) => {
+        const last = (data ?? [])[0]?.invoice_number as string | undefined
+        if (!last) return
+        const match = last.match(/^(.*?)(\d+)$/)
+        if (!match) return
+        const [, prefix, num] = match
+        const next = String(parseInt(num, 10) + 1).padStart(num.length, "0")
+        setForm(f => f.invoice_number ? f : { ...f, invoice_number: prefix + next })
+      })
+  }, [form.client_id])
+
   function set(field: string, value: any) {
     setForm(f => ({ ...f, [field]: value }))
   }
