@@ -82,7 +82,7 @@ export default function InvoiceOverflowMenu({
     setBusy(true)
     try {
       const res = await fetch("/api/admin/delete/invoice", {
-        method: "POST",
+        method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: invoiceId }),
       })

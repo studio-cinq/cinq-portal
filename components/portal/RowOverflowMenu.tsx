@@ -54,7 +54,7 @@ export default function RowOverflowMenu({
     setBusy(i)
     try {
       const res = await fetch(item.endpoint, {
-        method: "POST",
+        method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: item.id }),
       })
