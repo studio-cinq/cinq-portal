@@ -24,9 +24,19 @@ export async function POST(req: Request) {
       .select("*").eq("id", id).single()
     if (!source) return NextResponse.json({ error: "Source invoice not found" }, { status: 404 })
 
+    // invoice_number is NOT NULL — generate a placeholder by incrementing
+    // the source number's trailing digits (NEU-2602 → NEU-2603). Kacie
+    // lands on the edit page and can override before sending.
+    const sourceNumber = source.invoice_number ?? "DRAFT-1"
+    const match = sourceNumber.match(/^(.*?)(\d+)$/)
+    const nextNumber = match
+      ? match[1] + String(parseInt(match[2], 10) + 1).padStart(match[2].length, "0")
+      : `${sourceNumber}-2`
+
     const payload = {
       client_id: source.client_id,
       project_id: source.project_id ?? null,
+      invoice_number: nextNumber,
       description: source.description,
       amount: source.amount,
       line_items: source.line_items ?? [],
@@ -36,8 +46,8 @@ export async function POST(req: Request) {
       cc_emails: source.cc_emails ?? [],
       unlocks_files: source.unlocks_files ?? false,
       status: "draft",
-      // Intentionally NOT carrying over: invoice_number, due_date, dates,
-      // reminder counters — those are per-cycle.
+      // Intentionally NOT carrying over: due_date, dates, reminder counters
+      // — those are per-cycle.
     }
 
     const { data: created, error } = await (supabaseAdmin.from("invoices") as any)
