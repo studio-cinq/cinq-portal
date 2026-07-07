@@ -166,6 +166,12 @@ function InvoiceRow({ inv, today }: { inv: any; today: Date }) {
 
   const paidDate = inv.paid_at ?? inv.paid_date ?? null
 
+  // Paid rows get their "quiet" treatment by dimming the content blocks
+  // individually — not the whole row — so the ··· overflow popover stays
+  // at full opacity when opened. (opacity on a parent cascades and can't
+  // be undone by the child.)
+  const dimContent = isPaid ? 0.7 : 1
+
   return (
     <div
       className="invoice-row"
@@ -175,11 +181,10 @@ function InvoiceRow({ inv, today }: { inv: any; today: Date }) {
         gap: 14,
         padding: "13px 0",
         borderBottom: "0.5px solid rgba(15,15,14,0.1)",
-        opacity: isPaid ? 0.7 : 1,
       }}
     >
       {/* Primary block — name + client (line 1), StatusLine or Paid line (line 2) */}
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ flex: 1, minWidth: 0, opacity: dimContent }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0 }}>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.04em", color: "rgba(15,15,14,0.45)", whiteSpace: "nowrap" }}>
             #{inv.invoice_number}
@@ -233,7 +238,7 @@ function InvoiceRow({ inv, today }: { inv: any; today: Date }) {
       </div>
 
       {/* Amount + ACH chip (ACH lives next to the payment number, not in the StatusLine) */}
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0, minWidth: 88, gap: 2 }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0, minWidth: 88, gap: 2, opacity: dimContent }}>
         <div style={{
           fontFamily: "var(--font-sans)",
           fontSize: 14,
