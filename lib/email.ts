@@ -242,6 +242,16 @@ export async function sendClientInvoiceReminderEmail(p: ClientInvoiceReminderPay
   const totalFmt = (total / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
   const count = p.invoices.length;
   const noun = count === 1 ? "invoice" : "invoices";
+  const today = new Date();
+
+  // Renders a due-date phrase for each invoice, or empty if none is set.
+  function dueLine(due: string | null | undefined): { text: string; isOverdue: boolean } {
+    if (!due) return { text: "", isOverdue: false };
+    const dueDate = new Date(due);
+    const fmt = dueDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    if (dueDate < today) return { text: `Overdue — was due ${fmt}`, isOverdue: true };
+    return { text: `Due ${fmt}`, isOverdue: false };
+  }
 
   // Plain-text version
   const lines = [
@@ -253,7 +263,9 @@ export async function sendClientInvoiceReminderEmail(p: ClientInvoiceReminderPay
       const amt = (inv.amount / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
       const desc = inv.description ? ` — ${inv.description}` : "";
       const url = `${PORTAL_URL}/invoice/${inv.id}`;
-      return `• #${inv.invoice_number}${desc} · ${amt}\n  ${url}`;
+      const { text: due } = dueLine(inv.due_date);
+      const dueSuffix = due ? ` · ${due}` : "";
+      return `• #${inv.invoice_number}${desc} · ${amt}${dueSuffix}\n  ${url}`;
     }),
     "",
     "Let me know if there's anything you need from me on any of these.",
@@ -266,15 +278,18 @@ export async function sendClientInvoiceReminderEmail(p: ClientInvoiceReminderPay
   const rowsHtml = p.invoices.map(inv => {
     const amt = (inv.amount / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
     const url = `${PORTAL_URL}/invoice/${inv.id}`;
+    const { text: due, isOverdue } = dueLine(inv.due_date);
+    const dueColor = isOverdue ? "#9E3528" : "rgba(26,24,21,0.55)";
     return `
       <tr>
         <td style="padding:10px 0;border-bottom:0.5px solid rgba(26,24,21,0.12)">
           <div><a href="${url}" style="color:#1A1815;text-decoration:none"><strong>#${inv.invoice_number}</strong></a>${inv.description ? ` <span style="opacity:0.6">— ${inv.description}</span>` : ""}</div>
-          <div style="font-family:monospace;font-size:11px;opacity:0.5;letter-spacing:0.06em;margin-top:2px">
+          ${due ? `<div style="font-size:12px;color:${dueColor};margin-top:3px">${due}</div>` : ""}
+          <div style="font-family:monospace;font-size:11px;opacity:0.5;letter-spacing:0.06em;margin-top:3px">
             <a href="${url}" style="color:#1A1815;opacity:0.6;text-decoration:underline">View &amp; pay →</a>
           </div>
         </td>
-        <td style="padding:10px 0;border-bottom:0.5px solid rgba(26,24,21,0.12);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums">
+        <td style="padding:10px 0;border-bottom:0.5px solid rgba(26,24,21,0.12);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;vertical-align:top">
           <strong>${amt}</strong>
         </td>
       </tr>
