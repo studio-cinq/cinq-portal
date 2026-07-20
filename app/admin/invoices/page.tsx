@@ -41,6 +41,7 @@ export default async function AdminInvoicesPage({
   const overdueTotal     = invoices.filter(i => i.status === "overdue").reduce((s, i) => s + i.amount, 0)
   const overdueCount     = invoices.filter(i => i.status === "overdue").length
   const collectedTotal   = invoices.filter(i => i.status === "paid").reduce((s, i) => s + i.amount, 0)
+  const draftTotal       = invoices.filter(i => i.status === "draft").reduce((s, i) => s + i.amount, 0)
   const draftCount       = invoices.filter(i => i.status === "draft").length
 
   const visible = invoices.filter(inv => {
@@ -71,13 +72,18 @@ export default async function AdminInvoicesPage({
           </Link>
         </div>
 
-        {/* Summary cards — always all three; Overdue greys at $0 */}
-        <div className="admin-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 32 }}>
+        {/* Summary cards — always all four; Overdue greys at $0 */}
+        <div className="admin-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 32 }}>
           <SummaryCard label="Outstanding" value={fmtMoney(outstandingTotal)} />
           <SummaryCard
             label={overdueCount > 0 ? `Overdue · ${overdueCount}` : "Overdue"}
             value={fmtMoney(overdueTotal)}
             tone={overdueCount > 0 ? "danger" : "quiet"}
+          />
+          <SummaryCard
+            label={draftCount > 0 ? `In drafts · ${draftCount}` : "In drafts"}
+            value={fmtMoney(draftTotal)}
+            href={draftCount > 0 ? "/admin/invoices?tab=drafts" : undefined}
           />
           <SummaryCard label="Collected" value={fmtMoney(collectedTotal)} />
         </div>
@@ -305,15 +311,19 @@ function fmtMoney(cents: number): string {
   return `$${Math.round(cents / 100).toLocaleString("en-US")}`
 }
 
-function SummaryCard({ label, value, tone }: { label: string; value: string; tone?: "danger" | "quiet" }) {
+function SummaryCard({ label, value, tone, href }: { label: string; value: string; tone?: "danger" | "quiet"; href?: string }) {
   const danger = tone === "danger"
-  return (
-    <div style={{
-      background: danger ? "rgba(201,90,59,0.06)" : "rgba(255,255,255,0.35)",
-      border: `0.5px solid rgba(15,15,14,${danger ? 0.15 : 0.1})`,
-      padding: "16px 20px",
-      borderRadius: 8,
-    }}>
+  const cardStyle: React.CSSProperties = {
+    background: danger ? "rgba(201,90,59,0.06)" : "rgba(255,255,255,0.35)",
+    border: `0.5px solid rgba(15,15,14,${danger ? 0.15 : 0.1})`,
+    padding: "16px 20px",
+    borderRadius: 8,
+    textDecoration: "none",
+    color: "inherit",
+    display: "block",
+  }
+  const inner = (
+    <>
       <div style={{
         fontFamily: "var(--font-sans)",
         fontSize: 22,
@@ -334,8 +344,10 @@ function SummaryCard({ label, value, tone }: { label: string; value: string; ton
       }}>
         {label}
       </div>
-    </div>
+    </>
   )
+  if (href) return <Link href={href} style={cardStyle}>{inner}</Link>
+  return <div style={cardStyle}>{inner}</div>
 }
 
 const clientHeaderStyle: React.CSSProperties = {
