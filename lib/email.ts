@@ -218,6 +218,100 @@ export async function sendInvoiceReminderEmail(p: InvoiceReminderPayload) {
   });
 }
 
+// ─── Batched invoice reminder — one email covers every unpaid invoice for a client ─
+
+interface ClientReminderInvoice {
+  id: string;
+  invoice_number: string;
+  amount: number;   // cents
+  description?: string | null;
+  due_date?: string | null;
+}
+
+interface ClientInvoiceReminderPayload {
+  clientName: string;
+  contactName: string;
+  contactEmail: string;
+  ccEmails?: string[] | null;
+  invoices: ClientReminderInvoice[];
+}
+
+export async function sendClientInvoiceReminderEmail(p: ClientInvoiceReminderPayload) {
+  const firstName = (p.contactName ?? "").trim().split(/\s+/)[0] || p.contactName;
+  const total = p.invoices.reduce((s, i) => s + i.amount, 0);
+  const totalFmt = (total / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+  const count = p.invoices.length;
+  const noun = count === 1 ? "invoice" : "invoices";
+
+  // Plain-text version
+  const lines = [
+    `Hi ${firstName},`,
+    "",
+    `A small reminder that you have ${count} outstanding ${noun} with Studio Cinq — ${totalFmt} total.`,
+    "",
+    ...p.invoices.map(inv => {
+      const amt = (inv.amount / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+      const desc = inv.description ? ` — ${inv.description}` : "";
+      const url = `${PORTAL_URL}/invoice/${inv.id}`;
+      return `• #${inv.invoice_number}${desc} · ${amt}\n  ${url}`;
+    }),
+    "",
+    "Let me know if there's anything you need from me on any of these.",
+    "",
+    "Thanks,",
+    "Kacie | Cinq",
+  ];
+  const text = lines.join("\n");
+
+  const rowsHtml = p.invoices.map(inv => {
+    const amt = (inv.amount / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+    const url = `${PORTAL_URL}/invoice/${inv.id}`;
+    return `
+      <tr>
+        <td style="padding:10px 0;border-bottom:0.5px solid rgba(26,24,21,0.12)">
+          <div><a href="${url}" style="color:#1A1815;text-decoration:none"><strong>#${inv.invoice_number}</strong></a>${inv.description ? ` <span style="opacity:0.6">— ${inv.description}</span>` : ""}</div>
+          <div style="font-family:monospace;font-size:11px;opacity:0.5;letter-spacing:0.06em;margin-top:2px">
+            <a href="${url}" style="color:#1A1815;opacity:0.6;text-decoration:underline">View &amp; pay →</a>
+          </div>
+        </td>
+        <td style="padding:10px 0;border-bottom:0.5px solid rgba(26,24,21,0.12);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums">
+          <strong>${amt}</strong>
+        </td>
+      </tr>
+    `;
+  }).join("");
+
+  const html = emailShell(`
+    <div class="body">
+      <p>Hi ${firstName},</p>
+      <p>A small reminder that you have <strong>${count} outstanding ${noun}</strong> with Studio Cinq — <strong>${totalFmt}</strong> total.</p>
+      <table style="width:100%;border-collapse:collapse;margin:20px 0;font-size:14px">
+        ${rowsHtml}
+        <tr>
+          <td style="padding:12px 0 0;font-family:monospace;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;opacity:0.55">Total</td>
+          <td style="padding:12px 0 0;text-align:right;font-variant-numeric:tabular-nums"><strong>${totalFmt}</strong></td>
+        </tr>
+      </table>
+      <p>Let me know if there&rsquo;s anything you need from me on any of these.</p>
+      <p style="margin-top:24px">Thanks,<br/>Kacie | Cinq</p>
+    </div>
+  `);
+
+  const subject = count === 1
+    ? `A reminder — Invoice #${p.invoices[0].invoice_number}`
+    : `A reminder — ${count} outstanding invoices with Cinq`;
+
+  return sendEmail({
+    from: "Kacie Yates <portal@studiocinq.com>",
+    replyTo: STUDIO_EMAIL,
+    to: p.contactEmail,
+    cc: (p.ccEmails ?? []).filter(Boolean),
+    subject,
+    html,
+    text,
+  });
+}
+
 // ─── Creative Direction Plan sent — to client ─────────────────────────────────
 
 interface PlanSentPayload {

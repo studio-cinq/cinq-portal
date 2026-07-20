@@ -4,6 +4,7 @@ import PortalNav from "@/components/portal/Nav"
 import MarkPaidButton from "@/components/portal/MarkPaidButton"
 import SendInvoiceReminderButton from "@/components/portal/SendInvoiceReminderButton"
 import InvoiceOverflowMenu from "./InvoiceOverflowMenu"
+import RemindClientButton from "./RemindClientButton"
 import FilterTabs from "@/components/portal/FilterTabs"
 import { getStatusLine, type AgingTone } from "./get-status-line"
 
@@ -119,20 +120,28 @@ export default async function AdminInvoicesPage({
             ? groupByClient(visible, today).map(group => (
                 <div key={group.clientId} style={{ marginTop: 24 }}>
                   <div style={{
-                    display: "flex", justifyContent: "space-between", alignItems: "baseline",
+                    display: "flex", justifyContent: "space-between", alignItems: "center",
                     padding: "10px 0 8px",
                     borderBottom: "0.5px solid rgba(15,15,14,0.16)",
+                    gap: 12,
                   }}>
                     <div style={{ ...clientHeaderStyle }}>
                       {group.clientName}
                     </div>
-                    <div style={{
-                      fontFamily: "var(--font-mono)",
-                      fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase",
-                      color: "var(--ink)", opacity: 0.55,
-                      fontVariantNumeric: "tabular-nums",
-                    }}>
-                      ${Math.round(group.totalCents / 100).toLocaleString()} · {group.invoices.length} {group.invoices.length === 1 ? "invoice" : "invoices"}
+                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                      <div style={{
+                        fontFamily: "var(--font-mono)",
+                        fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase",
+                        color: "var(--ink)", opacity: 0.55,
+                        fontVariantNumeric: "tabular-nums",
+                      }}>
+                        ${Math.round(group.totalCents / 100).toLocaleString()} · {group.invoices.length} {group.invoices.length === 1 ? "invoice" : "invoices"}
+                      </div>
+                      <RemindClientButton
+                        clientId={group.clientId}
+                        clientName={group.clientName}
+                        count={group.invoices.length}
+                      />
                     </div>
                   </div>
                   {group.invoices.map(inv => (
