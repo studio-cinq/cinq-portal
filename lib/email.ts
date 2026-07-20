@@ -245,9 +245,11 @@ export async function sendClientInvoiceReminderEmail(p: ClientInvoiceReminderPay
   const noun = count === 1 ? "invoice" : "invoices";
   const today = new Date();
 
-  // Renders a due-date phrase for each invoice, or empty if none is set.
+  // Renders a due-date phrase for each invoice. Falls back to "Due upon
+  // receipt" when the invoice has no explicit due date so every line
+  // carries a scannable timing signal.
   function dueLine(due: string | null | undefined): { text: string; isOverdue: boolean } {
-    if (!due) return { text: "", isOverdue: false };
+    if (!due) return { text: "Due upon receipt", isOverdue: false };
     const dueDate = new Date(due);
     const fmt = dueDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
     if (dueDate < today) return { text: `Overdue — was due ${fmt}`, isOverdue: true };
