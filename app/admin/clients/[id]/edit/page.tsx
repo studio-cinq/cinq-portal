@@ -52,6 +52,7 @@ export default function EditClientPage({ params }: { params: { id: string } }) {
     logo_url:       "",
     notes:          "",
     invoice_prefix: "",
+    cc_emails:      "",   // comma-separated in the form, stored as text[] in the DB
   })
 
   useEffect(() => {
@@ -69,6 +70,7 @@ export default function EditClientPage({ params }: { params: { id: string } }) {
             logo_url:       data.logo_url ?? "",
             notes:          data.notes ?? "",
             invoice_prefix: data.invoice_prefix ?? "",
+            cc_emails:      Array.isArray(data.cc_emails) ? data.cc_emails.join(", ") : "",
           })
         }
         setLoading(false)
@@ -99,6 +101,9 @@ export default function EditClientPage({ params }: { params: { id: string } }) {
         logo_url:       form.logo_url.trim() || null,
         notes:          form.notes.trim() || null,
         invoice_prefix: form.invoice_prefix.trim().toUpperCase() || null,
+        cc_emails:      form.cc_emails.trim()
+          ? form.cc_emails.split(",").map((e: string) => e.trim()).filter(Boolean)
+          : [],
       }),
     })
 
@@ -200,6 +205,19 @@ export default function EditClientPage({ params }: { params: { id: string } }) {
                 value={form.invoice_prefix}
                 onChange={e => set("invoice_prefix", e.target.value.toUpperCase())}
               />
+            </div>
+          </div>
+
+          <div>
+            <label style={labelStyle}>Default CC recipients <span style={{ opacity: 0.5 }}>(optional)</span></label>
+            <input
+              style={inputStyle}
+              placeholder="accounting@client.com, partner@client.com"
+              value={form.cc_emails}
+              onChange={e => set("cc_emails", e.target.value)}
+            />
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.4, marginTop: 6, letterSpacing: "0.04em" }}>
+              Comma-separated. Auto-fills the CC field on every new invoice for this client.
             </div>
           </div>
 

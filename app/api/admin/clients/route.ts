@@ -8,7 +8,7 @@ export async function PATCH(req: Request) {
     if (auth.error) return auth.error
 
     const body = await req.json()
-    const { id, name, contact_name, contact_email, logo_url, notes, invoice_prefix } = body
+    const { id, name, contact_name, contact_email, logo_url, notes, invoice_prefix, cc_emails } = body
 
     if (!id)   return NextResponse.json({ error: "Missing client ID." }, { status: 400 })
     if (!name || !contact_name || !contact_email) {
@@ -17,7 +17,12 @@ export async function PATCH(req: Request) {
 
     const { data, error } = await (supabaseAdmin
       .from("clients") as any)
-      .update({ name, contact_name, contact_email, logo_url, notes, invoice_prefix })
+      .update({
+        name, contact_name, contact_email, logo_url, notes, invoice_prefix,
+        // Only include cc_emails when the caller sent it, so an older client
+        // save doesn't accidentally clear an existing list.
+        ...(Array.isArray(cc_emails) ? { cc_emails } : {}),
+      })
       .eq("id", id)
       .select()
       .single()

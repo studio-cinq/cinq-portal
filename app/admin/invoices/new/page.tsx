@@ -72,6 +72,22 @@ function NewInvoicePageInner() {
       .then(({ data }) => setProjects(data ?? []))
   }, [form.client_id])
 
+  // Auto-fill CC recipients from the client's default list. Never overwrites
+  // something already typed — only fills the blank.
+  useEffect(() => {
+    if (!form.client_id) return
+    supabase
+      .from("clients")
+      .select("cc_emails")
+      .eq("id", form.client_id)
+      .single()
+      .then(({ data }) => {
+        const list = ((data as any)?.cc_emails ?? []) as string[]
+        if (list.length === 0) return
+        setForm(f => f.cc_emails.trim() ? f : { ...f, cc_emails: list.join(", ") })
+      })
+  }, [form.client_id])
+
   // Suggest the next invoice number based on the client's most recent one.
   // Finds the last run of digits at the tail (e.g. "NEU-2602", "4W-26001",
   // "SC-001") and increments it, preserving zero-padding width. Only fills
