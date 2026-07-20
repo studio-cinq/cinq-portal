@@ -33,6 +33,7 @@ const PUBLIC_API_ROUTES = new Set([
   "/api/notify/foundations-viewed",
   "/api/notify/foundations-approved",
   "/api/webhook",
+  "/api/webhook/resend",
 ])
 
 const PUBLIC_API_PREFIXES = ["/api/pdf/", "/api/cron/", "/api/brand-kit/"] as const

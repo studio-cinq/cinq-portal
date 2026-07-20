@@ -215,6 +215,7 @@ export async function sendInvoiceReminderEmail(p: InvoiceReminderPayload) {
     subject: `A reminder — Invoice #${p.invoiceNumber}`,
     html,
     text,
+    tags: [{ name: "category", value: "invoice-reminder" }],
   });
 }
 
@@ -324,6 +325,7 @@ export async function sendClientInvoiceReminderEmail(p: ClientInvoiceReminderPay
     subject,
     html,
     text,
+    tags: [{ name: "category", value: "client-invoice-reminder" }],
   });
 }
 
@@ -667,6 +669,7 @@ export async function sendInvoiceEmail(p: InvoiceSentPayload) {
     ...(cc.length > 0 ? { cc } : {}),
     subject: `Invoice #${p.invoiceNumber} — ${amount} due from Studio Cinq`,
     html,
+    tags: [{ name: "category", value: "invoice-sent" }],
   })
 }
 
