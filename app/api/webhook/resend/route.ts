@@ -55,16 +55,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, ignored: type })
   }
 
-  // Skip opens on non-tagged emails (avoids notifying Kacie about her own
-  // internal notifications like "Invoice opened" landing in her own inbox).
-  const tags: Array<{ name: string; value: string }> = Array.isArray(data.tags) ? data.tags : []
-  const category = tags.find(t => t.name === "category")?.value
-  const CLIENT_FACING = new Set(["invoice-reminder", "client-invoice-reminder", "invoice-sent"])
-  if (!category || !CLIENT_FACING.has(category)) {
-    return NextResponse.json({ ok: true, ignored: category ?? "untagged" })
+  // Filter: skip anything that's a self-notification (admin emails to Kacie's
+  // own address). Everything else is a client-facing send worth notifying on,
+  // regardless of whether the template's been explicitly tagged.
+  const toValue = Array.isArray(data.to) ? data.to : (data.to ? [data.to] : [])
+  const to = toValue.join(", ") || "—"
+  const isSelf = toValue.some((addr: string) => (addr ?? "").toLowerCase() === ADMIN_EMAIL.toLowerCase())
+  if (isSelf) {
+    return NextResponse.json({ ok: true, ignored: "self-notification" })
   }
 
-  const to = Array.isArray(data.to) ? data.to.join(", ") : (data.to ?? "—")
   const subject = data.subject ?? "(no subject)"
   const openedAt = new Date().toLocaleString("en-US", {
     timeZone: "America/New_York",
@@ -72,9 +72,14 @@ export async function POST(req: Request) {
     hour: "numeric", minute: "2-digit", timeZoneName: "short",
   })
 
+  // Best-effort heading from the tag when it's there, subject when it's not.
+  const tags: Array<{ name: string; value: string }> = Array.isArray(data.tags) ? data.tags : []
+  const category = tags.find(t => t.name === "category")?.value
   const heading = category === "invoice-sent"
     ? "A client opened the invoice email you sent"
-    : "A client opened your reminder email"
+    : category === "invoice-reminder" || category === "client-invoice-reminder"
+    ? "A client opened your reminder email"
+    : "A client opened one of your emails"
 
   await trySendEmail({
     from: "Studio Cinq Portal <portal@studiocinq.com>",
