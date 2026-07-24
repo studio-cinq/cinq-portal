@@ -15,6 +15,8 @@ import { jsPDF } from "jspdf"
  * Route: /api/pdf/statement/{clientId}
  */
 
+const PORTAL_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://portal.studiocinq.com"
+
 const INK    = [15, 15, 14] as const
 const CREAM  = [244, 241, 236] as const
 const ALARM  = [158, 53, 40] as const  // oxblood
@@ -50,7 +52,7 @@ export async function GET(_req: Request, { params }: { params: { clientId: strin
         .select("name, contact_name")
         .eq("id", params.clientId).single(),
       (supabaseAdmin.from("invoices") as any)
-        .select("invoice_number, description, amount, status, last_sent_at, created_at, due_date")
+        .select("id, invoice_number, description, amount, status, last_sent_at, created_at, due_date")
         .eq("client_id", params.clientId)
         .in("status", ["sent", "overdue", "upcoming"])
         .order("last_sent_at", { ascending: true, nullsFirst: false })
@@ -171,7 +173,9 @@ export async function GET(_req: Request, { params }: { params: { clientId: strin
 
       doc.setFontSize(9)
       setColor(doc, INK, 0.85)
-      doc.text(`#${inv.invoice_number}`, colX.num, y)
+      const invLabel = `#${inv.invoice_number}`
+      const invUrl = `${PORTAL_URL}/invoice/${inv.id}`
+      doc.textWithLink(invLabel, colX.num, y, { url: invUrl })
 
       // Description, truncated to fit
       const descMax = colX.issued - colX.desc - 6
