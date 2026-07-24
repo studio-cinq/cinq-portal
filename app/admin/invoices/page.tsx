@@ -143,6 +143,25 @@ export default async function AdminInvoicesPage({
                       }}>
                         ${Math.round(group.totalCents / 100).toLocaleString()} · {group.invoices.length} {group.invoices.length === 1 ? "invoice" : "invoices"}
                       </div>
+                      <a
+                        href={`/api/pdf/statement/${group.clientId}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        title="Download a one-page Statement of Account covering every open invoice for this client."
+                        style={{
+                          fontFamily: "var(--font-mono)",
+                          fontSize: 10,
+                          letterSpacing: "0.14em",
+                          textTransform: "uppercase",
+                          color: "var(--ink)",
+                          textDecoration: "none",
+                          border: "0.5px solid rgba(15,15,14,0.2)",
+                          padding: "5px 9px",
+                          opacity: 0.85,
+                        }}
+                      >
+                        Statement PDF
+                      </a>
                       <RemindClientButton
                         clientId={group.clientId}
                         clientName={group.clientName}
