@@ -49,7 +49,7 @@ export async function GET(_req: Request, { params }: { params: { clientId: strin
   try {
     const [{ data: client }, { data: invoices }] = await Promise.all([
       (supabaseAdmin.from("clients") as any)
-        .select("name, contact_name")
+        .select("name")
         .eq("id", params.clientId).single(),
       (supabaseAdmin.from("invoices") as any)
         .select("id, invoice_number, description, amount, status, last_sent_at, created_at, due_date")
@@ -94,11 +94,6 @@ export async function GET(_req: Request, { params }: { params: { clientId: strin
     doc.setFontSize(22)
     setColor(doc, INK, 0.92)
     doc.text(client.name ?? "Statement", marginL, y)
-
-    y += 14
-    doc.setFontSize(9)
-    setColor(doc, INK, 0.5)
-    if (client.contact_name) doc.text(`Attn. ${client.contact_name}`, marginL, y)
 
     // ── Balance-due block (one loud thing) ──
     y += 44
