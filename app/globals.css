@@ -65,9 +65,9 @@
  */
 :root {
   /* Ground + ink */
-  --warm:       #EDE5D6;  /* page background, warm ivory */
-  --cream:      #EDE5D6;  /* alias — old name, new value */
-  --cream-dark: #E5DBCA;  /* a notch deeper for tints / 2nd-layer surfaces */
+  --warm:       #F7F6F2;  /* page background, cool ivory */
+  --cream:      #F7F6F2;  /* alias — old name, new value */
+  --cream-dark: #EFECE5;  /* a notch deeper for tints / 2nd-layer surfaces */
   --ink:        #1A1815;  /* primary text + hairline-dark UI. Never #000. */
   --bone:       #ECE3D2;  /* text on dark surfaces. Never #FFF. */
   --olive-dark: #1B1A14;  /* rare dark-moment surfaces + CTAs (client pages) */
@@ -87,7 +87,7 @@
   --amber:  var(--pending);
   --danger: var(--alarm);
 
-  --bg-grad:    linear-gradient(160deg, #EDE5D6 0%, #E5DBCA 100%);
+  --bg-grad:    linear-gradient(160deg, #F7F6F2 0%, #EFECE5 100%);
 
   /* Typography */
   --font-serif: 'PP Writer', 'Cormorant Garamond', Georgia, serif;
