@@ -40,7 +40,15 @@ export default async function AdminInvoicesPage({
   const outstandingTotal = invoices.filter(i => UNPAID_STATUSES.includes(i.status)).reduce((s, i) => s + i.amount, 0)
   const overdueTotal     = invoices.filter(i => i.status === "overdue").reduce((s, i) => s + i.amount, 0)
   const overdueCount     = invoices.filter(i => i.status === "overdue").length
-  const collectedTotal   = invoices.filter(i => i.status === "paid").reduce((s, i) => s + i.amount, 0)
+  const currentYear = new Date().getFullYear()
+  // Year-to-date, not lifetime. Falls back to created_at for older paid rows
+  // written before paid_at was stamped (currently none, but future-proof).
+  const collectedYtdTotal = invoices.filter(i => {
+    if (i.status !== "paid") return false
+    const paidWhen = i.paid_at ?? i.created_at
+    if (!paidWhen) return false
+    return new Date(paidWhen).getFullYear() === currentYear
+  }).reduce((s, i) => s + i.amount, 0)
   const draftTotal       = invoices.filter(i => i.status === "draft").reduce((s, i) => s + i.amount, 0)
   const draftCount       = invoices.filter(i => i.status === "draft").length
 
@@ -85,7 +93,7 @@ export default async function AdminInvoicesPage({
             value={fmtMoney(draftTotal)}
             href={draftCount > 0 ? "/admin/invoices?tab=drafts" : undefined}
           />
-          <SummaryCard label="Collected" value={fmtMoney(collectedTotal)} />
+          <SummaryCard label={`Collected in ${currentYear}`} value={fmtMoney(collectedYtdTotal)} />
         </div>
 
         <FilterTabs
