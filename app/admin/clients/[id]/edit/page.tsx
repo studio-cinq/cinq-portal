@@ -53,6 +53,7 @@ export default function EditClientPage({ params }: { params: { id: string } }) {
     notes:          "",
     invoice_prefix: "",
     cc_emails:      "",   // comma-separated in the form, stored as text[] in the DB
+    attach_pdf_to_emails: false,
   })
 
   useEffect(() => {
@@ -71,13 +72,14 @@ export default function EditClientPage({ params }: { params: { id: string } }) {
             notes:          data.notes ?? "",
             invoice_prefix: data.invoice_prefix ?? "",
             cc_emails:      Array.isArray(data.cc_emails) ? data.cc_emails.join(", ") : "",
+            attach_pdf_to_emails: Boolean(data.attach_pdf_to_emails),
           })
         }
         setLoading(false)
       })
   }, [params.id])
 
-  function set(field: string, value: string) {
+  function set(field: string, value: string | boolean) {
     setForm(f => ({ ...f, [field]: value }))
     setSaved(false)
   }
@@ -104,6 +106,7 @@ export default function EditClientPage({ params }: { params: { id: string } }) {
         cc_emails:      form.cc_emails.trim()
           ? form.cc_emails.split(",").map((e: string) => e.trim()).filter(Boolean)
           : [],
+        attach_pdf_to_emails: form.attach_pdf_to_emails,
       }),
     })
 
@@ -219,6 +222,26 @@ export default function EditClientPage({ params }: { params: { id: string } }) {
             <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.4, marginTop: 6, letterSpacing: "0.04em" }}>
               Comma-separated. Auto-fills the CC field on every new invoice for this client.
             </div>
+          </div>
+
+          <div>
+            <label style={labelStyle}>Billing preferences</label>
+            <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer", paddingTop: 8 }}>
+              <input
+                type="checkbox"
+                checked={form.attach_pdf_to_emails}
+                onChange={e => set("attach_pdf_to_emails", e.target.checked)}
+                style={{ marginTop: 4 }}
+              />
+              <div>
+                <div style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--ink)", opacity: 0.82 }}>
+                  Attach PDF to invoice emails
+                </div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.4, marginTop: 4, letterSpacing: "0.04em", lineHeight: 1.6 }}>
+                  Invoice sends include the invoice PDF as an attachment. Batched reminders include the Statement of Account PDF. Turn on for clients whose AP system ingests PDF attachments rather than following links.
+                </div>
+              </div>
+            </label>
           </div>
 
           <div>

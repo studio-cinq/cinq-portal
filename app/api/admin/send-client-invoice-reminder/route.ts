@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase-server"
 import { sendClientInvoiceReminderEmail } from "@/lib/email"
+import { generateStatementPdf } from "@/lib/pdf/statement"
 import { requireAdmin } from "@/lib/admin-auth"
 
 /**
@@ -22,7 +23,7 @@ export async function POST(req: Request) {
     if (!clientId) return NextResponse.json({ error: "Missing clientId" }, { status: 400 })
 
     const { data: client } = await (supabaseAdmin.from("clients") as any)
-      .select("name, contact_name, contact_email")
+      .select("name, contact_name, contact_email, attach_pdf_to_emails")
       .eq("id", clientId).single()
     if (!client) return NextResponse.json({ error: "Client not found" }, { status: 404 })
     if (!client.contact_email) {
@@ -50,6 +51,20 @@ export async function POST(req: Request) {
       for (const e of (inv.cc_emails ?? []) as string[]) if (e) ccSet.add(e)
     }
 
+    // For PDF-flagged clients (their AP system ingests attachments rather
+    // than following links), attach the Statement of Account PDF — one
+    // document covering every open invoice. Failure is logged and the send
+    // continues link-only.
+    let attachments: Array<{ filename: string; content: Buffer }> | undefined
+    if (client.attach_pdf_to_emails) {
+      try {
+        const pdf = await generateStatementPdf(clientId)
+        if (pdf) attachments = [{ filename: pdf.filename, content: pdf.buffer }]
+      } catch (err) {
+        console.error("[send-client-invoice-reminder] Statement PDF generation failed, sending link-only", err)
+      }
+    }
+
     await sendClientInvoiceReminderEmail({
       clientName: client.name,
       contactName: client.contact_name ?? client.name,
@@ -62,6 +77,7 @@ export async function POST(req: Request) {
         description: inv.description ?? null,
         due_date: inv.due_date ?? null,
       })),
+      attachments,
     })
 
     // Stamp each included invoice so the counter stays honest.
@@ -75,7 +91,7 @@ export async function POST(req: Request) {
         .eq("id", inv.id)
     ))
 
-    return NextResponse.json({ ok: true, count: list.length })
+    return NextResponse.json({ ok: true, count: list.length, pdfAttached: Boolean(attachments) })
   } catch (err: any) {
     console.error("[api/admin/send-client-invoice-reminder]", err)
     return NextResponse.json({ error: err?.message ?? "Failed to send reminder" }, { status: 500 })

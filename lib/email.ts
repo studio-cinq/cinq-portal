@@ -235,6 +235,7 @@ interface ClientInvoiceReminderPayload {
   contactEmail: string;
   ccEmails?: string[] | null;
   invoices: ClientReminderInvoice[];
+  attachments?: Array<{ filename: string; content: Buffer }>;
 }
 
 export async function sendClientInvoiceReminderEmail(p: ClientInvoiceReminderPayload) {
@@ -319,6 +320,8 @@ export async function sendClientInvoiceReminderEmail(p: ClientInvoiceReminderPay
     ? `A reminder — Invoice #${p.invoices[0].invoice_number}`
     : `A reminder — ${count} outstanding invoices with Cinq`;
 
+  const attachments = (p.attachments ?? []).filter(a => a?.content && a?.filename);
+
   return sendEmail({
     from: "Kacie Yates <portal@studiocinq.com>",
     replyTo: STUDIO_EMAIL,
@@ -328,6 +331,7 @@ export async function sendClientInvoiceReminderEmail(p: ClientInvoiceReminderPay
     html,
     text,
     tags: [{ name: "category", value: "client-invoice-reminder" }],
+    ...(attachments.length > 0 ? { attachments } : {}),
   });
 }
 
@@ -615,6 +619,7 @@ interface InvoiceSentPayload {
   paymentMethods?: string[]
   ccEmails?: string[]
   notes?: string
+  attachments?: Array<{ filename: string; content: Buffer }>
 }
 
 export async function sendInvoiceEmail(p: InvoiceSentPayload) {
@@ -664,6 +669,8 @@ export async function sendInvoiceEmail(p: InvoiceSentPayload) {
 
   const cc = (p.ccEmails ?? []).filter(Boolean)
 
+  const attachments = (p.attachments ?? []).filter(a => a?.content && a?.filename)
+
   return sendEmail({
     from: "Studio Cinq <portal@studiocinq.com>",
     replyTo: STUDIO_EMAIL,
@@ -672,6 +679,7 @@ export async function sendInvoiceEmail(p: InvoiceSentPayload) {
     subject: `Invoice #${p.invoiceNumber} — ${amount} due from Studio Cinq`,
     html,
     tags: [{ name: "category", value: "invoice-sent" }],
+    ...(attachments.length > 0 ? { attachments } : {}),
   })
 }
 
