@@ -12,6 +12,18 @@ interface LineItem {
   amount: string
 }
 
+// Net-30 default for the due-date field. Returns today + 30 days as
+// YYYY-MM-DD (what <input type="date"> expects), using the browser's
+// local calendar so "30 days out" matches the studio's calendar view.
+function defaultDueDate(): string {
+  const d = new Date()
+  d.setDate(d.getDate() + 30)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, "0")
+  const day = String(d.getDate()).padStart(2, "0")
+  return `${y}-${m}-${day}`
+}
+
 function NewInvoicePageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -35,7 +47,9 @@ function NewInvoicePageInner() {
     project_id:     "",
     invoice_number: "",
     description:    prefillTitle,
-    due_date:       "",
+    // Net-30 by default (today + 30 days), formatted as YYYY-MM-DD for
+    // the <input type="date">. Overridable inline like any other field.
+    due_date:       defaultDueDate(),
     status:         "sent",
     unlocks_files:  false,
     notes:          "",
@@ -305,7 +319,7 @@ function NewInvoicePageInner() {
               <input style={inputStyle} placeholder="SC-001" value={form.invoice_number} onChange={e => set("invoice_number", e.target.value)} />
             </div>
             <div>
-              <label style={labelStyle}>Due date <span style={{ opacity: 0.5 }}>(optional)</span></label>
+              <label style={labelStyle}>Due date <span style={{ opacity: 0.5 }}>(net 30 · editable)</span></label>
               <input style={inputStyle} type="date" value={form.due_date} onChange={e => set("due_date", e.target.value)} />
             </div>
           </div>
