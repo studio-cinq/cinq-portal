@@ -620,6 +620,13 @@ interface InvoiceSentPayload {
   ccEmails?: string[]
   notes?: string
   attachments?: Array<{ filename: string; content: Buffer }>
+  /**
+   * Count of OTHER outstanding invoices this client has besides the one being
+   * sent. When > 0, a soft reminder line is added below the CTA telling the
+   * client that a statement of account is attached — the caller is expected
+   * to have also generated + attached that statement PDF via `attachments`.
+   */
+  otherOpenInvoicesCount?: number
 }
 
 export async function sendInvoiceEmail(p: InvoiceSentPayload) {
@@ -652,6 +659,13 @@ export async function sendInvoiceEmail(p: InvoiceSentPayload) {
     ? `<div style="margin-top:20px;padding:16px 18px;background:#FAF8F5;border-left:2px solid #DDD6CC;font-size:14px;line-height:1.7;color:#333;white-space:pre-line">${p.notes.trim()}</div>`
     : ""
 
+  const otherOpen = p.otherOpenInvoicesCount ?? 0
+  const statementLine = otherOpen > 0 ? `
+    <p style="margin:24px 0 0;font-size:13px;color:#6B6258;font-style:italic;line-height:1.6">
+      You also have ${otherOpen} other outstanding invoice${otherOpen === 1 ? "" : "s"} with Cinq. A statement of account is attached for easy reference.
+    </p>
+  ` : ""
+
   const html = emailShell(`
     <div class="body">
       <p>Hi ${p.contactName} — you have a new invoice from Studio Cinq.</p>
@@ -664,6 +678,7 @@ export async function sendInvoiceEmail(p: InvoiceSentPayload) {
         ${achBlock}
       </div>
       <a class="cta" href="${p.invoiceUrl}" style="color:#FAF8F5;text-decoration:none;">${ctaLabel}</a>
+      ${statementLine}
     </div>
   `)
 

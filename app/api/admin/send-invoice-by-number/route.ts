@@ -2,7 +2,10 @@ import { NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase-server"
 import { sendInvoiceEmail } from "@/lib/email"
 import { generateInvoicePdf } from "@/lib/pdf/invoice"
+import { generateStatementPdf } from "@/lib/pdf/statement"
 import { requireAdmin } from "@/lib/admin-auth"
+
+const UNPAID_STATUSES = ["sent", "overdue", "upcoming"] as const
 
 export async function POST(req: Request) {
   try {
@@ -28,15 +31,33 @@ export async function POST(req: Request) {
 
     const portalUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://portal.studiocinq.com"
 
-    // Attach the invoice PDF for PDF-flagged clients (see send-invoice/route.ts
-    // for the rationale). Failure is logged and the send continues link-only.
-    let attachments: Array<{ filename: string; content: Buffer }> | undefined
+    // Count OTHER open invoices for this client (excluding the one being
+    // sent). If ≥1, auto-attach the Statement of Account PDF as a gentle
+    // nudge. See send-invoice/route.ts for the rationale.
+    const { count: otherOpenCount } = await (supabaseAdmin.from("invoices") as any)
+      .select("id", { count: "exact", head: true })
+      .eq("client_id", clientId)
+      .in("status", UNPAID_STATUSES)
+      .neq("id", invoice.id)
+    const otherOpen = otherOpenCount ?? 0
+
+    const attachments: Array<{ filename: string; content: Buffer }> = []
+
     if (client.attach_pdf_to_emails) {
       try {
         const pdf = await generateInvoicePdf(invoice.id)
-        if (pdf) attachments = [{ filename: pdf.filename, content: pdf.buffer }]
+        if (pdf) attachments.push({ filename: pdf.filename, content: pdf.buffer })
       } catch (err) {
-        console.error("[send-invoice-by-number] PDF generation failed, sending link-only", err)
+        console.error("[send-invoice-by-number] Invoice PDF generation failed, skipping that attachment", err)
+      }
+    }
+
+    if (otherOpen > 0) {
+      try {
+        const pdf = await generateStatementPdf(clientId)
+        if (pdf) attachments.push({ filename: pdf.filename, content: pdf.buffer })
+      } catch (err) {
+        console.error("[send-invoice-by-number] Statement PDF generation failed, sending without", err)
       }
     }
 
@@ -52,14 +73,19 @@ export async function POST(req: Request) {
       paymentMethods: invoice.payment_methods ?? ["stripe"],
       ccEmails: invoice.cc_emails ?? [],
       notes:    invoice.notes ?? undefined,
-      attachments,
+      attachments: attachments.length > 0 ? attachments : undefined,
+      otherOpenInvoicesCount: otherOpen,
     })
 
     await (supabaseAdmin.from("invoices") as any)
       .update({ last_sent_at: new Date().toISOString() })
       .eq("id", invoice.id)
 
-    return NextResponse.json({ ok: true, pdfAttached: Boolean(attachments) })
+    return NextResponse.json({
+      ok: true,
+      attachments: attachments.map(a => a.filename),
+      otherOpenInvoicesCount: otherOpen,
+    })
   } catch (err) {
     console.error("[send-invoice-by-number]", err)
     return NextResponse.json({ error: "Failed" }, { status: 500 })
