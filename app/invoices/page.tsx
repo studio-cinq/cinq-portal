@@ -190,6 +190,7 @@ function InvoiceCard({ inv, variant }: { inv: any; variant: "paid" | "due" | "lo
         const showStripe = methods.includes("stripe")
         const showACH = methods.includes("ach")
         const showVenmo = methods.includes("venmo") && Boolean(process.env.NEXT_PUBLIC_VENMO_HANDLE)
+        const showCheck = methods.includes("check") && Boolean(process.env.NEXT_PUBLIC_CHECK_MAILING_ADDRESS)
         return (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12, paddingTop: 14, borderTop: "0.5px solid rgba(15,15,14,0.07)" }}>
             <DownloadPDFButton type="invoice" id={inv.id} label="↓ Invoice PDF" />
@@ -216,8 +217,19 @@ function InvoiceCard({ inv, variant }: { inv: any; variant: "paid" | "due" | "lo
                   Venmo
                 </a>
               )}
+              {showCheck && (
+                <a href={`/invoice/${inv.id}`} className="portal-button-soft" style={{
+                  fontFamily: "var(--font-mono)", fontSize: 9,
+                  letterSpacing: "0.1em", textTransform: "uppercase",
+                  color: "var(--ink)", opacity: 0.5, textDecoration: "none",
+                  border: "0.5px solid rgba(15,15,14,0.18)", padding: "6px 12px",
+                  whiteSpace: "nowrap",
+                }}>
+                  Check
+                </a>
+              )}
               {showStripe && (
-                <PayInvoiceButton invoiceId={inv.id} amount={inv.amount} label={showACH || showVenmo ? "Pay with card" : undefined} />
+                <PayInvoiceButton invoiceId={inv.id} amount={inv.amount} label={showACH || showVenmo || showCheck ? "Pay with card" : undefined} />
               )}
             </div>
           </div>

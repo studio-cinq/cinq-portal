@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase"
 import CinqLogo from "@/components/CinqLogo"
 import DownloadPDFButton from "@/components/portal/DownloadPDFButton"
 import { Suspense } from "react"
+import QRCode from "qrcode"
 
 function InvoicePageInner({ params }: { params: { id: string } }) {
   const [invoice, setInvoice] = useState<any>(null)
@@ -14,6 +15,10 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
   const [isMobile, setIsMobile] = useState(false)
   const [paymentError, setPaymentError] = useState<string | null>(null)
   const [achDetails, setAchDetails] = useState<{ bankName: string; routingNumber: string; accountNumber: string; accountName: string } | null>(null)
+  // Which copy affordance just fired ("bank" details / Venmo "amount"); resets after 2s.
+  const [copied, setCopied] = useState<"bank" | "amount" | "check" | null>(null)
+  // Venmo QR (data URL) generated client-side from the deep link.
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
 
   useEffect(() => {
     function checkViewport() {
@@ -72,6 +77,31 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
     }
   }, [invoice, justPaid])
 
+  // Venmo QR — encodes a venmo:// deep link with recipient, amount and note
+  // prefilled, so a phone scan opens the app ready to pay. Drawn from the
+  // same handle the "Open in Venmo" button uses, so the two can't drift.
+  useEffect(() => {
+    if (!invoice) return
+    const methods: string[] = invoice.payment_methods ?? ["stripe"]
+    const handle = (process.env.NEXT_PUBLIC_VENMO_HANDLE ?? "").replace(/^@/, "")
+    const paid = invoice.status === "paid" || justPaid
+    if (!methods.includes("venmo") || !handle || paid) { setQrDataUrl(null); return }
+    const dollars = (invoice.amount / 100).toFixed(2)
+    const note = encodeURIComponent(`Invoice ${invoice.invoice_number}`)
+    const deepLink = `venmo://paycharge?txn=pay&recipients=${handle}&amount=${dollars}&note=${note}`
+    QRCode.toDataURL(deepLink, { margin: 0, width: 176, color: { dark: "#1A1815", light: "#00000000" } })
+      .then(setQrDataUrl)
+      .catch(() => setQrDataUrl(null))
+  }, [invoice, justPaid])
+
+  // Clipboard copy with a 2s "Copied" confirmation on the triggering control.
+  function copyText(key: "bank" | "amount" | "check", text: string) {
+    navigator.clipboard?.writeText(text).then(() => {
+      setCopied(key)
+      setTimeout(() => setCopied(c => (c === key ? null : c)), 2000)
+    }).catch(() => {})
+  }
+
   async function handlePay() {
     setSubmitting(true)
     setPaymentError(null)
@@ -125,7 +155,11 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
   // public env var; when it's unset the whole block stays hidden.
   const venmoHandle = (process.env.NEXT_PUBLIC_VENMO_HANDLE ?? "").replace(/^@/, "")
   const hasVenmo = paymentMethods.includes("venmo") && venmoHandle.length > 0
-  const hasAltMethod = hasACH || hasVenmo
+  // Check is opt-in per invoice too. Payable-to + mailing address come from
+  // public env vars; the card stays hidden until both are set.
+  const checkPayableTo = (process.env.NEXT_PUBLIC_CHECK_PAYABLE_TO ?? "").trim()
+  const checkAddress   = (process.env.NEXT_PUBLIC_CHECK_MAILING_ADDRESS ?? "").trim()
+  const hasCheck = paymentMethods.includes("check") && checkPayableTo.length > 0 && checkAddress.length > 0
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-grad)" }}>
@@ -324,122 +358,209 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
           </div>
         )}
 
-        {/* Payment block. Fee-free methods (bank transfer / Venmo) lead when
-             they're offered: their cards come first under "How to pay" and
-             card checkout follows as a same-size OUTLINED button — clearly
-             visible, just not the loudest thing. When card is the only
-             method, it's the filled primary button as before. */}
+        {/* Payment block — see design/payment-section-mockup.html.
+             Equal-height cards in a 3 / 2 / 1 column grid, ordered bank
+             transfer → Venmo → card. Which cards show is driven by the
+             invoice's payment_methods (+ env gates, see hasACH/hasVenmo).
+             A single method lays out horizontally; everything stacks on
+             mobile. Card checkout is the only solid button. */}
         {(() => {
-          const showACHCard = hasACH && !isPaid && Boolean(achDetails?.bankName)
-          const showVenmoCard = hasVenmo && !isPaid
-          const hasCards = showACHCard || showVenmoCard
+          const showACH   = hasACH && !isPaid && Boolean(achDetails?.bankName)
+          const showVenmo = hasVenmo && !isPaid
+          const showCheck = hasCheck && !isPaid
+          const showCard  = hasStripe && !isPaid
+          const count = [showACH, showVenmo, showCheck, showCard].filter(Boolean).length
 
-          const buttonBase: React.CSSProperties = {
-            fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
-            letterSpacing: "0.16em", textTransform: "uppercase",
-            padding: "16px 32px",
-            width: isMobile ? "100%" : undefined,
-            cursor: submitting ? "default" : "pointer",
-            opacity: submitting ? 0.4 : 1, transition: "opacity 0.2s",
-          }
-          const cardButton = hasStripe && !isPaid ? (
-            <button onClick={handlePay} disabled={submitting} style={hasCards
-              ? { ...buttonBase, background: "transparent", color: "var(--ink)", border: "0.5px solid rgba(15,15,14,0.45)" }
-              : { ...buttonBase, background: "var(--ink)", color: "var(--cream)", border: "none" }
-            }>
-              {submitting ? "Redirecting…" : hasCards ? "Pay with card" : "Pay invoice"}
-            </button>
-          ) : null
-          const paidLine = isPaid ? (
-            <div style={{
-              fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
-              letterSpacing: "0.14em", textTransform: "uppercase",
-              color: "var(--sage)", opacity: 0.85,
-              padding: "14px 0",
-            }}>
-              {justPaid ? "Payment received — thank you!" : `Paid${invoice.paid_at ? ` · ${new Date(invoice.paid_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : ""}`}
+          const reference = `Invoice #${invoice.invoice_number}`
+          const amountFmt = `$${amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}`
+
+          const errorLine = paymentError ? (
+            <div role="alert" style={{ marginTop: 12, fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", color: "var(--amber)", opacity: 0.9, lineHeight: 1.6 }}>
+              {paymentError}
             </div>
           ) : null
-          const actionRow = (
-            <>
-              <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-                {paidLine}
-                {cardButton}
-                <DownloadPDFButton type="invoice" id={params.id} label="↓ PDF" />
-              </div>
-              {paymentError && (
-                <div role="alert" style={{ marginTop: 12, fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", color: "var(--amber)", opacity: 0.9, lineHeight: 1.6 }}>
-                  {paymentError}
+
+          if (isPaid) {
+            return (
+              <div style={{ marginBottom: 40 }}>
+                <div style={{
+                  fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
+                  letterSpacing: "0.14em", textTransform: "uppercase",
+                  color: "var(--sage)", opacity: 0.85, padding: "14px 0",
+                }}>
+                  {justPaid ? "Payment received — thank you!" : `Paid${invoice.paid_at ? ` · ${new Date(invoice.paid_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : ""}`}
                 </div>
-              )}
-            </>
-          )
+              </div>
+            )
+          }
+          if (count === 0) return null
 
-          // Paid, or card-only: just the action row under the total.
-          if (!hasCards) return <div style={{ marginBottom: 40 }}>{actionRow}</div>
+          // Single method on desktop reads as one horizontal band.
+          const single = count === 1 && !isMobile
 
-          const sideBySide = !isMobile && showACHCard && showVenmoCard
-          // In a half-width column the label/value pair stacks so long bank
-          // names don't collide with their labels.
-          const stacked = isMobile || sideBySide
-          const cardStyle: React.CSSProperties = { padding: "20px 24px", background: "rgba(255,255,255,0.4)", border: "0.5px solid rgba(15,15,14,0.1)" }
-          const cardTitle: React.CSSProperties = { fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.55, marginBottom: 14 }
-          const detailRow = (row: { label: string; value: string }) => (
-            <div key={row.label} style={{ display: "flex", flexDirection: stacked ? "column" : "row", justifyContent: "space-between", alignItems: stacked ? "flex-start" : "center", gap: stacked ? 3 : 16, padding: "8px 0", borderBottom: "0.5px solid rgba(15,15,14,0.08)" }}>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.5 }}>{row.label}</span>
-              <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.85, wordBreak: "break-word" }}>{row.value}</span>
+          const eyebrow: React.CSSProperties = {
+            fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
+            letterSpacing: "0.14em", textTransform: "uppercase",
+          }
+          const card: React.CSSProperties = {
+            background: "rgba(255,255,255,0.4)", border: "0.5px solid rgba(15,15,14,0.1)",
+            padding: "24px 22px 22px",
+            display: "flex", flexDirection: single ? "row" : "column",
+            alignItems: single ? "flex-start" : undefined,
+            gap: single ? 40 : 0,
+            minHeight: single ? undefined : 300,
+            minWidth: 0,
+          }
+          const head = (title: string, tag: string, soft: boolean) => (
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, marginBottom: single ? 0 : 22, flexShrink: 0 }}>
+              <span style={{ ...eyebrow, color: "var(--ink)", opacity: 0.85 }}>{title}</span>
+              <span style={{
+                ...eyebrow, fontSize: 10, letterSpacing: "0.12em", padding: "3px 6px", whiteSpace: "nowrap",
+                color: soft ? "var(--ink)" : "var(--ink)", opacity: soft ? 0.45 : 0.85,
+                border: soft ? "0.5px solid rgba(15,15,14,0.2)" : "0.5px solid var(--ink)",
+              }}>{tag}</span>
             </div>
           )
+          const rowLabel: React.CSSProperties = { ...eyebrow, display: "block", fontSize: 10, letterSpacing: "0.12em", opacity: 0.5, marginBottom: 4 }
+          const rowStyle = (last: boolean): React.CSSProperties => ({
+            padding: "9px 0", borderBottom: last ? "none" : "0.5px solid rgba(15,15,14,0.08)",
+            fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.85,
+            display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12,
+            wordBreak: "break-word",
+          })
+          const inlineAction: React.CSSProperties = {
+            ...eyebrow, fontSize: 10, letterSpacing: "0.12em", background: "none", border: "none",
+            padding: 0, cursor: "pointer", color: "var(--ink)", opacity: 0.45, flexShrink: 0,
+          }
+          const btn: React.CSSProperties = {
+            ...eyebrow, display: "block", textAlign: "center", textDecoration: "none",
+            marginTop: single ? 0 : 22, width: single ? 220 : "100%", alignSelf: single ? "flex-end" : undefined,
+            padding: 14, border: "0.5px solid var(--ink)", background: "transparent", color: "var(--ink)",
+            cursor: "pointer", flexShrink: 0, boxSizing: "border-box",
+          }
+          const solid: React.CSSProperties = { ...btn, background: "var(--ink)", color: "var(--cream)" }
+
+          const bankRows = [
+            { label: "Bank",         value: achDetails?.bankName ?? "" },
+            { label: "Account name", value: achDetails?.accountName ?? "" },
+            { label: "Routing",      value: achDetails?.routingNumber ?? "" },
+            { label: "Account",      value: achDetails?.accountNumber ?? "" },
+            { label: "Reference",    value: reference },
+          ]
+          const bankText = bankRows.map(r => `${r.label}: ${r.value}`).join("\n")
+
           return (
             <div style={{ marginBottom: 36 }}>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.4, marginBottom: 12 }}>
-                How to pay
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: sideBySide ? "1fr 1fr" : "1fr", gap: 16 }}>
-                {showACHCard && (
-                  <div style={cardStyle}>
-                    <div style={cardTitle}>Bank transfer</div>
-                    {[
-                      { label: "Bank",           value: achDetails?.bankName ?? "" },
-                      { label: "Account name",   value: achDetails?.accountName ?? "" },
-                      { label: "Routing number", value: achDetails?.routingNumber ?? "" },
-                      { label: "Account number", value: achDetails?.accountNumber ?? "" },
-                      { label: "Reference",      value: `Invoice #${invoice.invoice_number}` },
-                    ].map(detailRow)}
-                  </div>
-                )}
-                {showVenmoCard && (
-                  // Flex column so the button pins to the bottom and the two
-                  // cards close on the same line when side by side.
-                  <div style={{ ...cardStyle, display: "flex", flexDirection: "column" }}>
-                    <div style={cardTitle}>Venmo</div>
-                    {[
-                      { label: "Handle",    value: `@${venmoHandle}` },
-                      { label: "Amount",    value: `$${amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}` },
-                      { label: "Reference", value: `Invoice #${invoice.invoice_number}` },
-                    ].map(detailRow)}
-                    <div style={{ marginTop: "auto", paddingTop: 14 }}>
-                      <a
-                        href={`https://venmo.com/u/${venmoHandle}`}
-                        target="_blank" rel="noreferrer"
-                        style={{ display: "inline-block", fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink)", opacity: 0.6, textDecoration: "none", border: "0.5px solid rgba(15,15,14,0.2)", padding: "8px 14px" }}
-                      >
-                        Open in Venmo ↗
-                      </a>
+              <span style={{ ...eyebrow, opacity: 0.4 }}>How to pay</span>
+              {/* 1–3 methods sit in a row; all four go 2×2 rather than cramming 4-across. */}
+              <div style={{ display: "grid", gap: 12, marginTop: 14, gridTemplateColumns: isMobile ? "minmax(0, 1fr)" : `repeat(${count === 4 ? 2 : count}, minmax(0, 1fr))` }}>
+
+                {showACH && (
+                  <div style={card}>
+                    {head("Bank transfer", "No fee", false)}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      {bankRows.map((r, i) => (
+                        <div key={r.label} style={rowStyle(i === bankRows.length - 1)}>
+                          <div><small style={rowLabel}>{r.label}</small>{r.value}</div>
+                        </div>
+                      ))}
                     </div>
+                    <button type="button" onClick={() => copyText("bank", bankText)} style={btn}>
+                      {copied === "bank" ? "Copied" : "Copy details"}
+                    </button>
                   </div>
                 )}
+
+                {showVenmo && (
+                  <div style={card}>
+                    {head("Venmo", "No fee", false)}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={rowStyle(false)}>
+                        <div><small style={rowLabel}>Handle</small>@{venmoHandle}</div>
+                      </div>
+                      <div style={rowStyle(false)}>
+                        <div><small style={rowLabel}>Amount</small>{amountFmt}</div>
+                        <button type="button" onClick={() => copyText("amount", amount.toFixed(2))} style={inlineAction}>
+                          {copied === "amount" ? "Copied" : "Copy"}
+                        </button>
+                      </div>
+                      <div style={rowStyle(false)}>
+                        <div><small style={rowLabel}>Reference</small>{reference}</div>
+                      </div>
+                      {/* QR encodes a venmo:// deep link with recipient, amount
+                           and note prefilled. Generated client-side from the
+                           same handle the button uses; falls back to a static
+                           asset while the data URL is still rendering. */}
+                      <div style={{ ...rowStyle(true), paddingTop: 16 }}>
+                        <img
+                          src={qrDataUrl ?? "/venmo-qr.png"}
+                          width={88} height={88}
+                          alt={`Venmo QR code — pay @${venmoHandle}`}
+                          style={{ display: "block", width: 88, height: 88, imageRendering: "pixelated" }}
+                        />
+                      </div>
+                    </div>
+                    <a href={`https://venmo.com/u/${venmoHandle}`} target="_blank" rel="noreferrer" style={btn}>
+                      Open in Venmo
+                    </a>
+                  </div>
+                )}
+
+                {showCheck && (
+                  <div style={card}>
+                    {head("Check", "No fee", false)}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={rowStyle(false)}>
+                        <div><small style={rowLabel}>Payable to</small>{checkPayableTo}</div>
+                      </div>
+                      <div style={rowStyle(false)}>
+                        <div><small style={rowLabel}>Mail to</small>{checkAddress}</div>
+                      </div>
+                      <div style={rowStyle(false)}>
+                        <div><small style={rowLabel}>Reference</small>{reference}</div>
+                      </div>
+                      <div style={{ ...rowStyle(true), fontSize: "var(--text-sm)", opacity: 0.55, lineHeight: 1.55 }}>
+                        Please allow 5–7 days for mailed payments to post.
+                      </div>
+                    </div>
+                    <button type="button" onClick={() => copyText("check", `Payable to: ${checkPayableTo}\nMail to: ${checkAddress}\nReference: ${reference}`)} style={btn}>
+                      {copied === "check" ? "Copied" : "Copy details"}
+                    </button>
+                  </div>
+                )}
+
+                {showCard && (
+                  <div style={card}>
+                    {head("Card", "Processing fee", true)}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={rowStyle(false)}>
+                        <div><small style={rowLabel}>Accepted</small>Visa, Mastercard, Amex</div>
+                      </div>
+                      <div style={rowStyle(false)}>
+                        <div><small style={rowLabel}>Reference</small>{reference}</div>
+                      </div>
+                      <div style={{ ...rowStyle(true), fontSize: "var(--text-sm)", opacity: 0.55, lineHeight: 1.55 }}>
+                        Secure checkout through Stripe. Receipt emailed on payment.
+                      </div>
+                    </div>
+                    <button type="button" onClick={handlePay} disabled={submitting} style={{ ...solid, opacity: submitting ? 0.4 : 1, cursor: submitting ? "default" : "pointer" }}>
+                      {submitting ? "Redirecting…" : "Pay with card"}
+                    </button>
+                  </div>
+                )}
+
               </div>
-              <div style={{ marginTop: 20 }}>{actionRow}</div>
+              {errorLine}
             </div>
           )
         })()}
 
-        {/* Footer */}
-        <div style={{ marginTop: 64, paddingTop: 20, borderTop: "0.5px solid rgba(15,15,14,0.08)" }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.25 }}>
+        {/* Footer — portal link left, PDF download right */}
+        <div style={{ marginTop: 64, paddingTop: 22, borderTop: "0.5px solid rgba(15,15,14,0.08)", display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 16, flexWrap: "wrap" }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.25 }}>
             Studio Cinq · portal.studiocinq.com
           </div>
+          <DownloadPDFButton type="invoice" id={params.id} label="↓ Download PDF" variant="link" />
         </div>
       </main>
     </div>

@@ -666,6 +666,19 @@ export async function sendInvoiceEmail(p: InvoiceSentPayload) {
     </div>
   ` : ""
 
+  // Check is per-invoice opt-in; rendered only when payable-to + address are set.
+  const checkPayableTo = (process.env.NEXT_PUBLIC_CHECK_PAYABLE_TO ?? "").trim()
+  const checkAddress   = (process.env.NEXT_PUBLIC_CHECK_MAILING_ADDRESS ?? "").trim()
+  const hasCheck = methods.includes("check") && checkPayableTo && checkAddress
+  const checkBlock = hasCheck ? `
+    <div style="margin-top:16px;padding-top:12px;border-top:1px solid #DDD6CC">
+      <p style="margin:0 0 8px;font-weight:600">Check option</p>
+      <p style="margin:0;font-size:13px;color:#555">Payable to: ${checkPayableTo}</p>
+      <p style="margin:0;font-size:13px;color:#555">Mail to: ${checkAddress}</p>
+      <p style="margin:0;font-size:13px;color:#555">Reference: Invoice #${p.invoiceNumber}</p>
+    </div>
+  ` : ""
+
   const notesBlock = p.notes?.trim()
     ? `<div style="margin-top:20px;padding:16px 18px;background:#FAF8F5;border-left:2px solid #DDD6CC;font-size:14px;line-height:1.7;color:#333;white-space:pre-line">${p.notes.trim()}</div>`
     : ""
@@ -688,6 +701,7 @@ export async function sendInvoiceEmail(p: InvoiceSentPayload) {
         ${dueLine ? `<p><strong>Due</strong> &nbsp;${dueLine}</p>` : ""}
         ${achBlock}
         ${venmoBlock}
+        ${checkBlock}
       </div>
       <a class="cta" href="${p.invoiceUrl}" style="color:#FAF8F5;text-decoration:none;">${ctaLabel}</a>
       ${statementLine}

@@ -290,6 +290,37 @@ export async function generateInvoicePdf(invoiceId: string): Promise<{ buffer: B
     }
   }
 
+  // Check (per-invoice opt-in; hidden unless payable-to + address env vars are set)
+  const checkPayableTo = (process.env.NEXT_PUBLIC_CHECK_PAYABLE_TO ?? "").trim()
+  const checkAddress   = (process.env.NEXT_PUBLIC_CHECK_MAILING_ADDRESS ?? "").trim()
+  if (paymentMethods.includes("check") && checkPayableTo && checkAddress && !isPaid) {
+    y += 24
+    doc.setDrawColor(200, 196, 190)
+    doc.setLineWidth(0.3)
+    doc.line(marginL, y, W - marginR, y)
+    y += 18
+
+    doc.setFontSize(6.5)
+    setColor(doc, INK, 0.38)
+    doc.text("PAY BY CHECK", marginL, y)
+    y += 16
+
+    const checkRows = [
+      { label: "PAYABLE TO", value: checkPayableTo },
+      { label: "MAIL TO",    value: checkAddress },
+      { label: "REFERENCE",  value: `Invoice #${invoice.invoice_number}` },
+    ]
+    for (const row of checkRows) {
+      doc.setFontSize(7)
+      setColor(doc, INK, 0.38)
+      doc.text(row.label, marginL, y)
+      doc.setFontSize(10)
+      setColor(doc, INK, 0.75)
+      doc.text(row.value, marginL + 120, y)
+      y += 16
+    }
+  }
+
   // Paid stamp (image in upper-right)
   if (isPaid) {
     try {

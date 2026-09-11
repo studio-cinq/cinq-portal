@@ -6,9 +6,11 @@ interface DownloadPDFButtonProps {
   type: "proposal" | "invoice"
   id: string
   label?: string
+  /** "link" renders as plain muted uppercase text (no border) — for footers. */
+  variant?: "button" | "link"
 }
 
-export default function DownloadPDFButton({ type, id, label }: DownloadPDFButtonProps) {
+export default function DownloadPDFButton({ type, id, label, variant = "button" }: DownloadPDFButtonProps) {
   const [loading, setLoading] = useState(false)
 
   async function handleDownload(e: React.MouseEvent) {
@@ -37,7 +39,20 @@ export default function DownloadPDFButton({ type, id, label }: DownloadPDFButton
     <button
       onClick={handleDownload}
       disabled={loading}
-      style={{
+      style={variant === "link" ? {
+        fontFamily: "var(--font-mono)",
+        fontSize: "var(--text-eyebrow)",
+        letterSpacing: "0.14em",
+        textTransform: "uppercase",
+        background: "none",
+        border: "none",
+        padding: 0,
+        cursor: loading ? "default" : "pointer",
+        color: "var(--ink)",
+        opacity: loading ? 0.2 : 0.4,
+        transition: "opacity 0.2s",
+        whiteSpace: "nowrap",
+      } : {
         fontFamily: "var(--font-mono)",
         fontSize: "var(--text-eyebrow)",
         letterSpacing: "0.1em",
