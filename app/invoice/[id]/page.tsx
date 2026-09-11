@@ -227,7 +227,7 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
         {/* Header */}
         <div style={{ position: "relative" }}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.42, marginBottom: 10 }}>
-            Invoice #{invoice.invoice_number}
+            Invoice #{invoice.invoice_number}{project?.title ? ` · ${project.title}` : ""}
           </div>
           <h1 style={{ fontFamily: "var(--font-sans)", fontWeight: 400, fontSize: isMobile ? 22 : 28, letterSpacing: "-0.015em", opacity: 0.9, margin: "0 0 32px", paddingRight: isPaid ? (isMobile ? 88 : 140) : 0 }}>
             {invoice.description}
@@ -250,7 +250,8 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
           )}
         </div>
 
-        {/* Meta — two rows: who (From / To), then when (Project / Issued / Due).
+        {/* Meta — a strict 2×2 so the columns share one rhythm: From / To,
+             then Issued / Due. Project lives in the eyebrow above the title.
              The contact subline is dropped when it just repeats the client
              name (solo clients). */}
         {(() => {
@@ -274,8 +275,7 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
                 {metaCell({ label: "From", value: "Studio Cinq", subline: "Kacie Yates" })}
                 {metaCell({ label: "To", value: clientName, subline: contactSub })}
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: isMobile ? 16 : 24, marginTop: isMobile ? 16 : 22 }}>
-                {metaCell({ label: "Project", value: project?.title ?? "—" })}
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 16 : 24, marginTop: isMobile ? 16 : 22 }}>
                 {metaCell({ label: "Issued", value: issuedRaw ? fmt(issuedRaw) : "—" })}
                 {metaCell({ label: "Due", value: invoice.due_date ? fmt(invoice.due_date) : "Upon receipt" })}
               </div>
@@ -413,20 +413,24 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
                   </div>
                 )}
                 {showVenmoCard && (
-                  <div style={cardStyle}>
+                  // Flex column so the button pins to the bottom and the two
+                  // cards close on the same line when side by side.
+                  <div style={{ ...cardStyle, display: "flex", flexDirection: "column" }}>
                     <div style={cardTitle}>Venmo</div>
                     {[
                       { label: "Handle",    value: `@${venmoHandle}` },
                       { label: "Amount",    value: `$${amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}` },
                       { label: "Reference", value: `Invoice #${invoice.invoice_number}` },
                     ].map(detailRow)}
-                    <a
-                      href={`https://venmo.com/u/${venmoHandle}`}
-                      target="_blank" rel="noreferrer"
-                      style={{ display: "inline-block", marginTop: 14, fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink)", opacity: 0.6, textDecoration: "none", border: "0.5px solid rgba(15,15,14,0.2)", padding: "8px 14px" }}
-                    >
-                      Open in Venmo ↗
-                    </a>
+                    <div style={{ marginTop: "auto", paddingTop: 14 }}>
+                      <a
+                        href={`https://venmo.com/u/${venmoHandle}`}
+                        target="_blank" rel="noreferrer"
+                        style={{ display: "inline-block", fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink)", opacity: 0.6, textDecoration: "none", border: "0.5px solid rgba(15,15,14,0.2)", padding: "8px 14px" }}
+                      >
+                        Open in Venmo ↗
+                      </a>
+                    </div>
                   </div>
                 )}
               </div>
