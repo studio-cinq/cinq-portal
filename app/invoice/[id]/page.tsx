@@ -398,7 +398,7 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
           if (available.length === 0) return null
 
           const current: Method = activeMethod && available.includes(activeMethod) ? activeMethod : available[0]
-          const labels: Record<Method, string> = { ach: "ACH", card: "Credit card", venmo: "Venmo", check: "Check" }
+          const labels: Record<Method, string> = { ach: "Bank transfer", card: "Credit card", venmo: "Venmo", check: "Check" }
 
           const eyebrow: React.CSSProperties = {
             fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
@@ -497,9 +497,11 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
 
           return (
             <div style={{ marginBottom: 36 }}>
-              <span style={{ ...eyebrow, opacity: 0.4 }}>How to pay</span>
+              <span style={{ ...eyebrow, opacity: 0.5 }}>How to pay</span>
 
-              {/* Tab row — hidden when there's only one way to pay. */}
+              {/* Tab row — hidden when there's only one way to pay. Tabs are
+                   controls, so they run a step larger and darker than the
+                   section eyebrow above them. */}
               {available.length > 1 && (
                 <div role="tablist" aria-label="Payment method" style={{ display: "flex", gap: 24, marginTop: 14, borderBottom: "0.5px solid rgba(15,15,14,0.12)" }}>
                   {available.map(m => {
@@ -509,8 +511,9 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
                         key={m} type="button" role="tab" aria-selected={on}
                         onClick={() => setActiveMethod(m)}
                         style={{
-                          ...eyebrow, background: "none", border: "none", padding: "10px 0 12px", cursor: on ? "default" : "pointer",
-                          color: "var(--ink)", opacity: on ? 0.9 : 0.4, whiteSpace: "nowrap",
+                          ...eyebrow, fontSize: 11, letterSpacing: "0.16em",
+                          background: "none", border: "none", padding: "10px 0 12px", cursor: on ? "default" : "pointer",
+                          color: "var(--ink)", opacity: on ? 1 : 0.55, whiteSpace: "nowrap",
                           marginBottom: -0.5, borderBottom: on ? "1px solid var(--ink)" : "1px solid transparent",
                         }}
                       >
