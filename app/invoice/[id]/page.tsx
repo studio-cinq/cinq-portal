@@ -16,7 +16,7 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
   const [paymentError, setPaymentError] = useState<string | null>(null)
   const [achDetails, setAchDetails] = useState<{ bankName: string; routingNumber: string; accountNumber: string; accountName: string } | null>(null)
   // Which copy affordance just fired ("bank" details / Venmo "amount"); resets after 2s.
-  const [copied, setCopied] = useState<"bank" | "amount" | "check" | null>(null)
+  const [copied, setCopied] = useState<"bank" | "check" | null>(null)
   // Venmo QR (data URL) generated client-side from the deep link.
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
 
@@ -95,7 +95,7 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
   }, [invoice, justPaid])
 
   // Clipboard copy with a 2s "Copied" confirmation on the triggering control.
-  function copyText(key: "bank" | "amount" | "check", text: string) {
+  function copyText(key: "bank" | "check", text: string) {
     navigator.clipboard?.writeText(text).then(() => {
       setCopied(key)
       setTimeout(() => setCopied(c => (c === key ? null : c)), 2000)
@@ -402,22 +402,30 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
             fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
             letterSpacing: "0.14em", textTransform: "uppercase",
           }
-          const card: React.CSSProperties = {
+          // Multi-column cards are a 3-row grid (header / content / button) so
+          // the button row is locked to the bottom and every button shares one
+          // baseline regardless of content height. The single-method band
+          // stays a horizontal flex row.
+          const card: React.CSSProperties = single ? {
             background: "rgba(255,255,255,0.4)", border: "0.5px solid rgba(15,15,14,0.1)",
             padding: "24px 22px 22px",
-            display: "flex", flexDirection: single ? "row" : "column",
-            alignItems: single ? "flex-start" : undefined,
-            gap: single ? 40 : 0,
-            minHeight: single ? undefined : 300,
+            display: "flex", flexDirection: "row", alignItems: "flex-start", gap: 40,
             minWidth: 0,
+          } : {
+            background: "rgba(255,255,255,0.4)", border: "0.5px solid rgba(15,15,14,0.1)",
+            padding: "24px 22px 22px",
+            display: "grid", gridTemplateRows: "auto 1fr auto",
+            minHeight: 300, minWidth: 0,
           }
           const head = (title: string, tag: string, soft: boolean) => (
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, marginBottom: single ? 0 : 22, flexShrink: 0 }}>
               <span style={{ ...eyebrow, color: "var(--ink)", opacity: 0.85 }}>{title}</span>
+              {/* Tags sit on a light rule-colored border; "No fee" keeps dark
+                   text so it reads first, "Processing fee" goes fully grey. */}
               <span style={{
-                ...eyebrow, fontSize: 10, letterSpacing: "0.12em", padding: "3px 6px", whiteSpace: "nowrap",
-                color: soft ? "var(--ink)" : "var(--ink)", opacity: soft ? 0.45 : 0.85,
-                border: soft ? "0.5px solid rgba(15,15,14,0.2)" : "0.5px solid var(--ink)",
+                ...eyebrow, fontSize: 9, letterSpacing: "0.12em", padding: "3px 6px", whiteSpace: "nowrap",
+                color: "var(--ink)", opacity: soft ? 0.45 : 0.85,
+                border: "0.5px solid rgba(15,15,14,0.16)",
               }}>{tag}</span>
             </div>
           )
@@ -428,15 +436,16 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
             display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12,
             wordBreak: "break-word",
           })
-          const inlineAction: React.CSSProperties = {
-            ...eyebrow, fontSize: 10, letterSpacing: "0.12em", background: "none", border: "none",
-            padding: 0, cursor: "pointer", color: "var(--ink)", opacity: 0.45, flexShrink: 0,
-          }
+          // Same margin-top on every button — with the grid's 1fr content row
+          // absorbing the slack, that's what puts them on one baseline.
           const btn: React.CSSProperties = {
             ...eyebrow, display: "block", textAlign: "center", textDecoration: "none",
             marginTop: single ? 0 : 22, width: single ? 220 : "100%", alignSelf: single ? "flex-end" : undefined,
             padding: 14, border: "0.5px solid var(--ink)", background: "transparent", color: "var(--ink)",
             cursor: "pointer", flexShrink: 0, boxSizing: "border-box",
+            // <a> inherits the page line-height while <button> uses "normal";
+            // pin it so the Venmo link and the buttons render the same height.
+            lineHeight: "normal",
           }
           const solid: React.CSSProperties = { ...btn, background: "var(--ink)", color: "var(--cream)" }
 
@@ -477,12 +486,6 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={rowStyle(false)}>
                         <div><small style={rowLabel}>Handle</small>@{venmoHandle}</div>
-                      </div>
-                      <div style={rowStyle(false)}>
-                        <div><small style={rowLabel}>Amount</small>{amountFmt}</div>
-                        <button type="button" onClick={() => copyText("amount", amount.toFixed(2))} style={inlineAction}>
-                          {copied === "amount" ? "Copied" : "Copy"}
-                        </button>
                       </div>
                       <div style={rowStyle(false)}>
                         <div><small style={rowLabel}>Reference</small>{reference}</div>
