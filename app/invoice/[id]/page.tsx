@@ -466,7 +466,7 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
 
                 {showACH && (
                   <div style={card}>
-                    {head("Bank transfer", "No fee", false)}
+                    {head("ACH", "No fee", false)}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       {bankRows.map((r, i) => (
                         <div key={r.label} style={rowStyle(i === bankRows.length - 1)}>
