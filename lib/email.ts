@@ -655,6 +655,17 @@ export async function sendInvoiceEmail(p: InvoiceSentPayload) {
     </div>
   ` : ""
 
+  // Venmo is per-invoice opt-in; only rendered when the handle env var is set.
+  const venmoHandle = (process.env.NEXT_PUBLIC_VENMO_HANDLE ?? "").replace(/^@/, "")
+  const hasVenmo = methods.includes("venmo") && venmoHandle.length > 0
+  const venmoBlock = hasVenmo ? `
+    <div style="margin-top:16px;padding-top:12px;border-top:1px solid #DDD6CC">
+      <p style="margin:0 0 8px;font-weight:600">Venmo option</p>
+      <p style="margin:0;font-size:13px;color:#555">Handle: <a href="https://venmo.com/u/${venmoHandle}" style="color:#1C1916">@${venmoHandle}</a></p>
+      <p style="margin:0;font-size:13px;color:#555">Reference: Invoice #${p.invoiceNumber}</p>
+    </div>
+  ` : ""
+
   const notesBlock = p.notes?.trim()
     ? `<div style="margin-top:20px;padding:16px 18px;background:#FAF8F5;border-left:2px solid #DDD6CC;font-size:14px;line-height:1.7;color:#333;white-space:pre-line">${p.notes.trim()}</div>`
     : ""
@@ -676,6 +687,7 @@ export async function sendInvoiceEmail(p: InvoiceSentPayload) {
         <p><strong>Amount</strong> &nbsp;${amount}</p>
         ${dueLine ? `<p><strong>Due</strong> &nbsp;${dueLine}</p>` : ""}
         ${achBlock}
+        ${venmoBlock}
       </div>
       <a class="cta" href="${p.invoiceUrl}" style="color:#FAF8F5;text-decoration:none;">${ctaLabel}</a>
       ${statementLine}

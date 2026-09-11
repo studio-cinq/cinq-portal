@@ -121,6 +121,11 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
   const paymentMethods: string[] = invoice.payment_methods ?? ["stripe"]
   const hasStripe = paymentMethods.includes("stripe")
   const hasACH = paymentMethods.includes("ach")
+  // Venmo is opt-in per invoice (small one-off clients). Handle comes from a
+  // public env var; when it's unset the whole block stays hidden.
+  const venmoHandle = (process.env.NEXT_PUBLIC_VENMO_HANDLE ?? "").replace(/^@/, "")
+  const hasVenmo = paymentMethods.includes("venmo") && venmoHandle.length > 0
+  const hasAltMethod = hasACH || hasVenmo
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-grad)" }}>
@@ -332,6 +337,32 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
           </div>
         )}
 
+        {/* Venmo */}
+        {hasVenmo && !isPaid && (
+          <div style={{ marginBottom: 36, padding: "20px 24px", background: "rgba(255,255,255,0.4)", border: "0.5px solid rgba(15,15,14,0.1)" }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.55, marginBottom: 14 }}>
+              Venmo
+            </div>
+            {[
+              { label: "Handle",    value: `@${venmoHandle}` },
+              { label: "Amount",    value: `$${amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}` },
+              { label: "Reference", value: `Invoice #${invoice.invoice_number}` },
+            ].map(row => (
+              <div key={row.label} style={{ display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", gap: isMobile ? 4 : 16, padding: "8px 0", borderBottom: "0.5px solid rgba(15,15,14,0.08)" }}>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.5 }}>{row.label}</span>
+                <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.85 }}>{row.value}</span>
+              </div>
+            ))}
+            <a
+              href={`https://venmo.com/u/${venmoHandle}`}
+              target="_blank" rel="noreferrer"
+              style={{ display: "inline-block", marginTop: 14, fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink)", opacity: 0.6, textDecoration: "none", border: "0.5px solid rgba(15,15,14,0.2)", padding: "8px 14px" }}
+            >
+              Open in Venmo ↗
+            </a>
+          </div>
+        )}
+
         {/* Actions */}
         <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
           {isPaid ? (
@@ -355,20 +386,24 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
                   cursor: submitting ? "default" : "pointer",
                   opacity: submitting ? 0.4 : 1, transition: "opacity 0.2s",
                 }}>
-                  {submitting ? "Redirecting…" : hasACH ? "Pay with card" : "Pay invoice"}
+                  {submitting ? "Redirecting…" : hasAltMethod ? "Pay with card" : "Pay invoice"}
                 </button>
               )}
-              {hasACH && !hasStripe && (
+              {hasAltMethod && !hasStripe && (
                 <div style={{
                   fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
                   letterSpacing: "0.1em", opacity: 0.5, lineHeight: 1.6,
                 }}>
-                  Please complete payment via bank transfer using the details above.
+                  {hasACH && hasVenmo
+                    ? "Please complete payment via bank transfer or Venmo using the details above."
+                    : hasVenmo
+                    ? "Please complete payment via Venmo using the details above."
+                    : "Please complete payment via bank transfer using the details above."}
                 </div>
               )}
-              {hasACH && hasStripe && (
+              {hasAltMethod && hasStripe && (
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.06em", opacity: 0.6 }}>
-                  or pay via bank transfer above
+                  {hasACH && hasVenmo ? "or pay via bank transfer or Venmo above" : hasVenmo ? "or pay via Venmo above" : "or pay via bank transfer above"}
                 </span>
               )}
             </>

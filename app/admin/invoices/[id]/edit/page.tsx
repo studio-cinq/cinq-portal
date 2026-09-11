@@ -426,6 +426,7 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
               {([
                 { value: "stripe", label: "Stripe (card checkout)" },
                 { value: "ach",    label: "ACH bank transfer" },
+                { value: "venmo",  label: "Venmo" },
               ] as const).map(opt => (
                 <label key={opt.value} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
                   <input
