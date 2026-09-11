@@ -370,10 +370,11 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
         {(() => {
           type Method = "ach" | "venmo" | "check" | "card"
           const available: Method[] = []
+          // Tab order: ACH → Credit card → Venmo → Check.
           if (hasACH && !isPaid && Boolean(achDetails?.bankName)) available.push("ach")
+          if (hasStripe && !isPaid) available.push("card")
           if (hasVenmo && !isPaid) available.push("venmo")
           if (hasCheck && !isPaid) available.push("check")
-          if (hasStripe && !isPaid) available.push("card")
 
           const errorLine = paymentError ? (
             <div role="alert" style={{ marginTop: 12, fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", color: "var(--amber)", opacity: 0.9, lineHeight: 1.6 }}>
@@ -397,7 +398,7 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
           if (available.length === 0) return null
 
           const current: Method = activeMethod && available.includes(activeMethod) ? activeMethod : available[0]
-          const labels: Record<Method, string> = { ach: "ACH", venmo: "Venmo", check: "Check", card: "Card" }
+          const labels: Record<Method, string> = { ach: "ACH", card: "Credit card", venmo: "Venmo", check: "Check" }
 
           const eyebrow: React.CSSProperties = {
             fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
