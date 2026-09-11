@@ -59,7 +59,7 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
     skip_email:     false,
   })
 
-  const [lineItems, setLineItems] = useState<{ description: string; amount: string }[]>([
+  const [lineItems, setLineItems] = useState<{ description: string; amount: string; detail?: string }[]>([
     { description: "", amount: "" },
   ])
 
@@ -103,6 +103,8 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
           setLineItems(inv.line_items.map((item: any) => ({
             description: item.description ?? "",
             amount: item.amount ? String(item.amount / 100) : "",
+            // Only surface the detail field for rows that already have one.
+            ...(item.detail ? { detail: String(item.detail) } : {}),
           })))
         }
 
@@ -135,7 +137,7 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
     setSaved(false)
   }
 
-  function updateLineItem(index: number, field: string, value: string) {
+  function updateLineItem(index: number, field: string, value: string | undefined) {
     setLineItems(items => items.map((item, i) => i === index ? { ...item, [field]: value } : item))
     setSaved(false)
   }
@@ -164,6 +166,7 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
     const items = validItems.map(item => ({
       description: item.description.trim(),
       amount: Math.round(parseFloat(item.amount) * 100),
+      ...(item.detail?.trim() ? { detail: item.detail.trim() } : {}),
     }))
     const totalCents = items.length > 0
       ? items.reduce((sum, item) => sum + item.amount, 0)
@@ -358,6 +361,31 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
                 <div>
                   {i === 0 && <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.35, marginBottom: 6, letterSpacing: "0.1em", textTransform: "uppercase" }}>Description</div>}
                   <input value={item.description} onChange={e => updateLineItem(i, "description", e.target.value)} placeholder="Logo design" style={{ ...inputStyle, borderBottom: "none", padding: "6px 0" }} />
+                  {item.detail !== undefined ? (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <input
+                        value={item.detail}
+                        autoFocus
+                        onChange={e => updateLineItem(i, "detail", e.target.value)}
+                        placeholder="Optional detail — e.g. 3 concepts, 2 rounds of revisions"
+                        style={{ ...inputStyle, borderBottom: "none", padding: "2px 0 6px", fontSize: 13, opacity: 0.7 }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => updateLineItem(i, "detail", undefined)}
+                        aria-label="Remove detail"
+                        style={{ fontFamily: "var(--font-mono)", fontSize: 10, background: "none", border: "none", cursor: "pointer", color: "var(--ink)", opacity: 0.3, padding: "0 2px" }}
+                      >✕</button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => updateLineItem(i, "detail", "")}
+                      style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", background: "none", border: "none", padding: "2px 0 0", cursor: "pointer", color: "var(--ink)", opacity: 0.35 }}
+                    >
+                      + detail
+                    </button>
+                  )}
                 </div>
                 <div>
                   {i === 0 && <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.35, marginBottom: 6, letterSpacing: "0.1em", textTransform: "uppercase" }}>Amount</div>}

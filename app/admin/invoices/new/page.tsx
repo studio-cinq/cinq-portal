@@ -10,6 +10,9 @@ import { Suspense } from "react"
 interface LineItem {
   description: string
   amount: string
+  // Optional sub-line under the description. `undefined` = collapsed in the
+  // form; "" = revealed but empty (dropped on save).
+  detail?: string
 }
 
 // Tiny safe arithmetic evaluator for the amount field, so "3.5*150+200" can
@@ -150,7 +153,7 @@ function NewInvoicePageInner() {
     setForm(f => ({ ...f, [field]: value }))
   }
 
-  function updateLineItem(index: number, field: keyof LineItem, value: string) {
+  function updateLineItem(index: number, field: keyof LineItem, value: string | undefined) {
     setLineItems(items => items.map((item, i) => i === index ? { ...item, [field]: value } : item))
   }
 
@@ -216,6 +219,7 @@ function NewInvoicePageInner() {
     const items = validItems.map(item => ({
       description: item.description.trim(),
       amount: Math.round(amountValue(item.amount) * 100),
+      ...(item.detail?.trim() ? { detail: item.detail.trim() } : {}),
     }))
     const totalCents = items.reduce((sum, item) => sum + item.amount, 0)
 
@@ -419,6 +423,31 @@ function NewInvoicePageInner() {
                     placeholder="Logo design & brand mark"
                     style={{ ...inputStyle, borderBottom: "none", padding: "6px 0" }}
                   />
+                  {item.detail !== undefined ? (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <input
+                        value={item.detail}
+                        autoFocus
+                        onChange={e => updateLineItem(i, "detail", e.target.value)}
+                        placeholder="Optional detail — e.g. 3 concepts, 2 rounds of revisions"
+                        style={{ ...inputStyle, borderBottom: "none", padding: "2px 0 6px", fontSize: 13, opacity: 0.7 }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => updateLineItem(i, "detail", undefined)}
+                        aria-label="Remove detail"
+                        style={{ fontFamily: "var(--font-mono)", fontSize: 10, background: "none", border: "none", cursor: "pointer", color: "var(--ink)", opacity: 0.3, padding: "0 2px" }}
+                      >✕</button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => updateLineItem(i, "detail", "")}
+                      style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", background: "none", border: "none", padding: "2px 0 0", cursor: "pointer", color: "var(--ink)", opacity: 0.35 }}
+                    >
+                      + detail
+                    </button>
+                  )}
                 </div>
                 <div>
                   {i === 0 && <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.35, marginBottom: 6, letterSpacing: "0.1em", textTransform: "uppercase" }}>Amount</div>}

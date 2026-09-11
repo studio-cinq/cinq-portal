@@ -171,7 +171,20 @@ export async function generateInvoicePdf(invoiceId: string): Promise<{ buffer: B
       setColor(doc, INK, 0.8)
       doc.text(item.description, marginL, y)
       doc.text(`$${(item.amount / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}`, W - marginR, y, { align: "right" })
-      y += 22
+      if (item.detail) {
+        // Optional sub-line, wrapped to leave room for the amount column.
+        y += 13
+        doc.setFontSize(8.5)
+        setColor(doc, INK, 0.5)
+        const detailLines = doc.splitTextToSize(String(item.detail), contentW - 110)
+        for (const line of detailLines) {
+          doc.text(line, marginL, y)
+          y += 11
+        }
+        y += 9
+      } else {
+        y += 22
+      }
     }
   } else {
     doc.setFontSize(11)

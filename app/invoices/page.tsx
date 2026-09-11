@@ -175,8 +175,11 @@ function InvoiceCard({ inv, variant }: { inv: any; variant: "paid" | "due" | "lo
         <div style={{ marginBottom: 12, padding: "10px 0", borderTop: "0.5px solid rgba(15,15,14,0.07)" }}>
           {inv.line_items.map((item: any, i: number) => (
             <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: 0.55 }}>
-              <span>{item.description}</span>
-              <span>${(item.amount / 100).toLocaleString()}</span>
+              <span>
+                {item.description}
+                {item.detail && <span style={{ display: "block", fontSize: 11, opacity: 0.7, marginTop: 2 }}>{item.detail}</span>}
+              </span>
+              <span style={{ whiteSpace: "nowrap" }}>${(item.amount / 100).toLocaleString()}</span>
             </div>
           ))}
         </div>

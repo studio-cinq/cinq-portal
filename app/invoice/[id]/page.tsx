@@ -279,8 +279,13 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
             </div>
             {lineItems.map((item: any, i: number) => (
               <div key={i} style={{ display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", gap: isMobile ? 6 : 16, padding: "14px 0", borderBottom: "0.5px solid rgba(15,15,14,0.07)" }}>
-                <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.75 }}>{item.description}</span>
-                <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.75 }}>${(item.amount / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+                <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.75 }}>
+                  {item.description}
+                  {item.detail && (
+                    <span style={{ display: "block", fontSize: "var(--text-sm)", opacity: 0.6, marginTop: 3, lineHeight: 1.5 }}>{item.detail}</span>
+                  )}
+                </span>
+                <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.75, whiteSpace: "nowrap" }}>${(item.amount / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
               </div>
             ))}
           </div>
