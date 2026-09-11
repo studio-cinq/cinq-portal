@@ -316,58 +316,6 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
           </span>
         </div>
 
-        {/* Actions — directly under the total so the primary action is never
-             below the payment-detail cards. */}
-        <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", marginBottom: 40 }}>
-          {isPaid ? (
-            <div style={{
-              fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
-              letterSpacing: "0.14em", textTransform: "uppercase",
-              color: "var(--sage)", opacity: 0.85,
-              padding: "14px 0",
-            }}>
-              {justPaid ? "Payment received — thank you!" : `Paid${invoice.paid_at ? ` · ${new Date(invoice.paid_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : ""}`}
-            </div>
-          ) : (
-            <>
-              {hasStripe && (
-                <button onClick={handlePay} disabled={submitting} style={{
-                  fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
-                  letterSpacing: "0.16em", textTransform: "uppercase",
-                  background: "var(--ink)", color: "var(--cream)",
-                  border: "none", padding: "16px 32px",
-                  width: isMobile ? "100%" : undefined,
-                  cursor: submitting ? "default" : "pointer",
-                  opacity: submitting ? 0.4 : 1, transition: "opacity 0.2s",
-                }}>
-                  {submitting ? "Redirecting…" : hasAltMethod ? "Pay with card" : "Pay invoice"}
-                </button>
-              )}
-              {hasAltMethod && !hasStripe && (
-                <div style={{
-                  fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
-                  letterSpacing: "0.1em", opacity: 0.5, lineHeight: 1.6,
-                }}>
-                  Payment details are below.
-                </div>
-              )}
-            </>
-          )}
-          <DownloadPDFButton type="invoice" id={params.id} label="↓ PDF" />
-        </div>
-        {paymentError && (
-          <div role="alert" style={{
-            marginTop: -28, marginBottom: 32,
-            fontFamily: "var(--font-sans)",
-            fontSize: "var(--text-sm)",
-            color: "var(--amber)",
-            opacity: 0.9,
-            lineHeight: 1.6,
-          }}>
-            {paymentError}
-          </div>
-        )}
-
         {/* Notes */}
         {invoice.notes && (
           <div style={{ marginBottom: 36, padding: "16px 20px", background: "rgba(255,255,255,0.3)", border: "0.5px solid rgba(15,15,14,0.08)" }}>
@@ -376,12 +324,60 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
           </div>
         )}
 
-        {/* Other ways to pay — bank transfer + Venmo, demoted below the
-             primary action. Side-by-side on desktop when both are offered. */}
+        {/* Payment block. Fee-free methods (bank transfer / Venmo) lead when
+             they're offered: their cards come first under "How to pay" and
+             card checkout follows as a same-size OUTLINED button — clearly
+             visible, just not the loudest thing. When card is the only
+             method, it's the filled primary button as before. */}
         {(() => {
           const showACHCard = hasACH && !isPaid && Boolean(achDetails?.bankName)
           const showVenmoCard = hasVenmo && !isPaid
-          if (!showACHCard && !showVenmoCard) return null
+          const hasCards = showACHCard || showVenmoCard
+
+          const buttonBase: React.CSSProperties = {
+            fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
+            letterSpacing: "0.16em", textTransform: "uppercase",
+            padding: "16px 32px",
+            width: isMobile ? "100%" : undefined,
+            cursor: submitting ? "default" : "pointer",
+            opacity: submitting ? 0.4 : 1, transition: "opacity 0.2s",
+          }
+          const cardButton = hasStripe && !isPaid ? (
+            <button onClick={handlePay} disabled={submitting} style={hasCards
+              ? { ...buttonBase, background: "transparent", color: "var(--ink)", border: "0.5px solid rgba(15,15,14,0.45)" }
+              : { ...buttonBase, background: "var(--ink)", color: "var(--cream)", border: "none" }
+            }>
+              {submitting ? "Redirecting…" : hasCards ? "Pay with card" : "Pay invoice"}
+            </button>
+          ) : null
+          const paidLine = isPaid ? (
+            <div style={{
+              fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
+              letterSpacing: "0.14em", textTransform: "uppercase",
+              color: "var(--sage)", opacity: 0.85,
+              padding: "14px 0",
+            }}>
+              {justPaid ? "Payment received — thank you!" : `Paid${invoice.paid_at ? ` · ${new Date(invoice.paid_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : ""}`}
+            </div>
+          ) : null
+          const actionRow = (
+            <>
+              <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+                {paidLine}
+                {cardButton}
+                <DownloadPDFButton type="invoice" id={params.id} label="↓ PDF" />
+              </div>
+              {paymentError && (
+                <div role="alert" style={{ marginTop: 12, fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", color: "var(--amber)", opacity: 0.9, lineHeight: 1.6 }}>
+                  {paymentError}
+                </div>
+              )}
+            </>
+          )
+
+          // Paid, or card-only: just the action row under the total.
+          if (!hasCards) return <div style={{ marginBottom: 40 }}>{actionRow}</div>
+
           const sideBySide = !isMobile && showACHCard && showVenmoCard
           // In a half-width column the label/value pair stacks so long bank
           // names don't collide with their labels.
@@ -397,7 +393,7 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
           return (
             <div style={{ marginBottom: 36 }}>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.4, marginBottom: 12 }}>
-                {hasStripe ? "Other ways to pay" : "How to pay"}
+                How to pay
               </div>
               <div style={{ display: "grid", gridTemplateColumns: sideBySide ? "1fr 1fr" : "1fr", gap: 16 }}>
                 {showACHCard && (
@@ -434,6 +430,7 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
                   </div>
                 )}
               </div>
+              <div style={{ marginTop: 20 }}>{actionRow}</div>
             </div>
           )
         })()}
