@@ -12,6 +12,21 @@ interface LineItem {
   amount: string
 }
 
+// Tiny safe arithmetic evaluator for the amount field, so "3.5*150+200" can
+// be typed straight in instead of reaching for the phone calculator. Only
+// digits, . + - * / ( ) and whitespace are allowed — anything else returns
+// null and the field is left as typed.
+function evalMath(expr: string): number | null {
+  const s = expr.trim()
+  if (!s || !/^[\d\s.+\-*/()]+$/.test(s)) return null
+  try {
+    const v = Function(`"use strict"; return (${s});`)()
+    return typeof v === "number" && isFinite(v) ? v : null
+  } catch {
+    return null
+  }
+}
+
 // Net-30 default for the due-date field. Returns today + 30 days as
 // YYYY-MM-DD (what <input type="date"> expects), using the browser's
 // local calendar so "30 days out" matches the studio's calendar view.
@@ -65,10 +80,15 @@ function NewInvoicePageInner() {
       : [{ description: "", amount: "" }]
   )
 
-  const total = lineItems.reduce((sum, item) => {
-    const val = parseFloat(item.amount)
-    return sum + (isNaN(val) ? 0 : val)
-  }, 0)
+  // Accepts either a plain number or an unresolved expression ("3*150").
+  const amountValue = (raw: string) => {
+    const v = evalMath(raw)
+    if (v !== null) return v
+    const n = parseFloat(raw)
+    return isNaN(n) ? 0 : n
+  }
+
+  const total = lineItems.reduce((sum, item) => sum + amountValue(item.amount), 0)
 
   useEffect(() => {
     supabase.from("clients").select("id, name").order("name").then(({ data }) => {
@@ -134,6 +154,34 @@ function NewInvoicePageInner() {
     setLineItems(items => items.map((item, i) => i === index ? { ...item, [field]: value } : item))
   }
 
+  // Per-line hrs × rate mini-calculator. Keyed by line index; present = open.
+  // The product writes straight into that line's amount as you type.
+  const [calc, setCalc] = useState<Record<number, { hours: string; rate: string }>>({})
+
+  function toggleCalc(index: number) {
+    setCalc(c => {
+      if (c[index]) { const { [index]: _, ...rest } = c; return rest }
+      return { ...c, [index]: { hours: "", rate: "" } }
+    })
+  }
+
+  function updateCalc(index: number, field: "hours" | "rate", value: string) {
+    setCalc(c => {
+      const next = { ...(c[index] ?? { hours: "", rate: "" }), [field]: value }
+      const h = parseFloat(next.hours), r = parseFloat(next.rate)
+      if (!isNaN(h) && !isNaN(r)) updateLineItem(index, "amount", (Math.round(h * r * 100) / 100).toString())
+      return { ...c, [index]: next }
+    })
+  }
+
+  // On blur, resolve any arithmetic typed into the amount field ("3*150").
+  function resolveAmount(index: number) {
+    const raw = lineItems[index]?.amount ?? ""
+    if (!/[+\-*/()]/.test(raw)) return
+    const v = evalMath(raw)
+    if (v !== null) updateLineItem(index, "amount", (Math.round(v * 100) / 100).toString())
+  }
+
   function addLineItem() {
     setLineItems(items => [...items, { description: "", amount: "" }])
   }
@@ -141,6 +189,16 @@ function NewInvoicePageInner() {
   function removeLineItem(index: number) {
     if (lineItems.length <= 1) return
     setLineItems(items => items.filter((_, i) => i !== index))
+    setCalc(c => {
+      // Re-key calculators above the removed row so they stay attached.
+      const next: typeof c = {}
+      for (const [k, v] of Object.entries(c)) {
+        const i = Number(k)
+        if (i < index) next[i] = v
+        else if (i > index) next[i - 1] = v
+      }
+      return next
+    })
   }
 
   async function handleSave() {
@@ -149,7 +207,7 @@ function NewInvoicePageInner() {
     if (!form.description.trim())    return setError("Invoice title is required.")
     if (!form.invoice_number.trim()) return setError("Invoice number is required.")
 
-    const validItems = lineItems.filter(item => item.description.trim() && parseFloat(item.amount) > 0)
+    const validItems = lineItems.filter(item => item.description.trim() && amountValue(item.amount) > 0)
     if (validItems.length === 0)     return setError("Add at least one line item.")
     if (form.payment_methods.length === 0) return setError("Select at least one payment method.")
 
@@ -157,7 +215,7 @@ function NewInvoicePageInner() {
 
     const items = validItems.map(item => ({
       description: item.description.trim(),
-      amount: Math.round(parseFloat(item.amount) * 100),
+      amount: Math.round(amountValue(item.amount) * 100),
     }))
     const totalCents = items.reduce((sum, item) => sum + item.amount, 0)
 
@@ -367,13 +425,50 @@ function NewInvoicePageInner() {
                   <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                     <span style={{ fontFamily: "var(--font-sans)", fontSize: 13, opacity: 0.35 }}>$</span>
                     <input
-                      type="number"
+                      type="text"
+                      inputMode="decimal"
                       value={item.amount}
                       onChange={e => updateLineItem(i, "amount", e.target.value)}
+                      onBlur={() => resolveAmount(i)}
+                      onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); resolveAmount(i) } }}
                       placeholder="0"
+                      title="Plain number, or math like 3.5*150"
                       style={{ ...inputStyle, borderBottom: "none", padding: "6px 0", textAlign: "right" }}
                     />
                   </div>
+                  {/* hrs × rate mini-calculator — product writes into the amount above */}
+                  <button
+                    type="button"
+                    onClick={() => toggleCalc(i)}
+                    style={{
+                      fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.1em",
+                      textTransform: "uppercase", background: "none", border: "none",
+                      padding: "2px 0 0", cursor: "pointer", color: "var(--ink)",
+                      opacity: calc[i] ? 0.7 : 0.35, display: "block", marginLeft: "auto",
+                    }}
+                  >
+                    {calc[i] ? "hrs × rate ▴" : "hrs × rate"}
+                  </button>
+                  {calc[i] && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, justifyContent: "flex-end" }}>
+                      <input
+                        type="text" inputMode="decimal" autoFocus
+                        value={calc[i].hours}
+                        onChange={e => updateCalc(i, "hours", e.target.value)}
+                        placeholder="hrs"
+                        style={{ ...inputStyle, width: 52, padding: "4px 0", fontSize: 13, textAlign: "right" }}
+                      />
+                      <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, opacity: 0.35 }}>×</span>
+                      <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, opacity: 0.35 }}>$</span>
+                      <input
+                        type="text" inputMode="decimal"
+                        value={calc[i].rate}
+                        onChange={e => updateCalc(i, "rate", e.target.value)}
+                        placeholder="rate"
+                        style={{ ...inputStyle, width: 56, padding: "4px 0", fontSize: 13, textAlign: "right" }}
+                      />
+                    </div>
+                  )}
                 </div>
                 <button
                   onClick={() => removeLineItem(i)}
