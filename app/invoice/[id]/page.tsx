@@ -17,6 +17,9 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
   const [achDetails, setAchDetails] = useState<{ bankName: string; routingNumber: string; accountNumber: string; accountName: string } | null>(null)
   // Which copy affordance just fired ("bank" details / Venmo "amount"); resets after 2s.
   const [copied, setCopied] = useState<"bank" | "check" | null>(null)
+  // Selected payment tab. null = "first available", resolved at render so a
+  // method that isn't offered on this invoice can never be selected.
+  const [activeMethod, setActiveMethod] = useState<"ach" | "venmo" | "check" | "card" | null>(null)
   // Venmo QR (data URL) generated client-side from the deep link.
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
 
@@ -358,21 +361,19 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
           </div>
         )}
 
-        {/* Payment block — see design/payment-section-mockup.html.
-             Equal-height cards in a 3 / 2 / 1 column grid, ordered bank
-             transfer → Venmo → card. Which cards show is driven by the
-             invoice's payment_methods (+ env gates, see hasACH/hasVenmo).
-             A single method lays out horizontally; everything stacks on
-             mobile. Card checkout is the only solid button. */}
+        {/* Payment block — tabbed. Every offered method is visible at once in
+             a segmented row (ACH → Venmo → Check → Card, first one selected by
+             default); the selected method's details sit in a single panel
+             below. No fee tags — Kacie doesn't want to steer how clients pay.
+             Which tabs show is driven by the invoice's payment_methods
+             (+ env gates, see hasACH/hasVenmo/hasCheck). */}
         {(() => {
-          const showACH   = hasACH && !isPaid && Boolean(achDetails?.bankName)
-          const showVenmo = hasVenmo && !isPaid
-          const showCheck = hasCheck && !isPaid
-          const showCard  = hasStripe && !isPaid
-          const count = [showACH, showVenmo, showCheck, showCard].filter(Boolean).length
-
-          const reference = `Invoice #${invoice.invoice_number}`
-          const amountFmt = `$${amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}`
+          type Method = "ach" | "venmo" | "check" | "card"
+          const available: Method[] = []
+          if (hasACH && !isPaid && Boolean(achDetails?.bankName)) available.push("ach")
+          if (hasVenmo && !isPaid) available.push("venmo")
+          if (hasCheck && !isPaid) available.push("check")
+          if (hasStripe && !isPaid) available.push("card")
 
           const errorLine = paymentError ? (
             <div role="alert" style={{ marginTop: 12, fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", color: "var(--amber)", opacity: 0.9, lineHeight: 1.6 }}>
@@ -393,59 +394,29 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
               </div>
             )
           }
-          if (count === 0) return null
+          if (available.length === 0) return null
 
-          // Single method on desktop reads as one horizontal band.
-          const single = count === 1 && !isMobile
+          const current: Method = activeMethod && available.includes(activeMethod) ? activeMethod : available[0]
+          const labels: Record<Method, string> = { ach: "ACH", venmo: "Venmo", check: "Check", card: "Card" }
 
           const eyebrow: React.CSSProperties = {
             fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
             letterSpacing: "0.14em", textTransform: "uppercase",
           }
-          // Multi-column cards are a 3-row grid (header / content / button) so
-          // the button row is locked to the bottom and every button shares one
-          // baseline regardless of content height. The single-method band
-          // stays a horizontal flex row.
-          const card: React.CSSProperties = single ? {
-            background: "rgba(255,255,255,0.4)", border: "0.5px solid rgba(15,15,14,0.1)",
-            padding: "24px 22px 22px",
-            display: "flex", flexDirection: "row", alignItems: "flex-start", gap: 40,
-            minWidth: 0,
-          } : {
-            background: "rgba(255,255,255,0.4)", border: "0.5px solid rgba(15,15,14,0.1)",
-            padding: "24px 22px 22px",
-            display: "grid", gridTemplateRows: "auto 1fr auto",
-            minHeight: 300, minWidth: 0,
-          }
-          const head = (title: string, tag: string, soft: boolean) => (
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, marginBottom: single ? 0 : 22, flexShrink: 0 }}>
-              <span style={{ ...eyebrow, color: "var(--ink)", opacity: 0.85 }}>{title}</span>
-              {/* Tags sit on a light rule-colored border; "No fee" keeps dark
-                   text so it reads first, "Processing fee" goes fully grey. */}
-              <span style={{
-                ...eyebrow, fontSize: 9, letterSpacing: "0.12em", padding: "3px 6px", whiteSpace: "nowrap",
-                color: "var(--ink)", opacity: soft ? 0.45 : 0.85,
-                border: "0.5px solid rgba(15,15,14,0.16)",
-              }}>{tag}</span>
-            </div>
-          )
           const rowLabel: React.CSSProperties = { ...eyebrow, display: "block", fontSize: 10, letterSpacing: "0.12em", opacity: 0.5, marginBottom: 4 }
           const rowStyle = (last: boolean): React.CSSProperties => ({
             padding: "9px 0", borderBottom: last ? "none" : "0.5px solid rgba(15,15,14,0.08)",
             fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.85,
-            display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12,
             wordBreak: "break-word",
           })
-          // Same margin-top on every button — with the grid's 1fr content row
-          // absorbing the slack, that's what puts them on one baseline.
+          const noteStyle: React.CSSProperties = { ...rowStyle(true), fontSize: "var(--text-sm)", opacity: 0.55, lineHeight: 1.55 }
+          // Panel is a horizontal band on desktop: rows left, button pinned
+          // bottom-right. Stacks with a full-width button on mobile.
           const btn: React.CSSProperties = {
-            ...eyebrow, display: "block", textAlign: "center", textDecoration: "none",
-            marginTop: single ? 0 : 22, width: single ? 220 : "100%", alignSelf: single ? "flex-end" : undefined,
+            ...eyebrow, display: "block", textAlign: "center", textDecoration: "none", lineHeight: "normal",
+            width: isMobile ? "100%" : 220, marginTop: isMobile ? 22 : 0, alignSelf: isMobile ? undefined : "flex-end",
             padding: 14, border: "0.5px solid var(--ink)", background: "transparent", color: "var(--ink)",
             cursor: "pointer", flexShrink: 0, boxSizing: "border-box",
-            // <a> inherits the page line-height while <button> uses "normal";
-            // pin it so the Venmo link and the buttons render the same height.
-            lineHeight: "normal",
           }
           const solid: React.CSSProperties = { ...btn, background: "var(--ink)", color: "var(--cream)" }
 
@@ -454,104 +425,116 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
             { label: "Account name", value: achDetails?.accountName ?? "" },
             { label: "Routing",      value: achDetails?.routingNumber ?? "" },
             { label: "Account",      value: achDetails?.accountNumber ?? "" },
-            { label: "Reference",    value: reference },
           ]
-          const bankText = bankRows.map(r => `${r.label}: ${r.value}`).join("\n")
+          const reference = `Invoice #${invoice.invoice_number}`
+          const bankText = [...bankRows.map(r => `${r.label}: ${r.value}`), `Reference: ${reference}`].join("\n")
+          const checkText = `Payable to: ${checkPayableTo}\nMail to: ${checkAddress}\nReference: ${reference}`
+
+          const panels: Record<Method, { rows: React.ReactNode; button: React.ReactNode }> = {
+            ach: {
+              rows: bankRows.map((r, i) => (
+                <div key={r.label} style={rowStyle(i === bankRows.length - 1)}>
+                  <small style={rowLabel}>{r.label}</small>{r.value}
+                </div>
+              )),
+              button: (
+                <button type="button" onClick={() => copyText("bank", bankText)} style={btn}>
+                  {copied === "bank" ? "Copied" : "Copy details"}
+                </button>
+              ),
+            },
+            venmo: {
+              rows: (
+                <>
+                  <div style={rowStyle(false)}><small style={rowLabel}>Handle</small>@{venmoHandle}</div>
+                  {/* QR encodes a venmo:// deep link with recipient, amount and
+                       note prefilled (verified on Kacie's phone). */}
+                  <div style={{ ...rowStyle(true), padding: "16px 0 9px" }}>
+                    <img
+                      src={qrDataUrl ?? "/venmo-qr.png"}
+                      width={88} height={88}
+                      alt={`Venmo QR code — pay @${venmoHandle}`}
+                      style={{ display: "block", width: 88, height: 88, imageRendering: "pixelated" }}
+                    />
+                  </div>
+                </>
+              ),
+              button: (
+                <a href={`https://venmo.com/u/${venmoHandle}`} target="_blank" rel="noreferrer" style={btn}>
+                  Open in Venmo
+                </a>
+              ),
+            },
+            check: {
+              rows: (
+                <>
+                  <div style={rowStyle(false)}><small style={rowLabel}>Payable to</small>{checkPayableTo}</div>
+                  <div style={rowStyle(false)}><small style={rowLabel}>Mail to</small>{checkAddress}</div>
+                  <div style={noteStyle}>Please allow 5–7 days for mailed payments to post.</div>
+                </>
+              ),
+              button: (
+                <button type="button" onClick={() => copyText("check", checkText)} style={btn}>
+                  {copied === "check" ? "Copied" : "Copy details"}
+                </button>
+              ),
+            },
+            card: {
+              rows: (
+                <>
+                  <div style={rowStyle(false)}><small style={rowLabel}>Accepted</small>Visa, Mastercard, Amex</div>
+                  <div style={noteStyle}>Secure checkout through Stripe. Receipt emailed on payment.</div>
+                </>
+              ),
+              button: (
+                <button type="button" onClick={handlePay} disabled={submitting} style={{ ...solid, opacity: submitting ? 0.4 : 1, cursor: submitting ? "default" : "pointer" }}>
+                  {submitting ? "Redirecting…" : "Pay with card"}
+                </button>
+              ),
+            },
+          }
 
           return (
             <div style={{ marginBottom: 36 }}>
               <span style={{ ...eyebrow, opacity: 0.4 }}>How to pay</span>
-              {/* 1–3 methods sit in a row; all four go 2×2 rather than cramming 4-across. */}
-              <div style={{ display: "grid", gap: 12, marginTop: 14, gridTemplateColumns: isMobile ? "minmax(0, 1fr)" : `repeat(${count === 4 ? 2 : count}, minmax(0, 1fr))` }}>
 
-                {showACH && (
-                  <div style={card}>
-                    {head("ACH", "No fee", false)}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      {bankRows.map((r, i) => (
-                        <div key={r.label} style={rowStyle(i === bankRows.length - 1)}>
-                          <div><small style={rowLabel}>{r.label}</small>{r.value}</div>
-                        </div>
-                      ))}
-                    </div>
-                    <button type="button" onClick={() => copyText("bank", bankText)} style={btn}>
-                      {copied === "bank" ? "Copied" : "Copy details"}
-                    </button>
-                  </div>
+              {/* Tab row — hidden when there's only one way to pay. */}
+              {available.length > 1 && (
+                <div role="tablist" aria-label="Payment method" style={{ display: "flex", gap: 24, marginTop: 14, borderBottom: "0.5px solid rgba(15,15,14,0.12)" }}>
+                  {available.map(m => {
+                    const on = m === current
+                    return (
+                      <button
+                        key={m} type="button" role="tab" aria-selected={on}
+                        onClick={() => setActiveMethod(m)}
+                        style={{
+                          ...eyebrow, background: "none", border: "none", padding: "10px 0 12px", cursor: on ? "default" : "pointer",
+                          color: "var(--ink)", opacity: on ? 0.9 : 0.4, whiteSpace: "nowrap",
+                          marginBottom: -0.5, borderBottom: on ? "1px solid var(--ink)" : "1px solid transparent",
+                        }}
+                      >
+                        {labels[m]}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+
+              <div
+                role="tabpanel"
+                style={{
+                  marginTop: available.length > 1 ? 16 : 14,
+                  background: "rgba(255,255,255,0.4)", border: "0.5px solid rgba(15,15,14,0.1)",
+                  padding: "20px 22px 22px",
+                  display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "stretch" : "flex-start", gap: isMobile ? 0 : 40,
+                  minWidth: 0,
+                }}
+              >
+                {available.length === 1 && (
+                  <span style={{ ...eyebrow, color: "var(--ink)", opacity: 0.85, flexShrink: 0, paddingTop: 9 }}>{labels[current]}</span>
                 )}
-
-                {showVenmo && (
-                  <div style={card}>
-                    {head("Venmo", "No fee", false)}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={rowStyle(false)}>
-                        <div><small style={rowLabel}>Handle</small>@{venmoHandle}</div>
-                      </div>
-                      <div style={rowStyle(false)}>
-                        <div><small style={rowLabel}>Reference</small>{reference}</div>
-                      </div>
-                      {/* QR encodes a venmo:// deep link with recipient, amount
-                           and note prefilled. Generated client-side from the
-                           same handle the button uses; falls back to a static
-                           asset while the data URL is still rendering. */}
-                      <div style={{ ...rowStyle(true), paddingTop: 16 }}>
-                        <img
-                          src={qrDataUrl ?? "/venmo-qr.png"}
-                          width={88} height={88}
-                          alt={`Venmo QR code — pay @${venmoHandle}`}
-                          style={{ display: "block", width: 88, height: 88, imageRendering: "pixelated" }}
-                        />
-                      </div>
-                    </div>
-                    <a href={`https://venmo.com/u/${venmoHandle}`} target="_blank" rel="noreferrer" style={btn}>
-                      Open in Venmo
-                    </a>
-                  </div>
-                )}
-
-                {showCheck && (
-                  <div style={card}>
-                    {head("Check", "No fee", false)}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={rowStyle(false)}>
-                        <div><small style={rowLabel}>Payable to</small>{checkPayableTo}</div>
-                      </div>
-                      <div style={rowStyle(false)}>
-                        <div><small style={rowLabel}>Mail to</small>{checkAddress}</div>
-                      </div>
-                      <div style={rowStyle(false)}>
-                        <div><small style={rowLabel}>Reference</small>{reference}</div>
-                      </div>
-                      <div style={{ ...rowStyle(true), fontSize: "var(--text-sm)", opacity: 0.55, lineHeight: 1.55 }}>
-                        Please allow 5–7 days for mailed payments to post.
-                      </div>
-                    </div>
-                    <button type="button" onClick={() => copyText("check", `Payable to: ${checkPayableTo}\nMail to: ${checkAddress}\nReference: ${reference}`)} style={btn}>
-                      {copied === "check" ? "Copied" : "Copy details"}
-                    </button>
-                  </div>
-                )}
-
-                {showCard && (
-                  <div style={card}>
-                    {head("Card", "Processing fee", true)}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={rowStyle(false)}>
-                        <div><small style={rowLabel}>Accepted</small>Visa, Mastercard, Amex</div>
-                      </div>
-                      <div style={rowStyle(false)}>
-                        <div><small style={rowLabel}>Reference</small>{reference}</div>
-                      </div>
-                      <div style={{ ...rowStyle(true), fontSize: "var(--text-sm)", opacity: 0.55, lineHeight: 1.55 }}>
-                        Secure checkout through Stripe. Receipt emailed on payment.
-                      </div>
-                    </div>
-                    <button type="button" onClick={handlePay} disabled={submitting} style={{ ...solid, opacity: submitting ? 0.4 : 1, cursor: submitting ? "default" : "pointer" }}>
-                      {submitting ? "Redirecting…" : "Pay with card"}
-                    </button>
-                  </div>
-                )}
-
+                <div style={{ flex: 1, minWidth: 0 }}>{panels[current].rows}</div>
+                {panels[current].button}
               </div>
               {errorLine}
             </div>
