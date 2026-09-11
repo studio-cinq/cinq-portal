@@ -250,21 +250,11 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
           )}
         </div>
 
-        {/* Meta */}
-        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 16 : 24, marginBottom: 36, padding: "20px 0", borderTop: "0.5px solid rgba(15,15,14,0.1)", borderBottom: "0.5px solid rgba(15,15,14,0.1)" }}>
-          {[
-            { label: "From", value: "Studio Cinq", subline: "Kacie Yates" },
-            { label: "To", value: client?.name ?? "—", subline: client?.contact_name || undefined },
-            { label: "Project", value: project?.title ?? "—" },
-            {
-              label: "Issued",
-              value: (() => {
-                const d = (invoice as any).last_sent_at ?? invoice.created_at
-                return d ? new Date(d).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : "—"
-              })(),
-            },
-            { label: "Due", value: invoice.due_date ? new Date(invoice.due_date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : "Upon receipt" },
-          ].map(row => (
+        {/* Meta — two rows: who (From / To), then when (Project / Issued / Due).
+             The contact subline is dropped when it just repeats the client
+             name (solo clients). */}
+        {(() => {
+          const metaCell = (row: { label: string; value: string; subline?: string }) => (
             <div key={row.label}>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.4, marginBottom: 6 }}>{row.label}</div>
               <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.75 }}>{row.value}</div>
@@ -272,8 +262,26 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
                 <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: 0.5, marginTop: 2 }}>{row.subline}</div>
               )}
             </div>
-          ))}
-        </div>
+          )
+          const clientName = client?.name ?? "—"
+          const contact = client?.contact_name?.trim()
+          const contactSub = contact && contact.toLowerCase() !== clientName.trim().toLowerCase() ? contact : undefined
+          const issuedRaw = (invoice as any).last_sent_at ?? invoice.created_at
+          const fmt = (d: string) => new Date(d).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+          return (
+            <div style={{ marginBottom: 36, padding: "20px 0", borderTop: "0.5px solid rgba(15,15,14,0.1)", borderBottom: "0.5px solid rgba(15,15,14,0.1)" }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 16 : 24 }}>
+                {metaCell({ label: "From", value: "Studio Cinq", subline: "Kacie Yates" })}
+                {metaCell({ label: "To", value: clientName, subline: contactSub })}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: isMobile ? 16 : 24, marginTop: isMobile ? 16 : 22 }}>
+                {metaCell({ label: "Project", value: project?.title ?? "—" })}
+                {metaCell({ label: "Issued", value: issuedRaw ? fmt(issuedRaw) : "—" })}
+                {metaCell({ label: "Due", value: invoice.due_date ? fmt(invoice.due_date) : "Upon receipt" })}
+              </div>
+            </div>
+          )
+        })()}
 
         {/* Line items */}
         {lineItems.length > 0 ? (
@@ -301,70 +309,16 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
         )}
 
         {/* Total */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 36 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 28 }}>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.5 }}>Total due</span>
           <span style={{ fontFamily: "var(--font-sans)", fontSize: 28, letterSpacing: "-0.01em", opacity: 0.9 }}>
             ${amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
           </span>
         </div>
 
-        {/* Notes */}
-        {invoice.notes && (
-          <div style={{ marginBottom: 36, padding: "16px 20px", background: "rgba(255,255,255,0.3)", border: "0.5px solid rgba(15,15,14,0.08)" }}>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.4, marginBottom: 8 }}>Notes</div>
-            <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.65, lineHeight: 1.7 }}>{invoice.notes}</div>
-          </div>
-        )}
-
-        {/* ACH bank details */}
-        {hasACH && !isPaid && achDetails && achDetails.bankName && (
-          <div style={{ marginBottom: 36, padding: "20px 24px", background: "rgba(255,255,255,0.4)", border: "0.5px solid rgba(15,15,14,0.1)" }}>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.55, marginBottom: 14 }}>
-              Bank transfer details
-            </div>
-            {[
-              { label: "Bank",           value: achDetails.bankName },
-              { label: "Account name",   value: achDetails.accountName },
-              { label: "Routing number", value: achDetails.routingNumber },
-              { label: "Account number", value: achDetails.accountNumber },
-              { label: "Reference",      value: `Invoice #${invoice.invoice_number}` },
-            ].map(row => (
-              <div key={row.label} style={{ display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", gap: isMobile ? 4 : 16, padding: "8px 0", borderBottom: "0.5px solid rgba(15,15,14,0.08)" }}>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.5 }}>{row.label}</span>
-                <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.85 }}>{row.value}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Venmo */}
-        {hasVenmo && !isPaid && (
-          <div style={{ marginBottom: 36, padding: "20px 24px", background: "rgba(255,255,255,0.4)", border: "0.5px solid rgba(15,15,14,0.1)" }}>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.55, marginBottom: 14 }}>
-              Venmo
-            </div>
-            {[
-              { label: "Handle",    value: `@${venmoHandle}` },
-              { label: "Amount",    value: `$${amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}` },
-              { label: "Reference", value: `Invoice #${invoice.invoice_number}` },
-            ].map(row => (
-              <div key={row.label} style={{ display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", gap: isMobile ? 4 : 16, padding: "8px 0", borderBottom: "0.5px solid rgba(15,15,14,0.08)" }}>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.5 }}>{row.label}</span>
-                <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.85 }}>{row.value}</span>
-              </div>
-            ))}
-            <a
-              href={`https://venmo.com/u/${venmoHandle}`}
-              target="_blank" rel="noreferrer"
-              style={{ display: "inline-block", marginTop: 14, fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink)", opacity: 0.6, textDecoration: "none", border: "0.5px solid rgba(15,15,14,0.2)", padding: "8px 14px" }}
-            >
-              Open in Venmo ↗
-            </a>
-          </div>
-        )}
-
-        {/* Actions */}
-        <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+        {/* Actions — directly under the total so the primary action is never
+             below the payment-detail cards. */}
+        <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", marginBottom: 40 }}>
           {isPaid ? (
             <div style={{
               fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
@@ -394,17 +348,8 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
                   fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)",
                   letterSpacing: "0.1em", opacity: 0.5, lineHeight: 1.6,
                 }}>
-                  {hasACH && hasVenmo
-                    ? "Please complete payment via bank transfer or Venmo using the details above."
-                    : hasVenmo
-                    ? "Please complete payment via Venmo using the details above."
-                    : "Please complete payment via bank transfer using the details above."}
+                  Payment details are below.
                 </div>
-              )}
-              {hasAltMethod && hasStripe && (
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.06em", opacity: 0.6 }}>
-                  {hasACH && hasVenmo ? "or pay via bank transfer or Venmo above" : hasVenmo ? "or pay via Venmo above" : "or pay via bank transfer above"}
-                </span>
               )}
             </>
           )}
@@ -412,7 +357,7 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
         </div>
         {paymentError && (
           <div role="alert" style={{
-            marginTop: 12,
+            marginTop: -28, marginBottom: 32,
             fontFamily: "var(--font-sans)",
             fontSize: "var(--text-sm)",
             color: "var(--amber)",
@@ -422,6 +367,72 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
             {paymentError}
           </div>
         )}
+
+        {/* Notes */}
+        {invoice.notes && (
+          <div style={{ marginBottom: 36, padding: "16px 20px", background: "rgba(255,255,255,0.3)", border: "0.5px solid rgba(15,15,14,0.08)" }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.4, marginBottom: 8 }}>Notes</div>
+            <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.65, lineHeight: 1.7 }}>{invoice.notes}</div>
+          </div>
+        )}
+
+        {/* Other ways to pay — bank transfer + Venmo, demoted below the
+             primary action. Side-by-side on desktop when both are offered. */}
+        {(() => {
+          const showACHCard = hasACH && !isPaid && Boolean(achDetails?.bankName)
+          const showVenmoCard = hasVenmo && !isPaid
+          if (!showACHCard && !showVenmoCard) return null
+          const sideBySide = !isMobile && showACHCard && showVenmoCard
+          // In a half-width column the label/value pair stacks so long bank
+          // names don't collide with their labels.
+          const stacked = isMobile || sideBySide
+          const cardStyle: React.CSSProperties = { padding: "20px 24px", background: "rgba(255,255,255,0.4)", border: "0.5px solid rgba(15,15,14,0.1)" }
+          const cardTitle: React.CSSProperties = { fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.55, marginBottom: 14 }
+          const detailRow = (row: { label: string; value: string }) => (
+            <div key={row.label} style={{ display: "flex", flexDirection: stacked ? "column" : "row", justifyContent: "space-between", alignItems: stacked ? "flex-start" : "center", gap: stacked ? 3 : 16, padding: "8px 0", borderBottom: "0.5px solid rgba(15,15,14,0.08)" }}>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.5 }}>{row.label}</span>
+              <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: 0.85, wordBreak: "break-word" }}>{row.value}</span>
+            </div>
+          )
+          return (
+            <div style={{ marginBottom: 36 }}>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.4, marginBottom: 12 }}>
+                {hasStripe ? "Other ways to pay" : "How to pay"}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: sideBySide ? "1fr 1fr" : "1fr", gap: 16 }}>
+                {showACHCard && (
+                  <div style={cardStyle}>
+                    <div style={cardTitle}>Bank transfer</div>
+                    {[
+                      { label: "Bank",           value: achDetails?.bankName ?? "" },
+                      { label: "Account name",   value: achDetails?.accountName ?? "" },
+                      { label: "Routing number", value: achDetails?.routingNumber ?? "" },
+                      { label: "Account number", value: achDetails?.accountNumber ?? "" },
+                      { label: "Reference",      value: `Invoice #${invoice.invoice_number}` },
+                    ].map(detailRow)}
+                  </div>
+                )}
+                {showVenmoCard && (
+                  <div style={cardStyle}>
+                    <div style={cardTitle}>Venmo</div>
+                    {[
+                      { label: "Handle",    value: `@${venmoHandle}` },
+                      { label: "Amount",    value: `$${amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}` },
+                      { label: "Reference", value: `Invoice #${invoice.invoice_number}` },
+                    ].map(detailRow)}
+                    <a
+                      href={`https://venmo.com/u/${venmoHandle}`}
+                      target="_blank" rel="noreferrer"
+                      style={{ display: "inline-block", marginTop: 14, fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink)", opacity: 0.6, textDecoration: "none", border: "0.5px solid rgba(15,15,14,0.2)", padding: "8px 14px" }}
+                    >
+                      Open in Venmo ↗
+                    </a>
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        })()}
 
         {/* Footer */}
         <div style={{ marginTop: 64, paddingTop: 20, borderTop: "0.5px solid rgba(15,15,14,0.08)" }}>
