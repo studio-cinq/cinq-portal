@@ -11,6 +11,8 @@ import path from "path"
  * (their AP system ingests PDF attachments rather than following links).
  */
 
+const PORTAL_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://portal.studiocinq.com"
+
 const INK = [15, 15, 14] as const
 const CREAM = [244, 241, 236] as const
 const SAGE = [143, 167, 181] as const
@@ -46,13 +48,25 @@ export async function generateInvoicePdf(invoiceId: string): Promise<{ buffer: B
   const contentW = W - marginL - marginR
   let y = 0
 
-  // Background
-  doc.setFillColor(CREAM[0], CREAM[1], CREAM[2])
-  doc.rect(0, 0, W, H, "F")
+  // Page chrome — background + top bar — drawn on every page.
+  const paintPage = () => {
+    doc.setFillColor(CREAM[0], CREAM[1], CREAM[2])
+    doc.rect(0, 0, W, H, "F")
+    doc.setFillColor(INK[0], INK[1], INK[2])
+    doc.rect(0, 0, W, 4, "F")
+  }
+  // jsPDF draws straight past the page edge without complaint, so every
+  // block asks for the room it needs and breaks to a fresh page if the
+  // remaining space (above the footer zone) can't hold it.
+  const BOTTOM = H - 64
+  const ensureSpace = (needed: number) => {
+    if (y + needed <= BOTTOM) return
+    doc.addPage()
+    paintPage()
+    y = 56
+  }
 
-  // Top bar
-  doc.setFillColor(INK[0], INK[1], INK[2])
-  doc.rect(0, 0, W, 4, "F")
+  paintPage()
 
   // ── Header ──
   y = 56
@@ -167,6 +181,7 @@ export async function generateInvoicePdf(invoiceId: string): Promise<{ buffer: B
 
   if (lineItems.length > 0) {
     for (const item of lineItems) {
+      ensureSpace(item.detail ? 46 : 22)
       doc.setFontSize(11)
       setColor(doc, INK, 0.8)
       doc.text(item.description, marginL, y)
@@ -195,6 +210,7 @@ export async function generateInvoicePdf(invoiceId: string): Promise<{ buffer: B
   }
 
   y += 6
+  ensureSpace(60)
   doc.setLineWidth(0.3)
   doc.line(marginL, y, W - marginR, y)
   y += 20
@@ -210,6 +226,9 @@ export async function generateInvoicePdf(invoiceId: string): Promise<{ buffer: B
 
   // Notes
   if (invoice.notes) {
+    doc.setFontSize(9)
+    const noteLines: string[] = doc.splitTextToSize(invoice.notes, contentW)
+    ensureSpace(34 + noteLines.length * 12)
     y += 20
     doc.setFontSize(8)
     setColor(doc, INK, 0.38)
@@ -217,8 +236,8 @@ export async function generateInvoicePdf(invoiceId: string): Promise<{ buffer: B
     y += 14
     doc.setFontSize(9)
     setColor(doc, INK, 0.6)
-    const noteLines = doc.splitTextToSize(invoice.notes, contentW)
     for (const line of noteLines) {
+      ensureSpace(12)
       doc.text(line, marginL, y)
       y += 12
     }
@@ -227,6 +246,7 @@ export async function generateInvoicePdf(invoiceId: string): Promise<{ buffer: B
   // ACH bank transfer details
   const paymentMethods: string[] = invoice.payment_methods ?? ["stripe"]
   if (paymentMethods.includes("ach") && !isPaid) {
+    ensureSpace(24 + 18 + 16 + 5 * 16)
     y += 24
     doc.setDrawColor(200, 196, 190)
     doc.setLineWidth(0.3)
@@ -257,9 +277,41 @@ export async function generateInvoicePdf(invoiceId: string): Promise<{ buffer: B
     }
   }
 
+  // Pay online by card — a PDF can't hold the Stripe button, so print the
+  // invoice URL as a live link (and as text, for anyone reading a printout).
+  // Ordered to match the client page's tabs: bank transfer → card → Venmo → check.
+  if (paymentMethods.includes("stripe") && !isPaid) {
+    ensureSpace(24 + 18 + 16 + 2 * 16)
+    y += 24
+    doc.setDrawColor(200, 196, 190)
+    doc.setLineWidth(0.3)
+    doc.line(marginL, y, W - marginR, y)
+    y += 18
+
+    doc.setFontSize(6.5)
+    setColor(doc, INK, 0.38)
+    doc.text("PAY ONLINE BY CARD", marginL, y)
+    y += 16
+
+    const invoiceUrl = `${PORTAL_URL}/invoice/${invoice.id}`
+    doc.setFontSize(7)
+    setColor(doc, INK, 0.38)
+    doc.text("LINK", marginL, y)
+    doc.setFontSize(10)
+    setColor(doc, INK, 0.75)
+    doc.textWithLink(invoiceUrl.replace(/^https?:\/\//, ""), marginL + 120, y, { url: invoiceUrl })
+    y += 16
+
+    doc.setFontSize(8.5)
+    setColor(doc, INK, 0.5)
+    doc.text("Secure checkout through Stripe. Visa, Mastercard, and Amex accepted.", marginL + 120, y)
+    y += 16
+  }
+
   // Venmo (per-invoice opt-in; hidden unless the handle env var is set)
   const venmoHandle = (process.env.NEXT_PUBLIC_VENMO_HANDLE ?? "").replace(/^@/, "")
   if (paymentMethods.includes("venmo") && venmoHandle && !isPaid) {
+    ensureSpace(24 + 18 + 16 + 2 * 16)
     y += 24
     doc.setDrawColor(200, 196, 190)
     doc.setLineWidth(0.3)
@@ -294,6 +346,7 @@ export async function generateInvoicePdf(invoiceId: string): Promise<{ buffer: B
   const checkPayableTo = (process.env.NEXT_PUBLIC_CHECK_PAYABLE_TO ?? "").trim()
   const checkAddress   = (process.env.NEXT_PUBLIC_CHECK_MAILING_ADDRESS ?? "").trim()
   if (paymentMethods.includes("check") && checkPayableTo && checkAddress && !isPaid) {
+    ensureSpace(24 + 18 + 16 + 3 * 16)
     y += 24
     doc.setDrawColor(200, 196, 190)
     doc.setLineWidth(0.3)
@@ -321,8 +374,9 @@ export async function generateInvoicePdf(invoiceId: string): Promise<{ buffer: B
     }
   }
 
-  // Paid stamp (image in upper-right)
+  // Paid stamp (image in upper-right of the first page)
   if (isPaid) {
+    doc.setPage(1)
     try {
       const stampPath = path.join(process.cwd(), "public", "paid-stamp.png")
       const stampBuffer = fs.readFileSync(stampPath)
@@ -334,12 +388,16 @@ export async function generateInvoicePdf(invoiceId: string): Promise<{ buffer: B
     }
   }
 
-  // ── Footer ──
-  doc.setFontSize(7)
-  setColor(doc, INK, 0.25)
-  doc.text("Studio Cinq", marginL, H - 40)
-  doc.text("portal.studiocinq.com", marginL, H - 28)
-  doc.text("1 / 1", W - marginR, H - 28, { align: "right" })
+  // ── Footer — on every page, with real page numbers ──
+  const pageCount = doc.getNumberOfPages()
+  for (let p = 1; p <= pageCount; p++) {
+    doc.setPage(p)
+    doc.setFontSize(7)
+    setColor(doc, INK, 0.25)
+    doc.text("Studio Cinq", marginL, H - 40)
+    doc.text("portal.studiocinq.com", marginL, H - 28)
+    doc.text(`${p} / ${pageCount}`, W - marginR, H - 28, { align: "right" })
+  }
 
   const buffer = Buffer.from(doc.output("arraybuffer"))
   const filename = `Invoice-${invoice.invoice_number}.pdf`
