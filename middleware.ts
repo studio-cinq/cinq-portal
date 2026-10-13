@@ -7,6 +7,7 @@ const PUBLIC_PAGE_PREFIXES = [
   "/proposals/",
   "/quotes/",
   "/invoice/",
+  "/statement/",
   "/review/",
   "/foundations/",
   "/brand-kit/",
@@ -18,6 +19,7 @@ const PUBLIC_PAGE_PREFIXES = [
 const PUBLIC_API_ROUTES = new Set([
   "/api/ach-details",
   "/api/invoice-checkout",
+  "/api/statement-checkout",
   "/api/notify/proposal-viewed",
   "/api/proposal-accept",
   "/api/proposal-checkout",

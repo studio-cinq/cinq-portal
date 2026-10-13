@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
 import { supabaseAdmin } from "@/lib/supabase-server"
-import { sendInvoicePaidEmail } from "@/lib/email"
+import { sendInvoicePaidEmail, sendStatementPaidEmail } from "@/lib/email"
 import { getStripe } from "@/lib/stripe"
 
 export async function POST(req: NextRequest) {
@@ -31,8 +31,52 @@ export async function POST(req: NextRequest) {
     const invoiceId  = session.metadata?.invoice_id
     const proposalId = session.metadata?.proposal_id
 
+    // Statement payment — one checkout covering several invoices. Checked
+    // first: it carries no invoice_id, so it can't collide with the branches
+    // below, but being explicit keeps the ordering obvious.
+    if (type === "statement") {
+      const paidAt = new Date()
+      const ids = (session.metadata?.invoice_ids ?? "").split(",").map(s => s.trim()).filter(Boolean)
+      if (ids.length === 0) {
+        console.error("[webhook] statement session with no invoice_ids:", session.id)
+        return NextResponse.json({ error: "No invoice ids" }, { status: 400 })
+      }
+
+      const { error: updateError } = await (supabaseAdmin as any)
+        .from("invoices")
+        .update({
+          status:                   "paid",
+          paid_at:                  paidAt.toISOString(),
+          stripe_payment_intent_id: session.payment_intent as string ?? null,
+        })
+        .in("id", ids)
+
+      if (updateError) {
+        console.error("[webhook] statement update failed:", updateError)
+        return NextResponse.json({ error: "DB update failed" }, { status: 500 })
+      }
+
+      try {
+        const { data: rows } = await (supabaseAdmin as any)
+          .from("invoices")
+          .select("invoice_number, amount, clients(name, contact_name)")
+          .in("id", ids)
+        const list = (rows ?? []) as any[]
+        if (list.length > 0) {
+          await sendStatementPaidEmail({
+            clientId: session.metadata?.client_id ?? "",
+            clientName: list[0].clients?.name ?? "Unknown",
+            contactName: list[0].clients?.contact_name ?? "",
+            invoices: list.map(r => ({ invoiceNumber: r.invoice_number ?? "—", amountCents: r.amount ?? 0 })),
+            paidAt,
+          })
+        }
+      } catch (err) {
+        console.error("[webhook] statement paid email failed:", err)
+      }
+    }
     // Invoice payment
-    if (type === "invoice" || (invoiceId && !proposalId)) {
+    else if (type === "invoice" || (invoiceId && !proposalId)) {
       const paidAt = new Date()
 
       const { error: updateError } = await (supabaseAdmin as any)

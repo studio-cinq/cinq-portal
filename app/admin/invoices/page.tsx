@@ -5,6 +5,7 @@ import MarkPaidButton from "@/components/portal/MarkPaidButton"
 import SendInvoiceReminderButton from "@/components/portal/SendInvoiceReminderButton"
 import InvoiceOverflowMenu from "./InvoiceOverflowMenu"
 import RemindClientButton from "./RemindClientButton"
+import CopyStatementLinkButton from "./CopyStatementLinkButton"
 import FilterTabs from "@/components/portal/FilterTabs"
 import { getStatusLine, type AgingTone } from "./get-status-line"
 
@@ -151,6 +152,7 @@ export default async function AdminInvoicesPage({
                       }}>
                         ${Math.round(group.totalCents / 100).toLocaleString()} · {group.invoices.length} {group.invoices.length === 1 ? "invoice" : "invoices"}
                       </div>
+                      <CopyStatementLinkButton clientId={group.clientId} />
                       <a
                         href={`/api/pdf/statement/${group.clientId}`}
                         target="_blank"

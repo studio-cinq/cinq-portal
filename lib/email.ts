@@ -767,6 +767,48 @@ export async function sendInvoicePaidEmail(p: InvoicePaidPayload) {
   });
 }
 
+// ─── Statement paid (several invoices in one checkout) — to admin ────────────
+
+interface StatementPaidPayload {
+  clientId: string;
+  clientName: string;
+  contactName: string;
+  invoices: Array<{ invoiceNumber: string; amountCents: number }>;
+  paidAt: Date;
+}
+
+export async function sendStatementPaidEmail(p: StatementPaidPayload) {
+  const totalCents = p.invoices.reduce((s, i) => s + i.amountCents, 0);
+  const fmt = (c: number) => (c / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+  const rows = p.invoices.map(i => `
+    <tr>
+      <td style="padding:6px 0;border-bottom:1px solid #eee">#${i.invoiceNumber}</td>
+      <td style="padding:6px 0;border-bottom:1px solid #eee;text-align:right">${fmt(i.amountCents)}</td>
+    </tr>`).join("");
+
+  const html = emailShell(`
+    <div class="body">
+      <p><strong>${p.clientName}</strong> paid their full statement — ${p.invoices.length} invoices in one card payment.</p>
+      <table style="width:100%;border-collapse:collapse;font-size:14px;margin:16px 0">
+        ${rows}
+        <tr><td style="padding:10px 0 0;font-weight:600">Total</td><td style="padding:10px 0 0;text-align:right;font-weight:600">${fmt(totalCents)}</td></tr>
+      </table>
+      <div class="meta">
+        <p><strong>Client</strong> &nbsp;${p.clientName}${p.contactName ? ` (${p.contactName})` : ""}</p>
+        <p><strong>Paid</strong> &nbsp;${formatDate(p.paidAt)}</p>
+      </div>
+      <a class="cta" href="${PORTAL_URL}/admin/invoices?tab=paid" style="color:#FAF8F5;text-decoration:none;">View invoices →</a>
+    </div>
+  `);
+
+  return sendEmail({
+    from: "Studio Cinq Portal <portal@studiocinq.com>",
+    to: STUDIO_EMAIL,
+    subject: `Statement paid — ${fmt(totalCents)} from ${p.clientName} (${p.invoices.length} invoices)`,
+    html,
+  });
+}
+
 // ─── Proposal reminder — to client ────────────────────────────────────────────
 
 interface ProposalReminderPayload {

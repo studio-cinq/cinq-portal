@@ -203,11 +203,18 @@ export async function generateStatementPdf(clientId: string): Promise<{ buffer: 
   doc.text("HOW TO PAY", marginL, y)
 
   y += 18
+  const statementUrl = `${PORTAL_URL}/statement/${clientId}`
+  doc.setFontSize(7)
+  setColor(doc, INK, 0.4)
+  doc.text("PAY FULL BALANCE BY CARD", marginL, y)
   doc.setFontSize(10)
   setColor(doc, INK, 0.75)
-  doc.text("Each invoice above has its own client link with a Pay button and, where enabled,", marginL, y); y += 14
-  doc.text("bank transfer details. Click any invoice number in your Cinq portal email, or ask", marginL, y); y += 14
-  doc.text("Kacie to resend links.", marginL, y)
+  doc.textWithLink(statementUrl.replace(/^https?:\/\//, ""), marginL + 150, y, { url: statementUrl })
+  y += 20
+  doc.setFontSize(10)
+  setColor(doc, INK, 0.75)
+  doc.text("One secure Stripe checkout covering every invoice above. Or open any invoice", marginL, y); y += 14
+  doc.text("number for bank transfer, Venmo, and check details and pay each on its own.", marginL, y)
 
   // Optional ACH block if configured
   if (process.env.ACH_BANK_NAME || process.env.ACH_ROUTING_NUMBER) {
