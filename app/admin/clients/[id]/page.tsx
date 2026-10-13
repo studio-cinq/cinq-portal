@@ -7,6 +7,7 @@ import MarkPaidButton from "@/components/portal/MarkPaidButton"
 import Calendar from "@/components/portal/Calendar"
 import { useToast } from "@/components/portal/Toast"
 import Link from "next/link"
+import { formatDate } from "@/lib/dates"
 
 const TABS = ["Project", "Presentation", "Invoices", "Proposal", "Calendar", "Brand Library", "Foundations"]
 
@@ -905,7 +906,7 @@ export default function AdminClientWorkspacePage({ params }: { params: { id: str
                   </div>
                   <div>
                     <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", opacity: "var(--op-full)" as any }}>{inv.description}</div>
-                    {inv.due_date && <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.4, marginTop: 2 }}>Due {new Date(inv.due_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</div>}
+                    {inv.due_date && <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-eyebrow)", opacity: 0.4, marginTop: 2 }}>Due {formatDate(inv.due_date)}</div>}
                   </div>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-body)", opacity: "var(--op-body)" as any }}>${(inv.amount / 100).toLocaleString()}</div>
                   <InvStatusBadge status={inv.status} />

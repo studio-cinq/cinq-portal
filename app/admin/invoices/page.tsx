@@ -6,6 +6,7 @@ import SendInvoiceReminderButton from "@/components/portal/SendInvoiceReminderBu
 import InvoiceOverflowMenu from "./InvoiceOverflowMenu"
 import RemindClientButton from "./RemindClientButton"
 import CopyStatementLinkButton from "./CopyStatementLinkButton"
+import { toDate } from "@/lib/dates"
 import FilterTabs from "@/components/portal/FilterTabs"
 import { getStatusLine, type AgingTone } from "./get-status-line"
 
@@ -428,7 +429,7 @@ function groupByClient(invoices: any[], today: Date): Array<{
     // Overdue: use days past due date, or days since sent if no due date.
     // Waiting: use days since sent (positive number, but lower than any overdue).
     const sent = inv.last_sent_at ? new Date(inv.last_sent_at) : (inv.created_at ? new Date(inv.created_at) : today)
-    const due = inv.due_date ? new Date(inv.due_date) : null
+    const due = inv.due_date ? toDate(inv.due_date) : null
     const isOverdue = inv.status === "overdue" || (due != null && due < today)
     const daysSince = (from: Date) => Math.max(0, Math.floor((today.getTime() - from.getTime()) / 86400000))
     if (isOverdue) return 10_000 + daysSince(due ?? sent)  // overdue always beats waiting

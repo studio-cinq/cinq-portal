@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "@/lib/supabase-server"
 import { jsPDF } from "jspdf"
+import { formatDate } from "@/lib/dates"
 import fs from "fs"
 import path from "path"
 
@@ -140,7 +141,7 @@ export async function generateInvoicePdf(invoiceId: string): Promise<{ buffer: B
     { label: "INVOICE NUMBER", value: `#${invoice.invoice_number}` },
     { label: "PROJECT", value: project?.title ?? "—" },
     { label: "DATE ISSUED", value: new Date(invoice.last_sent_at ?? invoice.created_at).toLocaleDateString("en-US", { timeZone: "America/New_York", month: "long", day: "numeric", year: "numeric" }) },
-    { label: "DUE DATE", value: invoice.due_date ? new Date(invoice.due_date).toLocaleDateString("en-US", { timeZone: "America/New_York", month: "long", day: "numeric", year: "numeric" }) : "Upon receipt" },
+    { label: "DUE DATE", value: invoice.due_date ? formatDate(invoice.due_date, { month: "long", day: "numeric", year: "numeric" }) : "Upon receipt" },
   ]
 
   const detailColW = contentW / 2

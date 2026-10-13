@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
 import CinqLogo from "@/components/CinqLogo"
+import { formatDate, toDate } from "@/lib/dates"
 
 /**
  * Client-facing Statement of Account with a single "pay the full balance"
@@ -30,7 +31,7 @@ function fmtMoney(cents: number) {
   return `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}`
 }
 function fmtDate(d: string | null) {
-  return d ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "Upon receipt"
+  return d ? formatDate(d) : "Upon receipt"
 }
 
 export default function StatementPage({ params }: { params: { clientId: string } }) {
@@ -162,7 +163,7 @@ export default function StatementPage({ params }: { params: { clientId: string }
               <span style={{ ...eyebrow, letterSpacing: "0.1em", opacity: 0.4 }}>Amount</span>
             </div>
             {invoices.map(inv => {
-              const due = inv.due_date ? new Date(inv.due_date) : null
+              const due = inv.due_date ? toDate(inv.due_date) : null
               const overdue = inv.status === "overdue" || (due !== null && due < today)
               return (
                 <div key={inv.id} style={{ display: "flex", justifyContent: "space-between", gap: 16, padding: "14px 0", borderBottom: "0.5px solid rgba(15,15,14,0.07)" }}>

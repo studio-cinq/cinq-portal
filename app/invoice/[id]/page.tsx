@@ -6,6 +6,7 @@ import CinqLogo from "@/components/CinqLogo"
 import DownloadPDFButton from "@/components/portal/DownloadPDFButton"
 import { Suspense } from "react"
 import QRCode from "qrcode"
+import { formatDate } from "@/lib/dates"
 
 function InvoicePageInner({ params }: { params: { id: string } }) {
   const [invoice, setInvoice] = useState<any>(null)
@@ -305,7 +306,7 @@ function InvoicePageInner({ params }: { params: { id: string } }) {
           const contact = client?.contact_name?.trim()
           const contactSub = contact && contact.toLowerCase() !== clientName.trim().toLowerCase() ? contact : undefined
           const issuedRaw = (invoice as any).last_sent_at ?? invoice.created_at
-          const fmt = (d: string) => new Date(d).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+          const fmt = (d: string) => formatDate(d, { month: "long", day: "numeric", year: "numeric" })
           return (
             <div style={{ marginBottom: 36, padding: "20px 0", borderTop: "0.5px solid rgba(15,15,14,0.1)", borderBottom: "0.5px solid rgba(15,15,14,0.1)" }}>
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 16 : 24 }}>

@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "@/lib/supabase-server"
 import { jsPDF } from "jspdf"
+import { formatDate, toDate } from "@/lib/dates"
 
 /**
  * Renders a Client-level Statement of Account as a one-page PDF and returns
@@ -27,8 +28,7 @@ function setColor(doc: jsPDF, rgb: readonly number[], opacity: number = 1) {
 
 function fmtDate(d: string | Date | null | undefined): string {
   if (!d) return "—"
-  const date = typeof d === "string" ? new Date(d) : d
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+  return formatDate(d)
 }
 
 function fmtMoney(cents: number): string {
@@ -133,7 +133,7 @@ export async function generateStatementPdf(clientId: string): Promise<{ buffer: 
 
   for (const inv of list) {
     const issued = inv.last_sent_at ?? inv.created_at
-    const due = inv.due_date ? new Date(inv.due_date) : null
+    const due = inv.due_date ? toDate(inv.due_date) : null
     const isOverdue = inv.status === "overdue" || (due && due < today)
     let statusText = "Sent"
     let statusColor: readonly number[] = INK

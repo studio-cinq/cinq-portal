@@ -3,6 +3,7 @@ import PortalNav from "@/components/portal/Nav"
 import PayInvoiceButton from "@/components/portal/PayInvoiceButton"
 import DownloadPDFButton from "@/components/portal/DownloadPDFButton"
 import InvoiceViewTracker from "@/components/portal/InvoiceViewTracker"
+import { formatDate } from "@/lib/dates"
 
 export default async function InvoicesPage() {
   const supabase = await createServerComponentClient()
@@ -158,7 +159,7 @@ function InvoiceCard({ inv, variant }: { inv: any; variant: "paid" | "due" | "lo
             {variant === "paid" && inv.paid_at
               ? `Paid ${new Date(inv.paid_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`
               : variant === "due" && inv.due_date
-              ? `Due ${new Date(inv.due_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`
+              ? `Due ${formatDate(inv.due_date)}`
               : "Due on delivery"}
           </div>
         </div>
@@ -256,7 +257,7 @@ function InvoiceCard({ inv, variant }: { inv: any; variant: "paid" | "due" | "lo
 function StatusBadge({ variant, dueDate }: { variant: string; dueDate?: string }) {
   const configs: Record<string, { color: string; label: string; border: string }> = {
     paid:   { color: "var(--sage)",  label: "Paid",  border: "rgba(143,167,181,0.4)" },
-    due:    { color: "var(--amber)", label: dueDate ? `Due ${new Date(dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : "Due", border: "rgba(201,90,59,0.4)" },
+    due:    { color: "var(--amber)", label: dueDate ? `Due ${formatDate(dueDate, { month: "short", day: "numeric" })}` : "Due", border: "rgba(201,90,59,0.4)" },
     locked: { color: "rgba(15,15,14,0.4)", label: "Not yet due", border: "rgba(15,15,14,0.15)" },
   }
   const c = configs[variant]

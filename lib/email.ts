@@ -1,4 +1,5 @@
 import { sendEmail } from "@/lib/resend";
+import { formatDate as formatDateOnly, toDate } from "@/lib/dates";
 
 const STUDIO_EMAIL = "kacie@studiocinq.com";
 const PORTAL_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://portal.studiocinq.com";
@@ -251,8 +252,8 @@ export async function sendClientInvoiceReminderEmail(p: ClientInvoiceReminderPay
   // carries a scannable timing signal.
   function dueLine(due: string | null | undefined): { text: string; isOverdue: boolean } {
     if (!due) return { text: "Due upon receipt", isOverdue: false };
-    const dueDate = new Date(due);
-    const fmt = dueDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    const dueDate = toDate(due);
+    const fmt = formatDateOnly(due);
     if (dueDate < today) return { text: `Overdue — was due ${fmt}`, isOverdue: true };
     return { text: `Due ${fmt}`, isOverdue: false };
   }
@@ -636,7 +637,7 @@ export async function sendInvoiceEmail(p: InvoiceSentPayload) {
   })
 
   const dueLine = p.dueDate
-    ? new Date(p.dueDate).toLocaleDateString("en-US", { timeZone: TZ, month: "long", day: "numeric", year: "numeric" })
+    ? formatDateOnly(p.dueDate, { month: "long", day: "numeric", year: "numeric" })
     : null
 
   const methods = p.paymentMethods ?? ["stripe"]
