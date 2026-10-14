@@ -60,7 +60,7 @@ export default function StatementPage({ params }: { params: { clientId: string }
       const [{ data: c }, { data: list }] = await Promise.all([
         supabase.from("clients").select("name").eq("id", params.clientId).single(),
         supabase.from("invoices")
-          .select("id, invoice_number, description, amount, status, due_date")
+          .select("id, invoice_number, description, amount, status, due_date, viewed_at")
           .eq("client_id", params.clientId)
           .in("status", UNPAID)
           .order("due_date", { ascending: true, nullsFirst: false })
@@ -68,6 +68,22 @@ export default function StatementPage({ params }: { params: { clientId: string }
       ])
       setClient((c as any) ?? null)
       setInvoices(((list ?? []) as Inv[]))
+
+      // View tracking — same rule as the invoice page: skip only when the
+      // viewer is Kacie's logged-in admin session; everyone else notifies.
+      const open = (list ?? []) as Inv[]
+      if (c && open.length > 0) {
+        const { data: { session } } = await supabase.auth.getSession()
+        const isAdmin = session?.user?.email === "kacie@studiocinq.com"
+        if (!isAdmin) {
+          const isReturnView = open.every((i: any) => Boolean(i.viewed_at))
+          fetch("/api/track-statement-view", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ clientId: params.clientId, isReturnView }),
+          }).catch(() => {})
+        }
+      }
     }
     load()
   }, [params.clientId])

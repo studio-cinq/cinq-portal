@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase-server"
 import { getStripe } from "@/lib/stripe"
+import { trySendEmail } from "@/lib/resend"
+import { requireAdmin } from "@/lib/admin-auth"
 
 /**
  * One Stripe Checkout session covering every open invoice for a client —
@@ -64,6 +66,34 @@ export async function POST(req: NextRequest) {
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/statement/${clientId}?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/statement/${clientId}`,
     })
+
+    // "Started checkout" is the strongest pre-payment signal there is —
+    // tell Kacie, unless it was Kacie herself testing the button.
+    const { error: notAdmin } = await requireAdmin()
+    if (notAdmin) {
+      const total = list.reduce((s, i) => s + (i.amount ?? 0), 0)
+      const at = new Date().toLocaleDateString("en-US", {
+        timeZone: "America/New_York", weekday: "long", month: "long", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short",
+      })
+      await trySendEmail({
+        from: "Studio Cinq Portal <portal@studiocinq.com>",
+        to: process.env.ADMIN_EMAIL ?? "kacie@studiocinq.com",
+        subject: `Card checkout started — ${client.name} · $${(total / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
+        html: `
+          <div style="font-family:Georgia,serif;max-width:500px;margin:40px auto;color:#1C1916">
+            <p style="font-family:monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;opacity:0.4">Studio Cinq · Portal</p>
+            <h2 style="font-weight:normal;font-size:20px;margin:8px 0 24px">${client.name} clicked Pay full balance by card</h2>
+            <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:28px">
+              <tr><td style="padding:8px 0;border-bottom:1px solid #eee;opacity:0.5;width:120px">Amount</td><td style="padding:8px 0;border-bottom:1px solid #eee">$${(total / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })} · ${list.length} invoice${list.length === 1 ? "" : "s"}</td></tr>
+              <tr><td style="padding:8px 0;border-bottom:1px solid #eee;opacity:0.5">Invoices</td><td style="padding:8px 0;border-bottom:1px solid #eee">${list.map(i => `#${i.invoice_number}`).join(", ")}</td></tr>
+              <tr><td style="padding:8px 0;opacity:0.5">When</td><td style="padding:8px 0">${at}</td></tr>
+            </table>
+            <p style="font-size:12px;opacity:0.45;line-height:1.6">They're on the Stripe checkout page now. You'll get a "Statement paid" note if it goes through; no note means they backed out.</p>
+          </div>
+        `,
+      }).catch(() => {})
+    }
+
     return NextResponse.json({ url: session.url })
   } catch (err) {
     console.error("[statement-checkout]", err)
