@@ -200,16 +200,21 @@ export default function StatementPage({ params }: { params: { clientId: string }
             })}
 
             <div style={{ marginTop: 32 }}>
+              {/* The one thing a client must not misread: this button is
+                   the whole balance, not one invoice. Say so right above it. */}
+              <div style={{ ...eyebrow, letterSpacing: "0.16em", color: "var(--ink)", opacity: 0.85, marginBottom: 10 }}>
+                Pays all {invoices.length} invoice{invoices.length === 1 ? "" : "s"} · {fmtMoney(total)}
+              </div>
               <button onClick={payAll} disabled={submitting} style={{
                 ...eyebrow, letterSpacing: "0.16em",
                 background: "var(--ink)", color: "var(--cream)", border: "none",
                 padding: "16px 32px", width: isMobile ? "100%" : undefined,
                 cursor: submitting ? "default" : "pointer", opacity: submitting ? 0.4 : 1, transition: "opacity 0.2s",
               }}>
-                {submitting ? "Redirecting…" : `Pay full balance by card · ${fmtMoney(total)}`}
+                {submitting ? "Redirecting…" : "Pay full balance by card"}
               </button>
               <p style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", opacity: 0.55, lineHeight: 1.6, marginTop: 14 }}>
-                One secure checkout through Stripe covering every invoice above. Prefer to pay by bank transfer, Venmo, or check? Open any invoice number for those details, or pay each invoice on its own page.
+                One secure Stripe checkout for the full balance, itemised by invoice. Opening an individual invoice above pays only that invoice — use that if you'd rather pay one at a time, or to find bank transfer, Venmo, and check details.
               </p>
               {error && (
                 <div role="alert" style={{ marginTop: 10, fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", color: "var(--amber)", opacity: 0.9 }}>{error}</div>
