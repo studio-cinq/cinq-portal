@@ -106,6 +106,13 @@ export async function generateStatementPdf(clientId: string): Promise<{ buffer: 
   doc.setLineWidth(0.3)
   doc.line(marginL, y, W - marginR, y)
 
+  // One hint for the whole table, instead of a label under every row:
+  // the numbers are links, and they're underlined to look like it.
+  y += 16
+  doc.setFontSize(8)
+  setColor(doc, INK, 0.5)
+  doc.text("Each invoice number below is a link — open one to review it or pay it on its own.", marginL, y)
+
   y += 20
   const colX = {
     num:    marginL,
@@ -158,6 +165,10 @@ export async function generateStatementPdf(clientId: string): Promise<{ buffer: 
     const invLabel = `#${inv.invoice_number}`
     const invUrl = `${PORTAL_URL}/invoice/${inv.id}`
     doc.textWithLink(invLabel, colX.num, y, { url: invUrl })
+    // Underline so it reads as a link on paper and on screen.
+    doc.setDrawColor(120, 118, 112)
+    doc.setLineWidth(0.4)
+    doc.line(colX.num, y + 2, colX.num + doc.getTextWidth(invLabel), y + 2)
 
     // Description, truncated to fit
     const descMax = colX.issued - colX.desc - 6
