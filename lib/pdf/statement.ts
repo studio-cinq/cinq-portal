@@ -111,7 +111,7 @@ export async function generateStatementPdf(clientId: string): Promise<{ buffer: 
   y += 16
   doc.setFontSize(8)
   setColor(doc, INK, 0.5)
-  doc.text("Each invoice number below is a link — open one to review it or pay it on its own.", marginL, y)
+  doc.text("Click any invoice number below to review its details or make a payment.", marginL, y)
 
   y += 20
   const colX = {
